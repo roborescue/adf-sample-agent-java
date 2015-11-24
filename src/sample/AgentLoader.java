@@ -1,15 +1,9 @@
-package adf.sample;
+package sample;
 
-import adf.control.ControlAmbulance;
-import adf.control.ControlFire;
-import adf.control.ControlPolice;
-import adf.launcher.AbstractLoader;
-import adf.sample.ambulance.tactics.MyTacticsAmbulance;
-import adf.sample.fire.tactics.MyTacticsFire;
-import adf.sample.police.tactics.MyTacticsPolice;
-import adf.tactics.TacticsAmbulance;
-import adf.tactics.TacticsFire;
-import adf.tactics.TacticsPolice;
+import adf.component.AbstractLoader;
+import sample.ambulance.tactics.MyTacticsAmbulance;
+import sample.fire.tactics.MyTacticsFire;
+import sample.police.tactics.MyTacticsPolice;
 
 /**
  * Created by takamin on 10/14/15.

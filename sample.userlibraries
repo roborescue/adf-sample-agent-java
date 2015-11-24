@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eclipse-userlibraries>
+  <library name="core">
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sample.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/kernel.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/clear.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/misc.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/collapse.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/ignition.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/resq-fire.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/rescuecore2.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/standard.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/gis2.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/maps.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/human.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/handy.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/traffic3.jar" />
+  </library>
+  <library name="default">
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/rescuecore.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/jscience-4.3.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/jaxen-1.1.1.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/resq-fire.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/jts-1.11.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/commons-logging-1.1.1.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/jsi-1.0b2p1.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/trove-0.1.8.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/jfreechart-1.0.13.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/junit-4.5.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/xml-0.0.6.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/dom4j.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/log4j-1.2.15.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/jcommon-1.0.16.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/default/uncommons-maths-1.2.jar" />
+  </library>
+  <library name="sources">
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/rescuecore2-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/handy-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/resq-fire-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/sample-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/standard-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/gis2-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/ignition-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/clear-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/collapse-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/kernel-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/misc-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/traffic3-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/human-sources.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/core/sources/maps-sources.jar" />
+  </library>
+  <library name="util">
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/util/comlib.jar" />
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/util/adf-core.jar" />
+  </library>
+  <library name="comlib-sources">
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/rescue/util/sources/comlib-sources.jar" />
+  </library>
+  <library name="guava-18.0">
+    <archive path="/home/takamin/Projects/RCRS-ADF/sample/library/util/guava-18.0.jar" />
+  </library>
+</eclipse-userlibraries>
+
