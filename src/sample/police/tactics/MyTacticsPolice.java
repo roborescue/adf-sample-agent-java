@@ -1,15 +1,11 @@
-package adf.sample.police.tactics;
+package sample.police.tactics;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.agent.platoon.action.Action;
-import adf.agent.platoon.action.common.ActionMove;
-import adf.agent.platoon.action.police.ActionClear;
-import adf.algorithm.path.PathPlanner;
-import adf.algorithm.path.SamplePathPlanner;
-import adf.tactics.TacticsPolice;
-import adf.util.datastorage.DataStorage;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.algorithm.path.PathPlanner;
+import adf.component.tactics.TacticsPolice;
 import rescuecore2.misc.collections.LazyMap;
 import rescuecore2.misc.geometry.GeometryTools2D;
 import rescuecore2.misc.geometry.Line2D;
@@ -51,7 +47,7 @@ public class MyTacticsPolice extends TacticsPolice
 	}
 
 	@Override
-	public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, DataStorage dataStorage)
+	public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData)
 	{
 		//non precompute
 		for (StandardEntity next : worldInfo.world) {
@@ -117,7 +113,7 @@ public class MyTacticsPolice extends TacticsPolice
 	}
 
 	@Override
-	public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, DataStorage dataStorage)
+	public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData)
 	{
 
 	}

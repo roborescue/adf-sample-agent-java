@@ -1,6 +1,12 @@
 package sample;
 
 import adf.component.AbstractLoader;
+import adf.component.control.ControlAmbulance;
+import adf.component.control.ControlFire;
+import adf.component.control.ControlPolice;
+import adf.component.tactics.TacticsAmbulance;
+import adf.component.tactics.TacticsFire;
+import adf.component.tactics.TacticsPolice;
 import sample.ambulance.tactics.MyTacticsAmbulance;
 import sample.fire.tactics.MyTacticsFire;
 import sample.police.tactics.MyTacticsPolice;

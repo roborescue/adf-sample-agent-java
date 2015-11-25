@@ -1,19 +1,11 @@
-package adf.sample.ambulance.tactics;
+package sample.ambulance.tactics;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.agent.platoon.action.Action;
-import adf.agent.platoon.action.ambulance.ActionLoad;
-import adf.agent.platoon.action.ambulance.ActionRescue;
-import adf.agent.platoon.action.ambulance.ActionUnload;
-import adf.agent.platoon.action.common.ActionMove;
-import adf.agent.platoon.extaction.ExtAction;
-import adf.algorithm.path.PathPlanner;
-import adf.algorithm.path.SamplePathPlanner;
-import adf.sample.ambulance.tactics.extaction.ActionTransport;
-import adf.tactics.TacticsAmbulance;
-import adf.util.datastorage.DataStorage;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.algorithm.path.PathPlanner;
+import adf.component.tactics.TacticsAmbulance;
 import rescuecore2.log.Logger;
 import rescuecore2.misc.collections.LazyMap;
 import rescuecore2.standard.entities.*;
@@ -51,18 +43,20 @@ public class MyTacticsAmbulance extends TacticsAmbulance
         refugeIDs = new ArrayList<>();
 	}
 
-	@Override
-	public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, DataStorage dataStorage)
-	{
-		//precpmpute
-	}
+    @Override
+    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData)
+    {
+        //precpmpute
 
-	@Override
-	public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, DataStorage dataStorage)
-	{
-		//load precompute data
+    }
+
+    @Override
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData)
+    {
+        //load precompute data
         preparate(agentInfo, worldInfo, scenarioInfo);
-	}
+
+    }
 
 	@Override
 	public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo) {

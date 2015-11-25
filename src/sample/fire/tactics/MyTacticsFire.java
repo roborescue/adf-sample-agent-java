@@ -1,18 +1,11 @@
-package adf.sample.fire.tactics;
+package sample.fire.tactics;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.agent.platoon.action.Action;
-import adf.agent.platoon.action.common.ActionMove;
-import adf.agent.platoon.action.common.ActionRest;
-import adf.agent.platoon.action.fire.ActionExtinguish;
-import adf.algorithm.path.PathPlanner;
-import adf.algorithm.path.SamplePathPlanner;
-import adf.sample.fire.tactics.extaction.ActionFireFighting;
-import adf.tactics.TacticsFire;
-import adf.util.datastorage.DataStorage;
-import org.omg.PortableInterceptor.ACTIVE;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.algorithm.path.PathPlanner;
+import adf.component.tactics.TacticsFire;
 import rescuecore2.misc.collections.LazyMap;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.Entity;
@@ -56,7 +49,7 @@ public class MyTacticsFire extends TacticsFire
 	}
 
 	@Override
-	public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, DataStorage dataStorage)
+	public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData)
 	{
 	}
 
@@ -110,7 +103,7 @@ public class MyTacticsFire extends TacticsFire
 	}
 
 	@Override
-	public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, DataStorage dataStorage)
+	public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData)
 	{
 		preparate(agentInfo, worldInfo, scenarioInfo);
 	}
