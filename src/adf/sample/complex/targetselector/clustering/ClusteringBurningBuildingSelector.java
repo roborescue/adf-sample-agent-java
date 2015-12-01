@@ -1,4 +1,4 @@
-package adf.sample.complex.targetselector.cluster;
+package adf.sample.complex.targetselector.clustering;
 
 
 import adf.agent.info.AgentInfo;

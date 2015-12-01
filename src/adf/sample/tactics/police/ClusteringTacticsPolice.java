@@ -16,7 +16,7 @@ import adf.sample.algorithm.clustering.StandardKMeans;
 import adf.sample.algorithm.pathplanning.SamplePathPlanning;
 import adf.sample.complex.targetselector.BlockadeSelector;
 import adf.sample.complex.targetselector.SearchBuildingSelector;
-import adf.sample.complex.targetselector.cluster.ClusteringSearchBuildingSelector;
+import adf.sample.complex.targetselector.clustering.ClusteringSearchBuildingSelector;
 import adf.sample.extaction.ActionExtClear;
 import adf.sample.extaction.ActionSearchCivilian;
 import adf.util.WorldUtil;
