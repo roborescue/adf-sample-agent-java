@@ -1,15 +1,18 @@
 package adf.sample.extaction;
 
-import adf.agent.action.ambulance.ActionUnload;
-import adf.agent.info.AgentInfo;
 import adf.agent.action.ambulance.ActionLoad;
 import adf.agent.action.ambulance.ActionRescue;
+import adf.agent.action.ambulance.ActionUnload;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
+import adf.agent.info.AgentInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.path.PathPlanner;
+import adf.component.algorithm.pathplanning.PathPlanner;
 import adf.component.extaction.ExtAction;
-import rescuecore2.standard.entities.*;
+import rescuecore2.standard.entities.Civilian;
+import rescuecore2.standard.entities.Human;
+import rescuecore2.standard.entities.Refuge;
+import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;

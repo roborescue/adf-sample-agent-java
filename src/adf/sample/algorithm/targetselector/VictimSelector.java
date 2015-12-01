@@ -1,9 +1,9 @@
-package adf.sample.algorithm.target;
+package adf.sample.algorithm.targetselector;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.target.TargetSelector;
+import adf.component.algorithm.targetselector.TargetSelector;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
@@ -12,7 +12,7 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VictimSelector extends TargetSelector<Human>{
+public class VictimSelector extends TargetSelector<Human> {
 
     private EntityID result;
 

@@ -1,34 +1,42 @@
-package adf.sample.algorithm.target;
-
+package adf.sample.algorithm.targetselector.cluster;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.path.PathPlanner;
-import adf.component.algorithm.target.TargetSelector;
-import rescuecore2.standard.entities.*;
+import adf.component.algorithm.clustering.Clustering;
+import adf.component.algorithm.pathplanning.PathPlanner;
+import adf.component.algorithm.targetselector.TargetSelector;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.StandardEntity;
+import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-public class SearchBuildingSelector extends TargetSelector<Building> {
+public class ClusterSearchBuildingSelector extends TargetSelector<Building> {
 
     private PathPlanner pathPlanner;
+
+    private Clustering clustering;
+    private int clusterIndex;
 
     private Collection<EntityID> unexploredBuildings;
     private EntityID result;
 
-    public SearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, PathPlanner pp) {
+    public ClusterSearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, PathPlanner pp, Clustering clustering) {
         super(ai, wi, si);
         this.pathPlanner = pp;
+        this.clustering = clustering;
         this.init();
     }
 
     private void init() {
+        this.clusterIndex = this.clustering.getClusterIndex(this.agentInfo.getID());
+
         this.unexploredBuildings = new HashSet<>();
-        for (StandardEntity next : this.worldInfo) {
+        for (StandardEntity next : this.clustering.getClusterEntities(this.clusterIndex)) {
             if(StandardEntityURN.BUILDING.equals(next.getStandardURN())) {
                 this.unexploredBuildings.add(next.getID());
             }

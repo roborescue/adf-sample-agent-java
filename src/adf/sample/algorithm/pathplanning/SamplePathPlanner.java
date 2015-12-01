@@ -1,9 +1,9 @@
-package adf.sample.algorithm.path;
+package adf.sample.algorithm.pathplanning;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.path.PathPlanner;
+import adf.component.algorithm.pathplanning.PathPlanner;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import rescuecore2.misc.collections.LazyMap;
