@@ -1,7 +1,6 @@
 package adf.sample.tactics.fire;
 
 import adf.agent.action.Action;
-import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
@@ -20,8 +19,6 @@ import adf.sample.extaction.ActionSearchCivilian;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
-
-import java.util.List;
 
 public class SampleTacticsFire extends TacticsFire {
 

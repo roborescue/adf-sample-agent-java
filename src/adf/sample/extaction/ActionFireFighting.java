@@ -1,19 +1,17 @@
 package adf.sample.extaction;
 
-import adf.agent.info.AgentInfo;
-import adf.agent.info.ScenarioInfo;
-import adf.agent.info.WorldInfo;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.action.fire.ActionExtinguish;
+import adf.agent.info.AgentInfo;
+import adf.agent.info.ScenarioInfo;
+import adf.agent.info.WorldInfo;
 import adf.component.algorithm.path.PathPlanner;
 import adf.component.extaction.ExtAction;
-import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ActionFireFighting extends ExtAction {
 

@@ -4,7 +4,6 @@ import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.action.police.ActionClear;
 import adf.agent.info.AgentInfo;
-import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.component.algorithm.path.PathPlanner;
 import adf.component.extaction.ExtAction;
@@ -25,7 +24,7 @@ public class ActionExtClear extends ExtAction {
     private PathPlanner pathPlanner;
     private EntityID target;
 
-    public ActionExtClear(AgentInfo ai, WorldInfo wi, ScenarioInfo scenarioInfo, PathPlanner pathPlanner, EntityID target) {
+    public ActionExtClear(AgentInfo ai, WorldInfo wi, PathPlanner pathPlanner, EntityID target) {
         this.worldInfo = wi;
         this.agentInfo = ai;
         this.pathPlanner = pathPlanner;
@@ -37,8 +36,8 @@ public class ActionExtClear extends ExtAction {
         this.result = new ActionRest();
         int agentX = ((Human)this.agentInfo.me()).getX();
         int agentY = ((Human)this.agentInfo.me()).getY();
-        Blockade blockade = null;
-        Road road = null;
+        Blockade blockade;
+        Road road;
         StandardEntity entity = this.worldInfo.getEntity(this.target);
         if(entity.getStandardURN().equals(StandardEntityURN.BLOCKADE)) {
             blockade = (Blockade) entity;

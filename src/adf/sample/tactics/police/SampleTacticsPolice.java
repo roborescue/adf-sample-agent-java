@@ -1,8 +1,6 @@
 package adf.sample.tactics.police;
 
 import adf.agent.action.Action;
-import adf.agent.action.common.ActionMove;
-import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -16,10 +14,10 @@ import adf.sample.algorithm.target.BlockadeSelector;
 import adf.sample.algorithm.target.SearchBuildingSelector;
 import adf.sample.extaction.ActionExtClear;
 import adf.sample.extaction.ActionSearchCivilian;
-import rescuecore2.standard.entities.*;
+import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
-
-import java.util.List;
 
 public class SampleTacticsPolice extends TacticsPolice {
 
@@ -62,7 +60,7 @@ public class SampleTacticsPolice extends TacticsPolice {
 
         EntityID target = this.blockadeSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionExtClear(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
+            Action action = new ActionExtClear(agentInfo, worldInfo, this.pathPlanner, target).calc().getAction();
             if(action != null) {
                 return action;
             }
@@ -71,10 +69,4 @@ public class SampleTacticsPolice extends TacticsPolice {
         // Nothing to do
         return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.buildingSelector).calc().getAction();
     }
-
-
-
-
-
-
 }

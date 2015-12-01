@@ -15,8 +15,6 @@ import adf.component.tactics.TacticsFire;
 import adf.sample.algorithm.cluster.PathBasedKMeans;
 import adf.sample.algorithm.cluster.StandardKMeans;
 import adf.sample.algorithm.path.SamplePathPlanner;
-import adf.sample.algorithm.target.BurningBuildingSelector;
-import adf.sample.algorithm.target.SearchBuildingSelector;
 import adf.sample.algorithm.target.cluster.ClusterBurningBuildingSelector;
 import adf.sample.algorithm.target.cluster.ClusterSearchBuildingSelector;
 import adf.sample.extaction.ActionFireFighting;

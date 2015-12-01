@@ -3,14 +3,10 @@ package adf.sample.extaction;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.info.AgentInfo;
-import adf.agent.info.ScenarioInfo;
-import adf.agent.info.WorldInfo;
 import adf.component.algorithm.path.PathPlanner;
 import adf.component.algorithm.target.TargetSelector;
 import adf.component.extaction.ExtAction;
-import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Building;
-import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
@@ -37,6 +33,7 @@ public class ActionSearchCivilian extends ExtAction {
             this.pathPlanner.setFrom(agentInfo.getPosition());
             List<EntityID> path = this.pathPlanner.setDist(searchBuildingID).getResult();
             if (path != null) {
+                path.remove(path.size() - 1);
                 this.result = new ActionMove(path);
             }
         }
