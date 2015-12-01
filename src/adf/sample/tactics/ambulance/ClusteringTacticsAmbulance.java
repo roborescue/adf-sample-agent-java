@@ -1,4 +1,5 @@
-package adf.sample.tactics.police;
+package adf.sample.tactics.ambulance;
+
 
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
@@ -10,18 +11,17 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.algorithm.Clustering;
 import adf.component.algorithm.PathPlanner;
 import adf.component.complex.TargetSelector;
-import adf.component.tactics.TacticsPolice;
+import adf.component.tactics.TacticsAmbulance;
 import adf.sample.algorithm.clustering.PathBasedKMeans;
 import adf.sample.algorithm.clustering.StandardKMeans;
 import adf.sample.algorithm.pathplanning.SamplePathPlanner;
-import adf.sample.complex.targetselector.BlockadeSelector;
-import adf.sample.complex.targetselector.SearchBuildingSelector;
-import adf.sample.complex.targetselector.cluster.ClusterSearchBuildingSelector;
-import adf.sample.extaction.ActionExtClear;
+import adf.sample.complex.targetselector.cluster.ClusteringSearchBuildingSelector;
+import adf.sample.complex.targetselector.cluster.ClusteringVictimSelector;
 import adf.sample.extaction.ActionSearchCivilian;
+import adf.sample.extaction.ActionTransport;
 import adf.util.WorldUtil;
-import rescuecore2.standard.entities.Blockade;
 import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -29,11 +29,11 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.Collection;
 import java.util.List;
 
-public class ClusterTacticsPolice extends TacticsPolice {
+public class ClusteringTacticsAmbulance extends TacticsAmbulance {
 
     private PathPlanner pathPlanner;
 
-    private TargetSelector<Blockade> blockadeSelector;
+    private TargetSelector<Human> victimSelector;
     private TargetSelector<Building> buildingSelector;
 
     private Clustering clustering;
@@ -42,13 +42,19 @@ public class ClusterTacticsPolice extends TacticsPolice {
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
         worldInfo.indexClass(
+                StandardEntityURN.CIVILIAN,
+                StandardEntityURN.FIRE_BRIGADE,
+                StandardEntityURN.POLICE_FORCE,
+                StandardEntityURN.AMBULANCE_TEAM,
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
                 StandardEntityURN.BUILDING,
                 StandardEntityURN.REFUGE,
-                StandardEntityURN.BLOCKADE
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
         );
-        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
         this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -61,8 +67,8 @@ public class ClusterTacticsPolice extends TacticsPolice {
         )
         );
         this.clusterIndex = -1;
-        this.blockadeSelector = new BlockadeSelector(agentInfo, worldInfo, scenarioInfo);
-        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner);
+        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.victimSelector = new ClusteringVictimSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
     }
 
     @Override
@@ -70,8 +76,8 @@ public class ClusterTacticsPolice extends TacticsPolice {
         this.clustering.calc();
         this.pathPlanner.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
-        this.blockadeSelector.precompute(precomputeData);
-        this.buildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.victimSelector.precompute(precomputeData);
+        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
         this.buildingSelector.precompute(precomputeData);
     }
 
@@ -79,8 +85,8 @@ public class ClusterTacticsPolice extends TacticsPolice {
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.pathPlanner.resume(precomputeData);
         this.clustering.resume(precomputeData);
-        this.blockadeSelector.resume(precomputeData);
-        this.buildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.victimSelector.resume(precomputeData);
+        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
         this.buildingSelector.resume(precomputeData);
     }
 
@@ -98,15 +104,20 @@ public class ClusterTacticsPolice extends TacticsPolice {
         )
         );
         this.clustering.calc();
-        this.buildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
     }
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
         this.pathPlanner.updateInfo();
         this.clustering.updateInfo();
-        this.blockadeSelector.updateInfo();
+        this.victimSelector.updateInfo();
         this.buildingSelector.updateInfo();
+
+        Human injured = agentInfo.someoneOnBoard();
+        if (injured != null) {
+            return new ActionTransport(agentInfo, worldInfo, this.pathPlanner, injured).calc().getAction();
+        }
 
         if(this.clusterIndex == -1) {
             this.clusterIndex = this.clustering.getClusterIndex(agentInfo.getID());
@@ -120,9 +131,10 @@ public class ClusterTacticsPolice extends TacticsPolice {
             }
         }
 
-        EntityID target = this.blockadeSelector.calc().getTarget();
+        // Go through targets (sorted by distance) and check for things we can do
+        EntityID target = this.victimSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionExtClear(agentInfo, worldInfo, this.pathPlanner, target).calc().getAction();
+            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanner, (Human)worldInfo.getEntity(target)).calc().getAction();
             if(action != null) {
                 return action;
             }

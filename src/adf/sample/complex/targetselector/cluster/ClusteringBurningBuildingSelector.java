@@ -15,14 +15,14 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClusterBurningBuildingSelector extends TargetSelector<Building> {
+public class ClusteringBurningBuildingSelector extends TargetSelector<Building> {
 
     private EntityID result;
 
     private Clustering clustering;
     private int clusterIndex;
 
-    public ClusterBurningBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Clustering clustering) {
+    public ClusteringBurningBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Clustering clustering) {
         super(ai, wi, si);
         this.clustering = clustering;
         this.clusterIndex = -1;

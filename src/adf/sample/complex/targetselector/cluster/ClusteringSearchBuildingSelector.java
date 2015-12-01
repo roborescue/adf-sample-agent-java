@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-public class ClusterSearchBuildingSelector extends TargetSelector<Building> {
+public class ClusteringSearchBuildingSelector extends TargetSelector<Building> {
 
     private PathPlanner pathPlanner;
 
@@ -25,7 +25,7 @@ public class ClusterSearchBuildingSelector extends TargetSelector<Building> {
     private Collection<EntityID> unexploredBuildings;
     private EntityID result;
 
-    public ClusterSearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, PathPlanner pp, Clustering clustering) {
+    public ClusteringSearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, PathPlanner pp, Clustering clustering) {
         super(ai, wi, si);
         this.pathPlanner = pp;
         this.clustering = clustering;

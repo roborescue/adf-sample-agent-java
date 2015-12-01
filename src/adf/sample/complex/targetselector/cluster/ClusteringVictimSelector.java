@@ -15,13 +15,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ClusterVictimSelector extends TargetSelector<Human> {
+public class ClusteringVictimSelector extends TargetSelector<Human> {
 
     private EntityID result;
     private Clustering clustering;
     private int clusterIndex;
 
-    public ClusterVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Clustering clustering) {
+    public ClusteringVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Clustering clustering) {
         super(ai, wi, si);
         this.clustering = clustering;
         this.clusterIndex = -1;

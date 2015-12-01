@@ -1,8 +1,7 @@
-package adf.sample.tactics.fire;
+package adf.sample.tactics.police;
 
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
-import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -11,16 +10,17 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.algorithm.Clustering;
 import adf.component.algorithm.PathPlanner;
 import adf.component.complex.TargetSelector;
-import adf.component.tactics.TacticsFire;
+import adf.component.tactics.TacticsPolice;
 import adf.sample.algorithm.clustering.PathBasedKMeans;
 import adf.sample.algorithm.clustering.StandardKMeans;
 import adf.sample.algorithm.pathplanning.SamplePathPlanner;
-import adf.sample.complex.targetselector.cluster.ClusterBurningBuildingSelector;
-import adf.sample.complex.targetselector.cluster.ClusterSearchBuildingSelector;
-import adf.sample.extaction.ActionFireFighting;
-import adf.sample.extaction.ActionRefill;
+import adf.sample.complex.targetselector.BlockadeSelector;
+import adf.sample.complex.targetselector.SearchBuildingSelector;
+import adf.sample.complex.targetselector.cluster.ClusteringSearchBuildingSelector;
+import adf.sample.extaction.ActionExtClear;
 import adf.sample.extaction.ActionSearchCivilian;
 import adf.util.WorldUtil;
+import rescuecore2.standard.entities.Blockade;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
@@ -29,12 +29,12 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.Collection;
 import java.util.List;
 
-public class ClusterTacticsFire extends TacticsFire {
+public class ClusteringTacticsPolice extends TacticsPolice {
 
     private PathPlanner pathPlanner;
 
-    private TargetSelector<Building> burningBuildingSelector;
-    private TargetSelector<Building> searchBuildingSelector;
+    private TargetSelector<Blockade> blockadeSelector;
+    private TargetSelector<Building> buildingSelector;
 
     private Clustering clustering;
     private int clusterIndex;
@@ -46,11 +46,9 @@ public class ClusterTacticsFire extends TacticsFire {
                 StandardEntityURN.HYDRANT,
                 StandardEntityURN.BUILDING,
                 StandardEntityURN.REFUGE,
-                StandardEntityURN.GAS_STATION,
-                StandardEntityURN.AMBULANCE_CENTRE,
-                StandardEntityURN.FIRE_STATION,
-                StandardEntityURN.POLICE_OFFICE
+                StandardEntityURN.BLOCKADE
         );
+        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
         this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -63,8 +61,8 @@ public class ClusterTacticsFire extends TacticsFire {
         )
         );
         this.clusterIndex = -1;
-        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
-        this.burningBuildingSelector = new ClusterBurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
+        this.blockadeSelector = new BlockadeSelector(agentInfo, worldInfo, scenarioInfo);
+        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner);
     }
 
     @Override
@@ -72,18 +70,18 @@ public class ClusterTacticsFire extends TacticsFire {
         this.clustering.calc();
         this.pathPlanner.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
-        this.burningBuildingSelector.precompute(precomputeData);
-        this.searchBuildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
-        this.searchBuildingSelector.precompute(precomputeData);
+        this.blockadeSelector.precompute(precomputeData);
+        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.buildingSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.pathPlanner.resume(precomputeData);
         this.clustering.resume(precomputeData);
-        this.burningBuildingSelector.resume(precomputeData);
-        this.searchBuildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
-        this.searchBuildingSelector.resume(precomputeData);
+        this.blockadeSelector.resume(precomputeData);
+        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.buildingSelector.resume(precomputeData);
     }
 
     @Override
@@ -100,22 +98,15 @@ public class ClusterTacticsFire extends TacticsFire {
         )
         );
         this.clustering.calc();
-        this.searchBuildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
     }
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
         this.pathPlanner.updateInfo();
         this.clustering.updateInfo();
-        this.burningBuildingSelector.updateInfo();
-        this.searchBuildingSelector.updateInfo();
-
-        // Are we currently filling with water?
-        // Are we out of water?
-        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanner).calc().getAction();
-        if(action != null) {
-            return action;
-        }
+        this.blockadeSelector.updateInfo();
+        this.buildingSelector.updateInfo();
 
         if(this.clusterIndex == -1) {
             this.clusterIndex = this.clustering.getClusterIndex(agentInfo.getID());
@@ -129,20 +120,15 @@ public class ClusterTacticsFire extends TacticsFire {
             }
         }
 
-        // cannot fire fighting
-        if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
-            // search civilian
-            return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.searchBuildingSelector).calc().getAction();
-        }
-
-        // Find all buildings that are on fire
-        EntityID target = this.burningBuildingSelector.calc().getTarget();
+        EntityID target = this.blockadeSelector.calc().getTarget();
         if(target != null) {
-            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
+            Action action = new ActionExtClear(agentInfo, worldInfo, this.pathPlanner, target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
-        return new ActionRest();
+
+        // Nothing to do
+        return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.buildingSelector).calc().getAction();
     }
 }

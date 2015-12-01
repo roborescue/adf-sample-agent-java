@@ -1,8 +1,8 @@
-package adf.sample.tactics.ambulance;
-
+package adf.sample.tactics.fire;
 
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
+import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -11,17 +11,17 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.algorithm.Clustering;
 import adf.component.algorithm.PathPlanner;
 import adf.component.complex.TargetSelector;
-import adf.component.tactics.TacticsAmbulance;
+import adf.component.tactics.TacticsFire;
 import adf.sample.algorithm.clustering.PathBasedKMeans;
 import adf.sample.algorithm.clustering.StandardKMeans;
 import adf.sample.algorithm.pathplanning.SamplePathPlanner;
-import adf.sample.complex.targetselector.cluster.ClusterSearchBuildingSelector;
-import adf.sample.complex.targetselector.cluster.ClusterVictimSelector;
+import adf.sample.complex.targetselector.cluster.ClusteringBurningBuildingSelector;
+import adf.sample.complex.targetselector.cluster.ClusteringSearchBuildingSelector;
+import adf.sample.extaction.ActionFireFighting;
+import adf.sample.extaction.ActionRefill;
 import adf.sample.extaction.ActionSearchCivilian;
-import adf.sample.extaction.ActionTransport;
 import adf.util.WorldUtil;
 import rescuecore2.standard.entities.Building;
-import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -29,12 +29,12 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.Collection;
 import java.util.List;
 
-public class ClusterTacticsAmbulance extends TacticsAmbulance {
+public class ClusteringTacticsFire extends TacticsFire {
 
     private PathPlanner pathPlanner;
 
-    private TargetSelector<Human> victimSelector;
-    private TargetSelector<Building> buildingSelector;
+    private TargetSelector<Building> burningBuildingSelector;
+    private TargetSelector<Building> searchBuildingSelector;
 
     private Clustering clustering;
     private int clusterIndex;
@@ -42,10 +42,6 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
         worldInfo.indexClass(
-                StandardEntityURN.CIVILIAN,
-                StandardEntityURN.FIRE_BRIGADE,
-                StandardEntityURN.POLICE_FORCE,
-                StandardEntityURN.AMBULANCE_TEAM,
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
                 StandardEntityURN.BUILDING,
@@ -68,7 +64,7 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
         );
         this.clusterIndex = -1;
         this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
-        this.victimSelector = new ClusterVictimSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
+        this.burningBuildingSelector = new ClusteringBurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
     }
 
     @Override
@@ -76,18 +72,18 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
         this.clustering.calc();
         this.pathPlanner.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
-        this.victimSelector.precompute(precomputeData);
-        this.buildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
-        this.buildingSelector.precompute(precomputeData);
+        this.burningBuildingSelector.precompute(precomputeData);
+        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.searchBuildingSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.pathPlanner.resume(precomputeData);
         this.clustering.resume(precomputeData);
-        this.victimSelector.resume(precomputeData);
-        this.buildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
-        this.buildingSelector.resume(precomputeData);
+        this.burningBuildingSelector.resume(precomputeData);
+        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.searchBuildingSelector.resume(precomputeData);
     }
 
     @Override
@@ -104,19 +100,21 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
         )
         );
         this.clustering.calc();
-        this.buildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
     }
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
         this.pathPlanner.updateInfo();
         this.clustering.updateInfo();
-        this.victimSelector.updateInfo();
-        this.buildingSelector.updateInfo();
+        this.burningBuildingSelector.updateInfo();
+        this.searchBuildingSelector.updateInfo();
 
-        Human injured = agentInfo.someoneOnBoard();
-        if (injured != null) {
-            return new ActionTransport(agentInfo, worldInfo, this.pathPlanner, injured).calc().getAction();
+        // Are we currently filling with water?
+        // Are we out of water?
+        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanner).calc().getAction();
+        if(action != null) {
+            return action;
         }
 
         if(this.clusterIndex == -1) {
@@ -131,16 +129,20 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
             }
         }
 
-        // Go through targets (sorted by distance) and check for things we can do
-        EntityID target = this.victimSelector.calc().getTarget();
+        // cannot fire fighting
+        if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
+            // search civilian
+            return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.searchBuildingSelector).calc().getAction();
+        }
+
+        // Find all buildings that are on fire
+        EntityID target = this.burningBuildingSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanner, (Human)worldInfo.getEntity(target)).calc().getAction();
+            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
-
-        // Nothing to do
-        return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.buildingSelector).calc().getAction();
+        return new ActionRest();
     }
 }
