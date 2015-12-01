@@ -22,7 +22,7 @@ public class ActionTransport extends ExtAction {
 
     private Human target;
 
-    public ActionTransport(WorldInfo worldInfo, AgentInfo agentInfo, PathPlanner pathPlanner, Human target) {
+    public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, PathPlanner pathPlanner, Human target) {
         super();
         this.worldInfo = worldInfo;
         this.agentInfo = agentInfo;

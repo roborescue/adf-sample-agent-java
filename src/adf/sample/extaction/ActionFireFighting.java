@@ -24,7 +24,7 @@ public class ActionFireFighting extends ExtAction {
     private int maxPower;
     private EntityID target;
 
-    public ActionFireFighting(WorldInfo worldInfo, AgentInfo agentInfo, ScenarioInfo scenarioInfo, PathPlanner pathPlanner, EntityID target) {
+    public ActionFireFighting(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PathPlanner pathPlanner, EntityID target) {
         super();
         this.worldInfo = worldInfo;
         this.agentInfo = agentInfo;

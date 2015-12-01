@@ -16,20 +16,24 @@ import adf.sample.algorithm.cluster.PathBasedKMeans;
 import adf.sample.algorithm.cluster.StandardKMeans;
 import adf.sample.algorithm.path.SamplePathPlanner;
 import adf.sample.algorithm.target.BurningBuildingSelector;
+import adf.sample.algorithm.target.SearchBuildingSelector;
+import adf.sample.algorithm.target.cluster.ClusterBurningBuildingSelector;
 import adf.sample.algorithm.target.cluster.ClusterSearchBuildingSelector;
 import adf.sample.extaction.ActionFireFighting;
+import adf.sample.extaction.ActionRefill;
 import adf.util.WorldUtil;
-import rescuecore2.standard.entities.*;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.StandardEntity;
+import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.Collection;
 import java.util.List;
 
-public class ClusterTacticsFire extends TacticsFire{
-
-    private int maxWater;
+public class ClusterTacticsFire extends TacticsFire {
 
     private PathPlanner pathPlanner;
+
     private TargetSelector<Building> burningBuildingSelector;
     private TargetSelector<Building> searchBuildingSelector;
 
@@ -40,30 +44,35 @@ public class ClusterTacticsFire extends TacticsFire{
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
         worldInfo.indexClass(
                 StandardEntityURN.ROAD,
+                StandardEntityURN.HYDRANT,
                 StandardEntityURN.BUILDING,
                 StandardEntityURN.REFUGE,
-                StandardEntityURN.HYDRANT,
-                StandardEntityURN.GAS_STATION
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
         );
         this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
-                StandardEntityURN.REFUGE,
                 StandardEntityURN.BUILDING,
-                StandardEntityURN.GAS_STATION
+                StandardEntityURN.REFUGE,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
         )
         );
-        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
-        this.burningBuildingSelector = new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo);
-
-        this.maxWater = scenarioInfo.getFireTankMaximum();
         this.clusterIndex = -1;
+        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.burningBuildingSelector = new ClusterBurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.pathPlanner.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
+        this.burningBuildingSelector.precompute(precomputeData);
         this.searchBuildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
         this.searchBuildingSelector.precompute(precomputeData);
     }
@@ -72,6 +81,7 @@ public class ClusterTacticsFire extends TacticsFire{
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.pathPlanner.resume(precomputeData);
         this.clustering.resume(precomputeData);
+        this.burningBuildingSelector.resume(precomputeData);
         this.searchBuildingSelector = new ClusterSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
         this.searchBuildingSelector.resume(precomputeData);
     }
@@ -81,9 +91,12 @@ public class ClusterTacticsFire extends TacticsFire{
         this.clustering = new StandardKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
-                StandardEntityURN.REFUGE,
                 StandardEntityURN.BUILDING,
-                StandardEntityURN.GAS_STATION
+                StandardEntityURN.REFUGE,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
         )
         );
         this.clustering.calc();
@@ -92,34 +105,16 @@ public class ClusterTacticsFire extends TacticsFire{
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+        this.pathPlanner.updateInfo();
+        this.clustering.updateInfo();
         this.burningBuildingSelector.updateInfo();
         this.searchBuildingSelector.updateInfo();
-        this.pathPlanner.updateInfo();
 
         // Are we currently filling with water?
-        if (agentInfo.isWaterDefined() && agentInfo.getWater() < this.maxWater && agentInfo.getLocation().getStandardURN().equals(StandardEntityURN.REFUGE)) {
-            return new ActionRest();
-        }
-        if(agentInfo.isWaterDefined() && agentInfo.getWater() < (this.maxWater / 5) && agentInfo.getLocation().getStandardURN().equals(StandardEntityURN.HYDRANT)) {
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            this.pathPlanner.setDist(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = this.pathPlanner.getResult();
-            return path != null ? new ActionMove(path) : new ActionRest();
-        }
         // Are we out of water?
-        if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
-            // Head for a refuge
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            this.pathPlanner.setDist(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = this.pathPlanner.getResult();
-            /*if (path == null) {
-                this.pathPlanner.setFrom(agentInfo.getPosition());
-                this.pathPlanner.setDist(worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
-                path = this.pathPlanner.getResult();
-            }*/
-            if(path != null) {
-                return new ActionMove(path);
-            }
+        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanner).calc().getAction();
+        if(action != null) {
+            return action;
         }
 
         if(this.clusterIndex == -1) {
@@ -134,24 +129,28 @@ public class ClusterTacticsFire extends TacticsFire{
             }
         }
 
+        // cannot fire fighting
+        if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
+            // search civilian
+            EntityID searchBuildingID = this.searchBuildingSelector.calc().getTarget();
+            if(searchBuildingID != null) {
+                this.pathPlanner.setFrom(agentInfo.getPosition());
+                List<EntityID> path = this.pathPlanner.setDist(searchBuildingID).getResult();
+                if (path != null) {
+                    return new ActionMove(path);
+                }
+            }
+        }
+
         // Find all buildings that are on fire
         EntityID target = this.burningBuildingSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionFireFighting(worldInfo, agentInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
+            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
 
-        /////////////////////////////////////////////////////
-        EntityID searchBuildingID = this.searchBuildingSelector.calc().getTarget();
-        if(searchBuildingID != null) {
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanner.setDist(searchBuildingID).getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-        }
         return new ActionRest();
     }
 }

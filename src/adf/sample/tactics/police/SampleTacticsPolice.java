@@ -65,7 +65,7 @@ public class SampleTacticsPolice extends TacticsPolice {
 
         EntityID target = this.blockadeSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionExtClear(worldInfo, agentInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
+            Action action = new ActionExtClear(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
             if(action != null) {
                 return action;
             }

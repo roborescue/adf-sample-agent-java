@@ -36,10 +36,14 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
                 StandardEntityURN.FIRE_BRIGADE,
                 StandardEntityURN.POLICE_FORCE,
                 StandardEntityURN.AMBULANCE_TEAM,
-                StandardEntityURN.REFUGE,
+                StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
+                StandardEntityURN.BUILDING,
+                StandardEntityURN.REFUGE,
                 StandardEntityURN.GAS_STATION,
-                StandardEntityURN.BUILDING
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
         );
         this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
         this.victimSelector = new VictimSelector(agentInfo, worldInfo, scenarioInfo);
@@ -60,19 +64,19 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+        this.pathPlanner.updateInfo();
         this.victimSelector.updateInfo();
         this.buildingSelector.updateInfo();
-        this.pathPlanner.updateInfo();
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {
-            return new ActionTransport(worldInfo, agentInfo, this.pathPlanner, injured).calc().getAction();
+            return new ActionTransport(agentInfo, worldInfo, this.pathPlanner, injured).calc().getAction();
         }
 
         // Go through targets (sorted by distance) and check for things we can do
         EntityID target = this.victimSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionTransport(worldInfo, agentInfo, this.pathPlanner, (Human)worldInfo.getEntity(target)).calc().getAction();
+            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanner, (Human)worldInfo.getEntity(target)).calc().getAction();
             if(action != null) {
                 return action;
             }

@@ -25,7 +25,7 @@ public class ActionExtClear extends ExtAction {
     private PathPlanner pathPlanner;
     private EntityID target;
 
-    public ActionExtClear(WorldInfo wi, AgentInfo ai, ScenarioInfo scenarioInfo, PathPlanner pathPlanner, EntityID target) {
+    public ActionExtClear(AgentInfo ai, WorldInfo wi, ScenarioInfo scenarioInfo, PathPlanner pathPlanner, EntityID target) {
         this.worldInfo = wi;
         this.agentInfo = ai;
         this.pathPlanner = pathPlanner;

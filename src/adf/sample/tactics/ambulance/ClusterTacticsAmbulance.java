@@ -46,22 +46,29 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
                 StandardEntityURN.FIRE_BRIGADE,
                 StandardEntityURN.POLICE_FORCE,
                 StandardEntityURN.AMBULANCE_TEAM,
-                StandardEntityURN.REFUGE,
+                StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
+                StandardEntityURN.BUILDING,
+                StandardEntityURN.REFUGE,
                 StandardEntityURN.GAS_STATION,
-                StandardEntityURN.BUILDING
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
         );
         this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
-                StandardEntityURN.REFUGE,
                 StandardEntityURN.BUILDING,
-                StandardEntityURN.GAS_STATION
+                StandardEntityURN.REFUGE,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
         )
         );
+        this.clusterIndex = -1;
         this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
         this.victimSelector = new ClusterVictimSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
-        this.clusterIndex = -1;
     }
 
     @Override
@@ -87,9 +94,12 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
         this.clustering = new StandardKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
-                StandardEntityURN.REFUGE,
                 StandardEntityURN.BUILDING,
-                StandardEntityURN.GAS_STATION
+                StandardEntityURN.REFUGE,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
         )
         );
         this.clustering.calc();
@@ -98,14 +108,14 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.victimSelector.updateInfo();
-        this.buildingSelector.updateInfo();
         this.pathPlanner.updateInfo();
         this.clustering.updateInfo();
+        this.victimSelector.updateInfo();
+        this.buildingSelector.updateInfo();
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {
-            return new ActionTransport(worldInfo, agentInfo, this.pathPlanner, injured).calc().getAction();
+            return new ActionTransport(agentInfo, worldInfo, this.pathPlanner, injured).calc().getAction();
         }
 
         if(this.clusterIndex == -1) {
@@ -123,7 +133,7 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
         // Go through targets (sorted by distance) and check for things we can do
         EntityID target = this.victimSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionTransport(worldInfo, agentInfo, this.pathPlanner, (Human)worldInfo.getEntity(target)).calc().getAction();
+            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanner, (Human)worldInfo.getEntity(target)).calc().getAction();
             if(action != null) {
                 return action;
             }

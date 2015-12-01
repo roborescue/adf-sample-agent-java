@@ -15,17 +15,17 @@ import adf.sample.algorithm.path.SamplePathPlanner;
 import adf.sample.algorithm.target.BurningBuildingSelector;
 import adf.sample.algorithm.target.SearchBuildingSelector;
 import adf.sample.extaction.ActionFireFighting;
+import adf.sample.extaction.ActionRefill;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
 
-public class SampleTacticsFire extends TacticsFire{
-
-    private int maxWater;
+public class SampleTacticsFire extends TacticsFire {
 
     private PathPlanner pathPlanner;
+
     private TargetSelector<Building> burningBuildingSelector;
     private TargetSelector<Building> searchBuildingSelector;
 
@@ -41,7 +41,6 @@ public class SampleTacticsFire extends TacticsFire{
         this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
         this.burningBuildingSelector = new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo);
         this.searchBuildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner);
-        this.maxWater = scenarioInfo.getFireTankMaximum();
     }
 
     @Override
@@ -63,54 +62,34 @@ public class SampleTacticsFire extends TacticsFire{
         this.pathPlanner.updateInfo();
 
         // Are we currently filling with water?
-        if (agentInfo.isWaterDefined() && agentInfo.getWater() < this.maxWater && agentInfo.getLocation().getStandardURN().equals(StandardEntityURN.REFUGE)) {
-            return new ActionRest();
-        }
-        if(agentInfo.isWaterDefined() && agentInfo.getWater() < (this.maxWater / 5) && agentInfo.getLocation().getStandardURN().equals(StandardEntityURN.HYDRANT)) {
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            this.pathPlanner.setDist(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = this.pathPlanner.getResult();
-            return path != null ? new ActionMove(path) : new ActionRest();
-        }
         // Are we out of water?
+        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanner).calc().getAction();
+        if(action != null) {
+            return action;
+        }
+
+        // cannot fire fighting
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
-            // Head for a refuge
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            this.pathPlanner.setDist(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = this.pathPlanner.getResult();
-            if (path == null) {
+            // search civilian
+            EntityID searchBuildingID = this.searchBuildingSelector.calc().getTarget();
+            if(searchBuildingID != null) {
                 this.pathPlanner.setFrom(agentInfo.getPosition());
-                this.pathPlanner.setDist(worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
-                path = this.pathPlanner.getResult();
-            }
-            if(path == null) {
-                EntityID searchBuildingID = this.searchBuildingSelector.calc().getTarget();
-                if (searchBuildingID != null) {
-                    this.pathPlanner.setFrom(agentInfo.getPosition());
-                    path = this.pathPlanner.setDist(searchBuildingID).getResult();
+                List<EntityID> path = this.pathPlanner.setDist(searchBuildingID).getResult();
+                if (path != null) {
+                    return new ActionMove(path);
                 }
             }
-            return path != null ? new ActionMove(path) : new ActionRest();
         }
 
         // Find all buildings that are on fire
         EntityID target = this.burningBuildingSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionFireFighting(worldInfo, agentInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
+            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
 
-        /////////////////////////////////////////////////////
-        EntityID searchBuildingID = this.searchBuildingSelector.calc().getTarget();
-        if(searchBuildingID != null) {
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanner.setDist(searchBuildingID).getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-        }
         return new ActionRest();
     }
 }
