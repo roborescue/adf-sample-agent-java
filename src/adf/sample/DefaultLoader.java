@@ -7,9 +7,9 @@ import adf.component.control.ControlPolice;
 import adf.component.tactics.TacticsAmbulance;
 import adf.component.tactics.TacticsFire;
 import adf.component.tactics.TacticsPolice;
-import adf.modules.main.tactics.ambulance.DefaultTacticsAmbulance;
-import adf.modules.main.tactics.fire.DefaultTacticsFire;
-import adf.modules.main.tactics.police.DefaultTacticsPolice;
+import adf.sample.tactics.ambulance.DefaultTacticsAmbulance;
+import adf.sample.tactics.fire.DefaultTacticsFire;
+import adf.sample.tactics.police.DefaultTacticsPolice;
 
 public class DefaultLoader extends AbstractLoader {
     @Override

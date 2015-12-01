@@ -11,10 +11,10 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.algorithm.path.PathPlanner;
 import adf.component.algorithm.target.TargetSelector;
 import adf.component.tactics.TacticsPolice;
-import adf.modules.main.algorithm.path.DefaultPathPlanner;
-import adf.modules.main.algorithm.target.BlockadeSelector;
-import adf.modules.main.algorithm.target.SearchBuildingSelector;
-import adf.modules.main.extaction.ActionExtClear;
+import adf.sample.algorithm.path.DefaultPathPlanner;
+import adf.sample.algorithm.target.BlockadeSelector;
+import adf.sample.algorithm.target.SearchBuildingSelector;
+import adf.sample.extaction.ActionExtClear;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
