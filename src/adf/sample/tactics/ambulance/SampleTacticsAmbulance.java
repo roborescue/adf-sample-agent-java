@@ -1,8 +1,6 @@
 package adf.sample.tactics.ambulance;
 
 import adf.agent.action.Action;
-import adf.agent.action.common.ActionMove;
-import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -14,13 +12,12 @@ import adf.component.tactics.TacticsAmbulance;
 import adf.sample.algorithm.path.SamplePathPlanner;
 import adf.sample.algorithm.target.SearchBuildingSelector;
 import adf.sample.algorithm.target.VictimSelector;
+import adf.sample.extaction.ActionSearchCivilian;
 import adf.sample.extaction.ActionTransport;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
-
-import java.util.List;
 
 public class SampleTacticsAmbulance extends TacticsAmbulance {
 
@@ -83,14 +80,6 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
         }
 
         // Nothing to do
-        EntityID searchBuildingID = this.buildingSelector.calc().getTarget();
-        if(searchBuildingID != null) {
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanner.setDist(searchBuildingID).getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-        }
-        return new ActionRest();
+        return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.buildingSelector).calc().getAction();
     }
 }

@@ -16,6 +16,7 @@ import adf.sample.algorithm.target.BurningBuildingSelector;
 import adf.sample.algorithm.target.SearchBuildingSelector;
 import adf.sample.extaction.ActionFireFighting;
 import adf.sample.extaction.ActionRefill;
+import adf.sample.extaction.ActionSearchCivilian;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -71,14 +72,7 @@ public class SampleTacticsFire extends TacticsFire {
         // cannot fire fighting
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
             // search civilian
-            EntityID searchBuildingID = this.searchBuildingSelector.calc().getTarget();
-            if(searchBuildingID != null) {
-                this.pathPlanner.setFrom(agentInfo.getPosition());
-                List<EntityID> path = this.pathPlanner.setDist(searchBuildingID).getResult();
-                if (path != null) {
-                    return new ActionMove(path);
-                }
-            }
+            return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.searchBuildingSelector).calc().getAction();
         }
 
         // Find all buildings that are on fire

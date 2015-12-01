@@ -18,6 +18,7 @@ import adf.sample.algorithm.cluster.StandardKMeans;
 import adf.sample.algorithm.path.SamplePathPlanner;
 import adf.sample.algorithm.target.cluster.ClusterSearchBuildingSelector;
 import adf.sample.algorithm.target.cluster.ClusterVictimSelector;
+import adf.sample.extaction.ActionSearchCivilian;
 import adf.sample.extaction.ActionTransport;
 import adf.util.WorldUtil;
 import rescuecore2.standard.entities.Building;
@@ -140,14 +141,6 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
         }
 
         // Nothing to do
-        EntityID searchBuildingID = this.buildingSelector.calc().getTarget();
-        if(searchBuildingID != null) {
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanner.setDist(searchBuildingID).getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-        }
-        return new ActionRest();
+        return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.buildingSelector).calc().getAction();
     }
 }
