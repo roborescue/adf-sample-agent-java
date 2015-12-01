@@ -7,11 +7,11 @@ import adf.component.control.ControlPolice;
 import adf.component.tactics.TacticsAmbulance;
 import adf.component.tactics.TacticsFire;
 import adf.component.tactics.TacticsPolice;
-import adf.sample.tactics.ambulance.DefaultTacticsAmbulance;
-import adf.sample.tactics.fire.DefaultTacticsFire;
-import adf.sample.tactics.police.DefaultTacticsPolice;
+import adf.sample.tactics.ambulance.SampleTacticsAmbulance;
+import adf.sample.tactics.fire.SampleTacticsFire;
+import adf.sample.tactics.police.SampleTacticsPolice;
 
-public class DefaultLoader extends AbstractLoader {
+public class SampleLoader extends AbstractLoader {
     @Override
     public String getTeamName() {
         return "Sample";
@@ -19,17 +19,17 @@ public class DefaultLoader extends AbstractLoader {
 
     @Override
     public TacticsAmbulance getTacticsAmbulance() {
-        return new DefaultTacticsAmbulance();
+        return new SampleTacticsAmbulance();
     }
 
     @Override
     public TacticsFire getTacticsFire() {
-        return new DefaultTacticsFire();
+        return new SampleTacticsFire();
     }
 
     @Override
     public TacticsPolice getTacticsPolice() {
-        return new DefaultTacticsPolice();
+        return new SampleTacticsPolice();
     }
 
     @Override

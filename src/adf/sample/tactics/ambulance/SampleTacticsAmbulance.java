@@ -1,4 +1,4 @@
-package adf.sample.tactics.police;
+package adf.sample.tactics.ambulance;
 
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
@@ -10,67 +10,75 @@ import adf.agent.info.WorldInfo;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.algorithm.path.PathPlanner;
 import adf.component.algorithm.target.TargetSelector;
-import adf.component.tactics.TacticsPolice;
-import adf.sample.algorithm.path.DefaultPathPlanner;
-import adf.sample.algorithm.target.BlockadeSelector;
+import adf.component.tactics.TacticsAmbulance;
+import adf.sample.algorithm.path.SamplePathPlanner;
 import adf.sample.algorithm.target.SearchBuildingSelector;
-import adf.sample.extaction.ActionExtClear;
-import rescuecore2.standard.entities.*;
+import adf.sample.algorithm.target.VictimSelector;
+import adf.sample.extaction.ActionTransport;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.Human;
+import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
 
-public class DefaultTacticsPolice extends TacticsPolice {
+public class SampleTacticsAmbulance extends TacticsAmbulance {
 
     private PathPlanner pathPlanner;
-    private TargetSelector<Blockade> blockadeSelector;
+
+    private TargetSelector<Human> victimSelector;
     private TargetSelector<Building> buildingSelector;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+        worldInfo.indexClass(
+                StandardEntityURN.CIVILIAN,
+                StandardEntityURN.FIRE_BRIGADE,
+                StandardEntityURN.POLICE_FORCE,
+                StandardEntityURN.AMBULANCE_TEAM,
+                StandardEntityURN.REFUGE,
+                StandardEntityURN.HYDRANT,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.BUILDING
+        );
+        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.victimSelector = new VictimSelector(agentInfo, worldInfo, scenarioInfo);
+        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner);
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
-        worldInfo.indexClass(StandardEntityURN.ROAD, StandardEntityURN.HYDRANT, StandardEntityURN.REFUGE, StandardEntityURN.BLOCKADE);
-        this.pathPlanner = new DefaultPathPlanner(agentInfo, worldInfo, scenarioInfo);
-        this.blockadeSelector = new BlockadeSelector(agentInfo, worldInfo, scenarioInfo);
-        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner);
-        this.pathPlanner.precompute(precomputeData);
-        this.blockadeSelector.precompute(precomputeData);
-        this.buildingSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
-        this.preparate(agentInfo, worldInfo, scenarioInfo);
-        this.pathPlanner.resume(precomputeData);
-        this.blockadeSelector.resume(precomputeData);
-        this.buildingSelector.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo) {
-        worldInfo.indexClass(StandardEntityURN.ROAD, StandardEntityURN.HYDRANT, StandardEntityURN.REFUGE, StandardEntityURN.BLOCKADE);
-        this.pathPlanner = new DefaultPathPlanner(agentInfo, worldInfo, scenarioInfo);
-        this.blockadeSelector = new BlockadeSelector(agentInfo, worldInfo, scenarioInfo);
-        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner);
     }
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.blockadeSelector.updateInfo();
+        this.victimSelector.updateInfo();
         this.buildingSelector.updateInfo();
         this.pathPlanner.updateInfo();
 
-        EntityID target = this.blockadeSelector.calc().getTarget();
+        Human injured = agentInfo.someoneOnBoard();
+        if (injured != null) {
+            return new ActionTransport(worldInfo, agentInfo, this.pathPlanner, injured).calc().getAction();
+        }
+
+        // Go through targets (sorted by distance) and check for things we can do
+        EntityID target = this.victimSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionExtClear(worldInfo, agentInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
+            Action action = new ActionTransport(worldInfo, agentInfo, this.pathPlanner, (Human)worldInfo.getEntity(target)).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
 
+        // Nothing to do
         EntityID searchBuildingID = this.buildingSelector.calc().getTarget();
         if(searchBuildingID != null) {
             this.pathPlanner.setFrom(agentInfo.getPosition());
@@ -81,10 +89,4 @@ public class DefaultTacticsPolice extends TacticsPolice {
         }
         return new ActionRest();
     }
-
-
-
-
-
-
 }

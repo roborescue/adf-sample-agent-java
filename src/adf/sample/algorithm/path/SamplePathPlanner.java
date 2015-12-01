@@ -13,7 +13,7 @@ import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
 
-public class DefaultPathPlanner extends PathPlanner {
+public class SamplePathPlanner extends PathPlanner {
 
     private Map<EntityID, Set<EntityID>> graph;
 
@@ -22,7 +22,7 @@ public class DefaultPathPlanner extends PathPlanner {
     private EntityID from;
     private List<EntityID> result;
 
-    public DefaultPathPlanner(AgentInfo ai, WorldInfo wi, ScenarioInfo si) {
+    public SamplePathPlanner(AgentInfo ai, WorldInfo wi, ScenarioInfo si) {
         super(ai, wi, si);
         this.init();
     }

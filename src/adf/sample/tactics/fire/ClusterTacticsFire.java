@@ -14,7 +14,7 @@ import adf.component.algorithm.target.TargetSelector;
 import adf.component.tactics.TacticsFire;
 import adf.sample.algorithm.cluster.PathBasedKMeans;
 import adf.sample.algorithm.cluster.StandardKMeans;
-import adf.sample.algorithm.path.DefaultPathPlanner;
+import adf.sample.algorithm.path.SamplePathPlanner;
 import adf.sample.algorithm.target.BurningBuildingSelector;
 import adf.sample.algorithm.target.cluster.ClusterSearchBuildingSelector;
 import adf.sample.extaction.ActionFireFighting;
@@ -53,7 +53,7 @@ public class ClusterTacticsFire extends TacticsFire{
                 StandardEntityURN.GAS_STATION
         )
         );
-        this.pathPlanner = new DefaultPathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
         this.burningBuildingSelector = new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo);
 
         this.maxWater = scenarioInfo.getFireTankMaximum();

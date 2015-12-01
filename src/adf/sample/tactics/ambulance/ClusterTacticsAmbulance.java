@@ -15,7 +15,7 @@ import adf.component.algorithm.target.TargetSelector;
 import adf.component.tactics.TacticsAmbulance;
 import adf.sample.algorithm.cluster.PathBasedKMeans;
 import adf.sample.algorithm.cluster.StandardKMeans;
-import adf.sample.algorithm.path.DefaultPathPlanner;
+import adf.sample.algorithm.path.SamplePathPlanner;
 import adf.sample.algorithm.target.cluster.ClusterSearchBuildingSelector;
 import adf.sample.algorithm.target.cluster.ClusterVictimSelector;
 import adf.sample.extaction.ActionTransport;
@@ -59,7 +59,7 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
                 StandardEntityURN.GAS_STATION
         )
         );
-        this.pathPlanner = new DefaultPathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
         this.victimSelector = new ClusterVictimSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
         this.clusterIndex = -1;
     }
