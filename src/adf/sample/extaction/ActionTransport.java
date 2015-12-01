@@ -7,7 +7,7 @@ import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.extaction.ExtAction;
 import rescuecore2.standard.entities.Civilian;
 import rescuecore2.standard.entities.Human;
@@ -21,15 +21,15 @@ public class ActionTransport extends ExtAction {
 
     private WorldInfo worldInfo;
     private AgentInfo agentInfo;
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
 
     private Human target;
 
-    public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, PathPlanner pathPlanner, Human target) {
+    public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, PathPlanning pathPlanning, Human target) {
         super();
         this.worldInfo = worldInfo;
         this.agentInfo = agentInfo;
-        this.pathPlanner = pathPlanner;
+        this.pathPlanning = pathPlanning;
         this.target = target;
     }
 
@@ -41,9 +41,9 @@ public class ActionTransport extends ExtAction {
                 this.result = new ActionUnload();
             }
             else {
-                this.pathPlanner.setFrom(agentInfo.getPosition());
-                this.pathPlanner.setDist(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-                List<EntityID> path = this.pathPlanner.getResult();
+                this.pathPlanning.setFrom(agentInfo.getPosition());
+                this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+                List<EntityID> path = this.pathPlanning.getResult();
                 if (path != null) {
                     this.result = new ActionMove(path);
                 }
@@ -57,9 +57,9 @@ public class ActionTransport extends ExtAction {
                     this.result = new ActionRescue(target.getID());
                 }
             } else {
-                this.pathPlanner.setFrom(agentInfo.getPosition());
-                this.pathPlanner.setDist(target.getPosition());
-                List<EntityID> path = this.pathPlanner.getResult();
+                this.pathPlanning.setFrom(agentInfo.getPosition());
+                this.pathPlanning.setDestination(target.getPosition());
+                List<EntityID> path = this.pathPlanning.getResult();
                 if (path != null) {
                     this.result = new ActionMove(path);
                 }

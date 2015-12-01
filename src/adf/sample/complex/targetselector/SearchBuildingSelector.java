@@ -4,7 +4,7 @@ package adf.sample.complex.targetselector;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.complex.TargetSelector;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntity;
@@ -17,14 +17,14 @@ import java.util.List;
 
 public class SearchBuildingSelector extends TargetSelector<Building> {
 
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
 
     private Collection<EntityID> unexploredBuildings;
     private EntityID result;
 
-    public SearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, PathPlanner pp) {
+    public SearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, PathPlanning pp) {
         super(ai, wi, si);
-        this.pathPlanner = pp;
+        this.pathPlanning = pp;
         this.init();
     }
 
@@ -47,8 +47,8 @@ public class SearchBuildingSelector extends TargetSelector<Building> {
 
     @Override
     public TargetSelector<Building> calc() {
-        this.pathPlanner.setFrom(this.agentInfo.getPosition());
-        List<EntityID> path = this.pathPlanner.setDist(this.unexploredBuildings).getResult();
+        this.pathPlanning.setFrom(this.agentInfo.getPosition());
+        List<EntityID> path = this.pathPlanning.setDestination(this.unexploredBuildings).getResult();
         if (path != null) {
             this.result = path.get(path.size() - 1);
         }

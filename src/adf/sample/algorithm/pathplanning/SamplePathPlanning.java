@@ -3,7 +3,7 @@ package adf.sample.algorithm.pathplanning;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import rescuecore2.misc.collections.LazyMap;
@@ -13,7 +13,7 @@ import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
 
-public class SamplePathPlanner extends PathPlanner {
+public class SamplePathPlanning extends PathPlanning {
 
     private Map<EntityID, Set<EntityID>> graph;
 
@@ -22,7 +22,7 @@ public class SamplePathPlanner extends PathPlanner {
     private EntityID from;
     private List<EntityID> result;
 
-    public SamplePathPlanner(AgentInfo ai, WorldInfo wi, ScenarioInfo si) {
+    public SamplePathPlanning(AgentInfo ai, WorldInfo wi, ScenarioInfo si) {
         super(ai, wi, si);
         this.init();
     }
@@ -55,7 +55,7 @@ public class SamplePathPlanner extends PathPlanner {
     }
 
     @Override
-    public PathPlanner setDist(Collection<EntityID> targets) {
+    public PathPlanning setDestination(Collection<EntityID> targets) {
         //check cache
         if(this.hasCache(targets)) {
             return this;

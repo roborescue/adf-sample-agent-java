@@ -6,10 +6,10 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.complex.TargetSelector;
 import adf.component.tactics.TacticsAmbulance;
-import adf.sample.algorithm.pathplanning.SamplePathPlanner;
+import adf.sample.algorithm.pathplanning.SamplePathPlanning;
 import adf.sample.complex.targetselector.SearchBuildingSelector;
 import adf.sample.complex.targetselector.VictimSelector;
 import adf.sample.extaction.ActionSearchCivilian;
@@ -21,7 +21,7 @@ import rescuecore2.worldmodel.EntityID;
 
 public class SampleTacticsAmbulance extends TacticsAmbulance {
 
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
 
     private TargetSelector<Human> victimSelector;
     private TargetSelector<Building> buildingSelector;
@@ -42,9 +42,9 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
-        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
         this.victimSelector = new VictimSelector(agentInfo, worldInfo, scenarioInfo);
-        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner);
+        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning);
     }
 
     @Override
@@ -61,25 +61,25 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.pathPlanner.updateInfo();
+        this.pathPlanning.updateInfo();
         this.victimSelector.updateInfo();
         this.buildingSelector.updateInfo();
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {
-            return new ActionTransport(agentInfo, worldInfo, this.pathPlanner, injured).calc().getAction();
+            return new ActionTransport(agentInfo, worldInfo, this.pathPlanning, injured).calc().getAction();
         }
 
         // Go through targets (sorted by distance) and check for things we can do
         EntityID target = this.victimSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanner, (Human)worldInfo.getEntity(target)).calc().getAction();
+            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanning, (Human)worldInfo.getEntity(target)).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
 
         // Nothing to do
-        return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.buildingSelector).calc().getAction();
+        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.buildingSelector).calc().getAction();
     }
 }

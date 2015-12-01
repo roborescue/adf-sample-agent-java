@@ -7,10 +7,10 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.complex.TargetSelector;
 import adf.component.tactics.TacticsFire;
-import adf.sample.algorithm.pathplanning.SamplePathPlanner;
+import adf.sample.algorithm.pathplanning.SamplePathPlanning;
 import adf.sample.complex.targetselector.BurningBuildingSelector;
 import adf.sample.complex.targetselector.SearchBuildingSelector;
 import adf.sample.extaction.ActionFireFighting;
@@ -22,7 +22,7 @@ import rescuecore2.worldmodel.EntityID;
 
 public class SampleTacticsFire extends TacticsFire {
 
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
 
     private TargetSelector<Building> burningBuildingSelector;
     private TargetSelector<Building> searchBuildingSelector;
@@ -36,9 +36,9 @@ public class SampleTacticsFire extends TacticsFire {
                 StandardEntityURN.HYDRANT,
                 StandardEntityURN.GAS_STATION
         );
-        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
         this.burningBuildingSelector = new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo);
-        this.searchBuildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner);
+        this.searchBuildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning);
     }
 
     @Override
@@ -57,11 +57,11 @@ public class SampleTacticsFire extends TacticsFire {
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
         this.burningBuildingSelector.updateInfo();
         this.searchBuildingSelector.updateInfo();
-        this.pathPlanner.updateInfo();
+        this.pathPlanning.updateInfo();
 
         // Are we currently filling with water?
         // Are we out of water?
-        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanner).calc().getAction();
+        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanning).calc().getAction();
         if(action != null) {
             return action;
         }
@@ -69,13 +69,13 @@ public class SampleTacticsFire extends TacticsFire {
         // cannot fire fighting
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
             // search civilian
-            return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.searchBuildingSelector).calc().getAction();
+            return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.searchBuildingSelector).calc().getAction();
         }
 
         // Find all buildings that are on fire
         EntityID target = this.burningBuildingSelector.calc().getTarget();
         if(target != null) {
-            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
+            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, target).calc().getAction();
             if(action != null) {
                 return action;
             }

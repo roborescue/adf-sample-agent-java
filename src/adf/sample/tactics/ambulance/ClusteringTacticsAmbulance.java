@@ -9,12 +9,12 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.algorithm.Clustering;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.complex.TargetSelector;
 import adf.component.tactics.TacticsAmbulance;
 import adf.sample.algorithm.clustering.PathBasedKMeans;
 import adf.sample.algorithm.clustering.StandardKMeans;
-import adf.sample.algorithm.pathplanning.SamplePathPlanner;
+import adf.sample.algorithm.pathplanning.SamplePathPlanning;
 import adf.sample.complex.targetselector.cluster.ClusteringSearchBuildingSelector;
 import adf.sample.complex.targetselector.cluster.ClusteringVictimSelector;
 import adf.sample.extaction.ActionSearchCivilian;
@@ -31,7 +31,7 @@ import java.util.List;
 
 public class ClusteringTacticsAmbulance extends TacticsAmbulance {
 
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
 
     private TargetSelector<Human> victimSelector;
     private TargetSelector<Building> buildingSelector;
@@ -67,26 +67,26 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         )
         );
         this.clusterIndex = -1;
-        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
         this.victimSelector = new ClusteringVictimSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.clustering.calc();
-        this.pathPlanner.precompute(precomputeData);
+        this.pathPlanning.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
         this.victimSelector.precompute(precomputeData);
-        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
         this.buildingSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
-        this.pathPlanner.resume(precomputeData);
+        this.pathPlanning.resume(precomputeData);
         this.clustering.resume(precomputeData);
         this.victimSelector.resume(precomputeData);
-        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
         this.buildingSelector.resume(precomputeData);
     }
 
@@ -104,19 +104,19 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         )
         );
         this.clustering.calc();
-        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
     }
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.pathPlanner.updateInfo();
+        this.pathPlanning.updateInfo();
         this.clustering.updateInfo();
         this.victimSelector.updateInfo();
         this.buildingSelector.updateInfo();
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {
-            return new ActionTransport(agentInfo, worldInfo, this.pathPlanner, injured).calc().getAction();
+            return new ActionTransport(agentInfo, worldInfo, this.pathPlanning, injured).calc().getAction();
         }
 
         if(this.clusterIndex == -1) {
@@ -124,8 +124,8 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         }
         Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
         if(!list.contains(agentInfo.me())) {
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanner.setDist(WorldUtil.convertToID(list)).getResult();
+            this.pathPlanning.setFrom(agentInfo.getPosition());
+            List<EntityID> path = this.pathPlanning.setDestination(WorldUtil.convertToID(list)).getResult();
             if (path != null) {
                 return new ActionMove(path);
             }
@@ -134,13 +134,13 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         // Go through targets (sorted by distance) and check for things we can do
         EntityID target = this.victimSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanner, (Human)worldInfo.getEntity(target)).calc().getAction();
+            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanning, (Human)worldInfo.getEntity(target)).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
 
         // Nothing to do
-        return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.buildingSelector).calc().getAction();
+        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.buildingSelector).calc().getAction();
     }
 }

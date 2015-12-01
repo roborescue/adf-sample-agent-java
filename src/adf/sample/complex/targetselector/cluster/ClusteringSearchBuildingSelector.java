@@ -4,7 +4,7 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.component.algorithm.Clustering;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.complex.TargetSelector;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntity;
@@ -17,7 +17,7 @@ import java.util.List;
 
 public class ClusteringSearchBuildingSelector extends TargetSelector<Building> {
 
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
 
     private Clustering clustering;
     private int clusterIndex;
@@ -25,9 +25,9 @@ public class ClusteringSearchBuildingSelector extends TargetSelector<Building> {
     private Collection<EntityID> unexploredBuildings;
     private EntityID result;
 
-    public ClusteringSearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, PathPlanner pp, Clustering clustering) {
+    public ClusteringSearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, PathPlanning pp, Clustering clustering) {
         super(ai, wi, si);
-        this.pathPlanner = pp;
+        this.pathPlanning = pp;
         this.clustering = clustering;
         this.init();
     }
@@ -53,8 +53,8 @@ public class ClusteringSearchBuildingSelector extends TargetSelector<Building> {
 
     @Override
     public TargetSelector<Building> calc() {
-        this.pathPlanner.setFrom(this.agentInfo.getPosition());
-        List<EntityID> path = this.pathPlanner.setDist(this.unexploredBuildings).getResult();
+        this.pathPlanning.setFrom(this.agentInfo.getPosition());
+        List<EntityID> path = this.pathPlanning.setDestination(this.unexploredBuildings).getResult();
         if (path != null) {
             this.result = path.get(path.size() - 1);
         }

@@ -6,10 +6,10 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.complex.TargetSelector;
 import adf.component.tactics.TacticsPolice;
-import adf.sample.algorithm.pathplanning.SamplePathPlanner;
+import adf.sample.algorithm.pathplanning.SamplePathPlanning;
 import adf.sample.complex.targetselector.BlockadeSelector;
 import adf.sample.complex.targetselector.SearchBuildingSelector;
 import adf.sample.extaction.ActionExtClear;
@@ -21,7 +21,7 @@ import rescuecore2.worldmodel.EntityID;
 
 public class SampleTacticsPolice extends TacticsPolice {
 
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
 
     private TargetSelector<Blockade> blockadeSelector;
     private TargetSelector<Building> buildingSelector;
@@ -35,9 +35,9 @@ public class SampleTacticsPolice extends TacticsPolice {
                 StandardEntityURN.REFUGE,
                 StandardEntityURN.BLOCKADE
         );
-        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
         this.blockadeSelector = new BlockadeSelector(agentInfo, worldInfo, scenarioInfo);
-        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner);
+        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning);
     }
 
     @Override
@@ -54,19 +54,19 @@ public class SampleTacticsPolice extends TacticsPolice {
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.pathPlanner.updateInfo();
+        this.pathPlanning.updateInfo();
         this.blockadeSelector.updateInfo();
         this.buildingSelector.updateInfo();
 
         EntityID target = this.blockadeSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionExtClear(agentInfo, worldInfo, this.pathPlanner, target).calc().getAction();
+            Action action = new ActionExtClear(agentInfo, worldInfo, this.pathPlanning, target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
 
         // Nothing to do
-        return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.buildingSelector).calc().getAction();
+        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.buildingSelector).calc().getAction();
     }
 }

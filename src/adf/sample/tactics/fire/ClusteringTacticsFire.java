@@ -9,12 +9,12 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.algorithm.Clustering;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.complex.TargetSelector;
 import adf.component.tactics.TacticsFire;
 import adf.sample.algorithm.clustering.PathBasedKMeans;
 import adf.sample.algorithm.clustering.StandardKMeans;
-import adf.sample.algorithm.pathplanning.SamplePathPlanner;
+import adf.sample.algorithm.pathplanning.SamplePathPlanning;
 import adf.sample.complex.targetselector.cluster.ClusteringBurningBuildingSelector;
 import adf.sample.complex.targetselector.cluster.ClusteringSearchBuildingSelector;
 import adf.sample.extaction.ActionFireFighting;
@@ -31,7 +31,7 @@ import java.util.List;
 
 public class ClusteringTacticsFire extends TacticsFire {
 
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
 
     private TargetSelector<Building> burningBuildingSelector;
     private TargetSelector<Building> searchBuildingSelector;
@@ -63,26 +63,26 @@ public class ClusteringTacticsFire extends TacticsFire {
         )
         );
         this.clusterIndex = -1;
-        this.pathPlanner = new SamplePathPlanner(agentInfo, worldInfo, scenarioInfo);
+        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
         this.burningBuildingSelector = new ClusteringBurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.clustering.calc();
-        this.pathPlanner.precompute(precomputeData);
+        this.pathPlanning.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
         this.burningBuildingSelector.precompute(precomputeData);
-        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
         this.searchBuildingSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
-        this.pathPlanner.resume(precomputeData);
+        this.pathPlanning.resume(precomputeData);
         this.clustering.resume(precomputeData);
         this.burningBuildingSelector.resume(precomputeData);
-        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
         this.searchBuildingSelector.resume(precomputeData);
     }
 
@@ -100,19 +100,19 @@ public class ClusteringTacticsFire extends TacticsFire {
         )
         );
         this.clustering.calc();
-        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, this.clustering);
+        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
     }
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.pathPlanner.updateInfo();
+        this.pathPlanning.updateInfo();
         this.clustering.updateInfo();
         this.burningBuildingSelector.updateInfo();
         this.searchBuildingSelector.updateInfo();
 
         // Are we currently filling with water?
         // Are we out of water?
-        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanner).calc().getAction();
+        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanning).calc().getAction();
         if(action != null) {
             return action;
         }
@@ -122,8 +122,8 @@ public class ClusteringTacticsFire extends TacticsFire {
         }
         Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
         if(!list.contains(agentInfo.me())) {
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanner.setDist(WorldUtil.convertToID(list)).getResult();
+            this.pathPlanning.setFrom(agentInfo.getPosition());
+            List<EntityID> path = this.pathPlanning.setDestination(WorldUtil.convertToID(list)).getResult();
             if (path != null) {
                 return new ActionMove(path);
             }
@@ -132,13 +132,13 @@ public class ClusteringTacticsFire extends TacticsFire {
         // cannot fire fighting
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
             // search civilian
-            return new ActionSearchCivilian(agentInfo, this.pathPlanner, this.searchBuildingSelector).calc().getAction();
+            return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.searchBuildingSelector).calc().getAction();
         }
 
         // Find all buildings that are on fire
         EntityID target = this.burningBuildingSelector.calc().getTarget();
         if(target != null) {
-            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanner, target).calc().getAction();
+            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, target).calc().getAction();
             if(action != null) {
                 return action;
             }

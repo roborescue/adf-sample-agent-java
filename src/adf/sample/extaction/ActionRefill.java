@@ -6,7 +6,7 @@ import adf.agent.action.common.ActionRest;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.extaction.ExtAction;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.StandardEntityURN;
@@ -18,13 +18,13 @@ public class ActionRefill extends ExtAction{
     private final int maxWater;
     private WorldInfo worldInfo;
     private AgentInfo agentInfo;
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
 
-    public ActionRefill(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PathPlanner pathPlanner) {
+    public ActionRefill(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PathPlanning pathPlanning) {
         super();
         this.worldInfo = worldInfo;
         this.agentInfo = agentInfo;
-        this.pathPlanner = pathPlanner;
+        this.pathPlanning = pathPlanning;
         this.maxWater = scenarioInfo.getFireTankMaximum();
     }
 
@@ -43,9 +43,9 @@ public class ActionRefill extends ExtAction{
             int hydrantWaterLimit = ((this.maxWater / 10) * 2);
             if(water < hydrantWaterLimit && location.getStandardURN().equals(StandardEntityURN.HYDRANT)) {
                 // move refuge
-                this.pathPlanner.setFrom(agentInfo.getPosition());
-                this.pathPlanner.setDist(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-                List<EntityID> path = this.pathPlanner.getResult();
+                this.pathPlanning.setFrom(agentInfo.getPosition());
+                this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+                List<EntityID> path = this.pathPlanning.getResult();
                 this.result = path != null ? new ActionMove(path) : new ActionRest();
             }
         }
@@ -53,14 +53,14 @@ public class ActionRefill extends ExtAction{
         // Are we out of water?
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
             // Head for a refuge
-            this.pathPlanner.setFrom(agentInfo.getPosition());
-            this.pathPlanner.setDist(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = this.pathPlanner.getResult();
+            this.pathPlanning.setFrom(agentInfo.getPosition());
+            this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+            List<EntityID> path = this.pathPlanning.getResult();
             // Head for a hydrant
             if (path == null) {
-                this.pathPlanner.setFrom(agentInfo.getPosition());
-                this.pathPlanner.setDist(worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
-                path = this.pathPlanner.getResult();
+                this.pathPlanning.setFrom(agentInfo.getPosition());
+                this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
+                path = this.pathPlanning.getResult();
             }
             if(path != null) {
                 this.result = new ActionMove(path);

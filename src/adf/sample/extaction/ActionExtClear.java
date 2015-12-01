@@ -5,7 +5,7 @@ import adf.agent.action.common.ActionRest;
 import adf.agent.action.police.ActionClear;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.PathPlanner;
+import adf.component.algorithm.PathPlanning;
 import adf.component.extaction.ExtAction;
 import rescuecore2.misc.geometry.GeometryTools2D;
 import rescuecore2.misc.geometry.Line2D;
@@ -21,13 +21,13 @@ public class ActionExtClear extends ExtAction {
 
     private WorldInfo worldInfo;
     private AgentInfo agentInfo;
-    private PathPlanner pathPlanner;
+    private PathPlanning pathPlanning;
     private EntityID target;
 
-    public ActionExtClear(AgentInfo ai, WorldInfo wi, PathPlanner pathPlanner, EntityID target) {
+    public ActionExtClear(AgentInfo ai, WorldInfo wi, PathPlanning pathPlanning, EntityID target) {
         this.worldInfo = wi;
         this.agentInfo = ai;
-        this.pathPlanner = pathPlanner;
+        this.pathPlanning = pathPlanning;
         this.target = target;
     }
 
@@ -69,8 +69,8 @@ public class ActionExtClear extends ExtAction {
             this.result = new ActionClear((int) (agentX + v.getX()), (int) (agentY + v.getY()));
         }
         else {
-            this.pathPlanner.setFrom(this.agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanner.setDist(road.getID()).getResult();
+            this.pathPlanning.setFrom(this.agentInfo.getPosition());
+            List<EntityID> path = this.pathPlanning.setDestination(road.getID()).getResult();
             if(path != null) {
                 this.result = new ActionMove(path, blockade.getX(), blockade.getY());
             }
