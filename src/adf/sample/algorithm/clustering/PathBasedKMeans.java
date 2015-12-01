@@ -55,7 +55,6 @@ public class PathBasedKMeans extends Clustering {
 
     @Override
     public Clustering precompute(PrecomputeData precomputeData) {
-        this.calc();
         precomputeData.setEntityIDList(KEY_ALL_ELEMENTS, (List<EntityID>)WorldUtil.convertToID(this.entities));
         precomputeData.setInteger(KEY_CLUSTER_SIZE, this.clusterSize);
         precomputeData.setEntityIDList(KEY_CLUSTER_CENTER, (List<EntityID>)WorldUtil.convertToID(this.centerList));

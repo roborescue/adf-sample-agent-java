@@ -67,6 +67,7 @@ public class ClusterTacticsPolice extends TacticsPolice {
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+        this.clustering.calc();
         this.pathPlanner.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
         this.blockadeSelector.precompute(precomputeData);

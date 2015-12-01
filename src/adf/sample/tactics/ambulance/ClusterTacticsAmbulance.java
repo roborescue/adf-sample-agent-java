@@ -73,6 +73,7 @@ public class ClusterTacticsAmbulance extends TacticsAmbulance {
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+        this.clustering.calc();
         this.pathPlanner.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
         this.victimSelector.precompute(precomputeData);
