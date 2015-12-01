@@ -1,11 +1,11 @@
-package adf.sample.algorithm.targetselector.cluster;
+package adf.sample.complex.targetselector.cluster;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.clustering.Clustering;
-import adf.component.algorithm.targetselector.TargetSelector;
-import adf.sample.algorithm.targetselector.DistanceSorter;
+import adf.component.algorithm.Clustering;
+import adf.component.complex.TargetSelector;
+import adf.sample.complex.targetselector.DistanceSorter;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;

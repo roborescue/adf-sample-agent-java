@@ -5,7 +5,7 @@ import adf.agent.action.common.ActionRest;
 import adf.agent.action.police.ActionClear;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.pathplanning.PathPlanner;
+import adf.component.algorithm.PathPlanner;
 import adf.component.extaction.ExtAction;
 import rescuecore2.misc.geometry.GeometryTools2D;
 import rescuecore2.misc.geometry.Line2D;

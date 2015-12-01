@@ -5,7 +5,7 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.clustering.Clustering;
+import adf.component.algorithm.Clustering;
 import adf.util.WorldUtil;
 import rescuecore2.misc.Pair;
 import rescuecore2.misc.collections.LazyMap;

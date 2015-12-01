@@ -7,7 +7,7 @@ import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.pathplanning.PathPlanner;
+import adf.component.algorithm.PathPlanner;
 import adf.component.extaction.ExtAction;
 import rescuecore2.standard.entities.Civilian;
 import rescuecore2.standard.entities.Human;

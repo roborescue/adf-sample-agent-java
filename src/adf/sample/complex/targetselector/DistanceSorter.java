@@ -1,4 +1,4 @@
-package adf.sample.algorithm.targetselector;
+package adf.sample.complex.targetselector;
 
 import adf.agent.info.WorldInfo;
 import rescuecore2.standard.entities.StandardEntity;
