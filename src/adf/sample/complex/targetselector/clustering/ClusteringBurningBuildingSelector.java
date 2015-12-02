@@ -6,7 +6,7 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.component.algorithm.Clustering;
 import adf.component.complex.TargetSelector;
-import adf.sample.complex.targetselector.DistanceSorter;
+import adf.sample.util.DistanceSorter;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
