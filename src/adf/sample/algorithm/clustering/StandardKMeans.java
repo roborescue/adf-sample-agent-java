@@ -20,11 +20,11 @@ import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 
 public class StandardKMeans extends Clustering {
-    public static final String KEY_ALL_ELEMENTS = "default.clustering.elements";
-    public static final String KEY_CLUSTER_SIZE = "default.clustering.size";
-    public static final String KEY_CLUSTER_CENTER = "default.clustering.centers";
-    public static final String KEY_CLUSTER_ENTITY = "default.clustering.entities.";
-    public static final String KEY_ASSIGN_AGENT = "default.clustering.assign";
+    public static final String KEY_ALL_ELEMENTS = "sample.clustering.elements";
+    public static final String KEY_CLUSTER_SIZE = "sample.clustering.size";
+    public static final String KEY_CLUSTER_CENTER = "sample.clustering.centers";
+    public static final String KEY_CLUSTER_ENTITY = "sample.clustering.entities.";
+    public static final String KEY_ASSIGN_AGENT = "sample.clustering.assign";
 
     protected List<StandardEntity> centerList;
     protected List<List<StandardEntity>> clusterEntityList;
