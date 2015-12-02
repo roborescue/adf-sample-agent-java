@@ -27,7 +27,7 @@ public class BlockadeSelector extends TargetSelector<Blockade> {
 
     @Override
     public TargetSelector<Blockade> calc() {
-        Area location = this.agentInfo.getLocation();
+        Area location = this.agentInfo.getPositionArea();
         Blockade result = getTargetBlockade(location, distance);
         if (result != null) {
             this.result = result.getID();
@@ -93,7 +93,7 @@ public class BlockadeSelector extends TargetSelector<Blockade> {
         if(result.isEmpty()) {
             return null;
         }
-        result.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getLocation()));
+        result.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
         return result.get(0).getBlockades().get(0);
     }
 }

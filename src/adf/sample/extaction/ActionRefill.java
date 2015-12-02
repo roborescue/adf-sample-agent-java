@@ -34,7 +34,7 @@ public class ActionRefill extends ExtAction{
         // Are we currently filling with water?
         if (agentInfo.isWaterDefined()) {
             int water = agentInfo.getWater();
-            Area location = agentInfo.getLocation();
+            Area location = agentInfo.getPositionArea();
             // refuge
             if(water < this.maxWater && location.getStandardURN().equals(StandardEntityURN.REFUGE)) {
                 this.result = new ActionRest();

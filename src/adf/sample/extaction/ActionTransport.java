@@ -37,7 +37,7 @@ public class ActionTransport extends ExtAction {
     public ExtAction calc() {
         this.result = new ActionRest();
         if(this.target.getPosition().equals(this.agentInfo.getID())) {
-            if(agentInfo.getLocation().getStandardURN().equals(StandardEntityURN.REFUGE)) {
+            if(agentInfo.getPositionArea().getStandardURN().equals(StandardEntityURN.REFUGE)) {
                 this.result = new ActionUnload();
             }
             else {
@@ -51,7 +51,7 @@ public class ActionTransport extends ExtAction {
         }
         else {
             if (target.getPosition().equals(agentInfo.getPosition())) {
-                if ((target instanceof Civilian) && target.getBuriedness() == 0 && !(agentInfo.getLocation() instanceof Refuge)) {
+                if ((target instanceof Civilian) && target.getBuriedness() == 0 && !(agentInfo.getPositionArea() instanceof Refuge)) {
                     this.result = new ActionLoad(target.getID());
                 } else if (target.getBuriedness() > 0) {
                     this.result = new ActionRescue(target.getID());

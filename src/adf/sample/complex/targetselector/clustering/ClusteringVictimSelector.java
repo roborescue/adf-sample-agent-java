@@ -56,7 +56,7 @@ public class ClusteringVictimSelector extends TargetSelector<Human> {
                 }
             }
         }
-        targets.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getLocation()));
+        targets.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
         result = targets.isEmpty() ? null : targets.get(0).getID();
         return this;
     }

@@ -32,7 +32,7 @@ public class BurningBuildingSelector extends TargetSelector<Building> {
             }
         }
         // Sort by distance
-        buildingList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getLocation()));
+        buildingList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
         this.result = buildingList.isEmpty() ? null : buildingList.get(0).getID();
         return this;
     }
