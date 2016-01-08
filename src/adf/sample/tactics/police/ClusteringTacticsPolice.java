@@ -49,6 +49,13 @@ public class ClusteringTacticsPolice extends TacticsPolice {
                 StandardEntityURN.BLOCKADE
         );
         this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
+        this.clusterIndex = -1;
+        this.blockadeSelector = new BlockadeSelector(agentInfo, worldInfo, scenarioInfo);
+    }
+
+    @Override
+    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+        this.pathPlanning.precompute(precomputeData);
         this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -60,15 +67,7 @@ public class ClusteringTacticsPolice extends TacticsPolice {
                 StandardEntityURN.POLICE_OFFICE
         )
         );
-        this.clusterIndex = -1;
-        this.blockadeSelector = new BlockadeSelector(agentInfo, worldInfo, scenarioInfo);
-        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning);
-    }
-
-    @Override
-    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.clustering.calc();
-        this.pathPlanning.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
         this.blockadeSelector.precompute(precomputeData);
         this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
@@ -78,6 +77,17 @@ public class ClusteringTacticsPolice extends TacticsPolice {
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.pathPlanning.resume(precomputeData);
+        this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
+                StandardEntityURN.ROAD,
+                StandardEntityURN.HYDRANT,
+                StandardEntityURN.BUILDING,
+                StandardEntityURN.REFUGE,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
+        )
+        );
         this.clustering.resume(precomputeData);
         this.blockadeSelector.resume(precomputeData);
         this.buildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);

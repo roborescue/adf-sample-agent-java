@@ -51,6 +51,13 @@ public class ClusteringTacticsFire extends TacticsFire {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
+        this.clusterIndex = -1;
+        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
+    }
+
+    @Override
+    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+        this.pathPlanning.precompute(precomputeData);
         this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -62,16 +69,9 @@ public class ClusteringTacticsFire extends TacticsFire {
                 StandardEntityURN.POLICE_OFFICE
         )
         );
-        this.clusterIndex = -1;
-        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
-        this.burningBuildingSelector = new ClusteringBurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
-    }
-
-    @Override
-    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.clustering.calc();
-        this.pathPlanning.precompute(precomputeData);
         this.clustering.precompute(precomputeData);
+        this.burningBuildingSelector = new ClusteringBurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
         this.burningBuildingSelector.precompute(precomputeData);
         this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
         this.searchBuildingSelector.precompute(precomputeData);
@@ -80,7 +80,19 @@ public class ClusteringTacticsFire extends TacticsFire {
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
         this.pathPlanning.resume(precomputeData);
+        this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
+                StandardEntityURN.ROAD,
+                StandardEntityURN.HYDRANT,
+                StandardEntityURN.BUILDING,
+                StandardEntityURN.REFUGE,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
+        )
+        );
         this.clustering.resume(precomputeData);
+        this.burningBuildingSelector = new ClusteringBurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
         this.burningBuildingSelector.resume(precomputeData);
         this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
         this.searchBuildingSelector.resume(precomputeData);
