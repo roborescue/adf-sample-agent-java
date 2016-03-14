@@ -17,8 +17,6 @@ public class SamplePathPlanning extends PathPlanning {
 
     private Map<EntityID, Set<EntityID>> graph;
 
-    private Table<EntityID, EntityID, List<EntityID>> cache;
-
     private EntityID from;
     private List<EntityID> result;
 
@@ -41,7 +39,6 @@ public class SamplePathPlanning extends PathPlanning {
             }
         }
         this.graph = neighbours;
-        this.cache = HashBasedTable.create();
     }
 
     @Override
@@ -56,11 +53,6 @@ public class SamplePathPlanning extends PathPlanning {
 
     @Override
     public PathPlanning setDestination(Collection<EntityID> targets) {
-        //check cache
-        if(this.hasCache(targets)) {
-            return this;
-        }
-        //calc
         List<EntityID> open = new LinkedList<>();
         Map<EntityID, EntityID> ancestors = new HashMap<>();
         open.add(this.from);
@@ -107,19 +99,7 @@ public class SamplePathPlanning extends PathPlanning {
             }
         } while (current != this.from);
         this.result = path;
-        this.cache.put(path.getFirst(), path.getLast(), path);
-        this.cache.put(path.getLast(), path.getFirst(), path);
         return this;
-    }
-
-    private boolean hasCache(Collection<EntityID> targets) {
-        for(EntityID next : targets) {
-            this.result = this.cache.get(this.from, next);
-            if(this.result != null) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private boolean isGoal(EntityID e, Collection<EntityID> test) {
