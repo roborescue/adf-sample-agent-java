@@ -53,8 +53,7 @@ public class ActionFireFighting extends ExtAction {
         if (targets.isEmpty()) {
             return null;
         }
-        this.pathPlanning.setFrom(this.agentInfo.getPosition());
-        this.pathPlanning.setDestination(targets);
+        this.pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(targets).calc();
         return this.pathPlanning.getResult();
     }
 }

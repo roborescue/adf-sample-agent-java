@@ -12,7 +12,7 @@
 hs_err_pid*
 
 # inteliJ
-!*.iml
+*.iml
 *.ipr
 *.iws
 .idea/

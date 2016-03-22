@@ -45,6 +45,7 @@ public class ActionRefill extends ExtAction{
                 // move refuge
                 this.pathPlanning.setFrom(agentInfo.getPosition());
                 this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+                this.pathPlanning.calc();
                 List<EntityID> path = this.pathPlanning.getResult();
                 this.result = path != null ? new ActionMove(path) : new ActionRest();
             }
@@ -55,11 +56,13 @@ public class ActionRefill extends ExtAction{
             // Head for a refuge
             this.pathPlanning.setFrom(agentInfo.getPosition());
             this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+            this.pathPlanning.calc();
             List<EntityID> path = this.pathPlanning.getResult();
             // Head for a hydrant
             if (path == null) {
                 this.pathPlanning.setFrom(agentInfo.getPosition());
                 this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
+                this.pathPlanning.calc();
                 path = this.pathPlanning.getResult();
             }
             if(path != null) {

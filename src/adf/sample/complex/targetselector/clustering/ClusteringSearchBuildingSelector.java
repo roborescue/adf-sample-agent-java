@@ -53,8 +53,8 @@ public class ClusteringSearchBuildingSelector extends TargetSelector<Building> {
 
     @Override
     public TargetSelector<Building> calc() {
-        this.pathPlanning.setFrom(this.agentInfo.getPosition());
-        List<EntityID> path = this.pathPlanning.setDestination(this.unexploredBuildings).getResult();
+        List<EntityID> path =
+                this.pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(this.unexploredBuildings).calc().getResult();
         if (path != null) {
             this.result = path.get(path.size() - 1);
         }

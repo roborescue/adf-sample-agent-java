@@ -43,6 +43,7 @@ public class ActionTransport extends ExtAction {
             else {
                 this.pathPlanning.setFrom(agentInfo.getPosition());
                 this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+                this.pathPlanning.calc();
                 List<EntityID> path = this.pathPlanning.getResult();
                 if (path != null) {
                     this.result = new ActionMove(path);
@@ -59,6 +60,7 @@ public class ActionTransport extends ExtAction {
             } else {
                 this.pathPlanning.setFrom(agentInfo.getPosition());
                 this.pathPlanning.setDestination(target.getPosition());
+                this.pathPlanning.calc();
                 List<EntityID> path = this.pathPlanning.getResult();
                 if (path != null) {
                     this.result = new ActionMove(path);

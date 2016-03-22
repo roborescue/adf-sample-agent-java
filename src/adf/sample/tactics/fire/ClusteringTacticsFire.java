@@ -134,8 +134,8 @@ public class ClusteringTacticsFire extends TacticsFire {
         }
         Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
         if(!list.contains(agentInfo.me())) {
-            this.pathPlanning.setFrom(agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanning.setDestination(WorldUtil.convertToID(list)).getResult();
+            List<EntityID> path =
+                    this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(WorldUtil.convertToID(list)).getResult();
             if (path != null) {
                 return new ActionMove(path);
             }

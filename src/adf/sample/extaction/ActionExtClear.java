@@ -69,8 +69,8 @@ public class ActionExtClear extends ExtAction {
             this.result = new ActionClear((int) (agentX + v.getX()), (int) (agentY + v.getY()));
         }
         else {
-            this.pathPlanning.setFrom(this.agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanning.setDestination(road.getID()).getResult();
+            List<EntityID> path =
+                    this.pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(road.getID()).calc().getResult();
             if(path != null) {
                 this.result = new ActionMove(path, blockade.getX(), blockade.getY());
             }

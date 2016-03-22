@@ -30,8 +30,8 @@ public class ActionSearchCivilian extends ExtAction {
         this.result = new ActionRest();
         EntityID searchBuildingID = this.buildingSelector.calc().getTarget();
         if(searchBuildingID != null) {
-            this.pathPlanning.setFrom(agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanning.setDestination(searchBuildingID).getResult();
+            List<EntityID> path =
+                    this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(searchBuildingID).calc().getResult();
             if (path != null) {
                 path.remove(path.size() - 1);
                 this.result = new ActionMove(path);

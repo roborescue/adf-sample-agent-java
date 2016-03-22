@@ -18,6 +18,7 @@ public class SamplePathPlanning extends PathPlanning {
     private Map<EntityID, Set<EntityID>> graph;
 
     private EntityID from;
+    private Collection<EntityID> targets;
     private List<EntityID> result;
 
     public SamplePathPlanning(AgentInfo ai, WorldInfo wi, ScenarioInfo si) {
@@ -47,12 +48,19 @@ public class SamplePathPlanning extends PathPlanning {
     }
 
     @Override
-    public void setFrom(EntityID id) {
+    public PathPlanning setFrom(EntityID id) {
         this.from = id;
+        return this;
     }
 
     @Override
     public PathPlanning setDestination(Collection<EntityID> targets) {
+			this.targets = targets;
+			return this;
+		}
+
+    @Override
+    public PathPlanning calc() {
         List<EntityID> open = new LinkedList<>();
         Map<EntityID, EntityID> ancestors = new HashMap<>();
         open.add(this.from);

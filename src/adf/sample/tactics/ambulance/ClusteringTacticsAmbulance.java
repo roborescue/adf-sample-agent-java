@@ -138,8 +138,8 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         }
         Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
         if(!list.contains(agentInfo.me())) {
-            this.pathPlanning.setFrom(agentInfo.getPosition());
-            List<EntityID> path = this.pathPlanning.setDestination(WorldUtil.convertToID(list)).getResult();
+            List<EntityID> path =
+                    this.pathPlanning.setFrom(agentInfo.getPosition()).calc().setDestination(WorldUtil.convertToID(list)).getResult();
             if (path != null) {
                 return new ActionMove(path);
             }
