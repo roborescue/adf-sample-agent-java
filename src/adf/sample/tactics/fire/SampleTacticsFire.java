@@ -6,26 +6,24 @@ import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.PathPlanning;
-import adf.component.complex.TargetSelector;
+import adf.component.module.algorithm.PathPlanning;
+import adf.component.module.complex.BuildingSelector;
 import adf.component.tactics.TacticsFire;
-import adf.sample.algorithm.pathplanning.SamplePathPlanning;
-import adf.sample.complex.targetselector.BurningBuildingSelector;
-import adf.sample.complex.targetselector.SearchBuildingSelector;
 import adf.sample.extaction.ActionFireFighting;
 import adf.sample.extaction.ActionRefill;
 import adf.sample.extaction.ActionSearchCivilian;
-import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 public class SampleTacticsFire extends TacticsFire {
 
+    private ModuleManager moduleManager;
     private PathPlanning pathPlanning;
 
-    private TargetSelector<Building> burningBuildingSelector;
-    private TargetSelector<Building> searchBuildingSelector;
+    private BuildingSelector burningBuildingSelector;
+    private BuildingSelector searchBuildingSelector;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
@@ -36,9 +34,17 @@ public class SampleTacticsFire extends TacticsFire {
                 StandardEntityURN.HYDRANT,
                 StandardEntityURN.GAS_STATION
         );
-        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
-        this.burningBuildingSelector = new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo);
-        this.searchBuildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning);
+        this.moduleManager = new ModuleManager(agentInfo, worldInfo, scenarioInfo);
+        try {
+            //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+            this.pathPlanning = (PathPlanning)this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+            //new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+            this.burningBuildingSelector = (BuildingSelector) this.moduleManager.getModuleInstance("adf.sample.complex.targetselector.BuildingSelector");
+            //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+            this.searchBuildingSelector = (BuildingSelector) this.moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -55,9 +61,9 @@ public class SampleTacticsFire extends TacticsFire {
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.burningBuildingSelector.updateInfo();
-        this.searchBuildingSelector.updateInfo();
-        this.pathPlanning.updateInfo();
+        this.burningBuildingSelector.updateInfo(messageManager);
+        this.searchBuildingSelector.updateInfo(messageManager);
+        this.pathPlanning.updateInfo(messageManager);
 
         // Are we currently filling with water?
         // Are we out of water?

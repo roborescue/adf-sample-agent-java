@@ -6,8 +6,8 @@ import adf.agent.action.fire.ActionExtinguish;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.PathPlanning;
 import adf.component.extaction.ExtAction;
+import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.Collection;

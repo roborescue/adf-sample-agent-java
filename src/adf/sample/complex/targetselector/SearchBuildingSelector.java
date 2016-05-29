@@ -23,20 +23,18 @@ public class SearchBuildingSelector extends BuildingSelector {
 
     public SearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
         super(ai, wi, si, moduleManager);
-        this.init();
-    }
-
-    private void init() {
         this.unexploredBuildings = new HashSet<>();
-        for (StandardEntity next : this.worldInfo) {
-            if(StandardEntityURN.BUILDING.equals(next.getStandardURN())) {
-                this.unexploredBuildings.add(next.getID());
-            }
-        }
     }
 
     @Override
     public BuildingSelector updateInfo(MessageManager messageManager) {
+        if(this.unexploredBuildings.isEmpty()) {
+            for (StandardEntity next : this.worldInfo) {
+                if(StandardEntityURN.BUILDING.equals(next.getStandardURN())) {
+                    this.unexploredBuildings.add(next.getID());
+                }
+            }
+        }
         for (EntityID next : this.worldInfo.getChanged().getChangedEntities()) {
             this.unexploredBuildings.remove(next);
         }

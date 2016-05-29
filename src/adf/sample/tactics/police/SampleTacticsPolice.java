@@ -5,17 +5,14 @@ import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.PathPlanning;
-import adf.component.complex.TargetSelector;
+import adf.component.module.algorithm.PathPlanning;
+import adf.component.module.complex.BlockadeSelector;
+import adf.component.module.complex.BuildingSelector;
 import adf.component.tactics.TacticsPolice;
-import adf.sample.algorithm.pathplanning.SamplePathPlanning;
-import adf.sample.complex.targetselector.SampleBlockadeSelector;
-import adf.sample.complex.targetselector.SearchBuildingSelector;
 import adf.sample.extaction.ActionExtClear;
 import adf.sample.extaction.ActionSearchCivilian;
-import rescuecore2.standard.entities.Blockade;
-import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
@@ -23,8 +20,9 @@ public class SampleTacticsPolice extends TacticsPolice {
 
     private PathPlanning pathPlanning;
 
-    private TargetSelector<Blockade> blockadeSelector;
-    private TargetSelector<Building> buildingSelector;
+    private BlockadeSelector blockadeSelector;
+    private BuildingSelector buildingSelector;
+    private ModuleManager moduleManager;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
@@ -35,9 +33,18 @@ public class SampleTacticsPolice extends TacticsPolice {
                 StandardEntityURN.REFUGE,
                 StandardEntityURN.BLOCKADE
         );
-        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
-        this.blockadeSelector = new SampleBlockadeSelector(agentInfo, worldInfo, scenarioInfo);
-        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning);
+        this.moduleManager = new ModuleManager(agentInfo, worldInfo, scenarioInfo);
+        try {
+            //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+            this.pathPlanning = (PathPlanning)this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+            //new SampleBlockadeSelector(agentInfo, worldInfo, scenarioInfo, moduleManager);
+            this.blockadeSelector = (BlockadeSelector)this.moduleManager.getModuleInstance("adf.component.module.complex.BlockadeSelector");
+            //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+            this.buildingSelector = (BuildingSelector)this.moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -54,9 +61,9 @@ public class SampleTacticsPolice extends TacticsPolice {
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.pathPlanning.updateInfo();
-        this.blockadeSelector.updateInfo();
-        this.buildingSelector.updateInfo();
+        this.pathPlanning.updateInfo(messageManager);
+        this.blockadeSelector.updateInfo(messageManager);
+        this.buildingSelector.updateInfo(messageManager);
 
         EntityID target = this.blockadeSelector.calc().getTarget();
         if(target != null) {

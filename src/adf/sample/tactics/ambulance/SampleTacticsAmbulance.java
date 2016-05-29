@@ -11,12 +11,8 @@ import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
 import adf.component.module.complex.HumanSelector;
 import adf.component.tactics.TacticsAmbulance;
-import adf.sample.algorithm.pathplanning.SamplePathPlanning;
-import adf.sample.complex.targetselector.SearchBuildingSelector;
-import adf.sample.complex.targetselector.VictimSelector;
 import adf.sample.extaction.ActionSearchCivilian;
 import adf.sample.extaction.ActionTransport;
-import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -47,9 +43,17 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
                 StandardEntityURN.POLICE_OFFICE
         );
         this.moduleManager = new ModuleManager(agentInfo, worldInfo, scenarioInfo);
-        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.victimSelector = new VictimSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        try {
+            //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+            this.pathPlanning = (PathPlanning)this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+            //new VictimSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+            this.victimSelector = (HumanSelector)this.moduleManager.getModuleInstance("adf.component.module.complex.HumanSelector");
+            //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+            this.buildingSelector = (BuildingSelector)this.moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -66,9 +70,9 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.pathPlanning.updateInfo();
-        this.victimSelector.updateInfo();
-        this.buildingSelector.updateInfo();
+        this.pathPlanning.updateInfo(messageManager);
+        this.victimSelector.updateInfo(messageManager);
+        this.buildingSelector.updateInfo(messageManager);
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {

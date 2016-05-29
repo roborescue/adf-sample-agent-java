@@ -3,9 +3,9 @@ package adf.sample.extaction;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.info.AgentInfo;
-import adf.component.algorithm.PathPlanning;
-import adf.component.complex.TargetSelector;
 import adf.component.extaction.ExtAction;
+import adf.component.module.algorithm.PathPlanning;
+import adf.component.module.complex.BuildingSelector;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.worldmodel.EntityID;
 
@@ -16,9 +16,9 @@ public class ActionSearchCivilian extends ExtAction {
 
     private PathPlanning pathPlanning;
 
-    private TargetSelector<Building> buildingSelector;
+    private BuildingSelector buildingSelector;
 
-    public ActionSearchCivilian(AgentInfo agentInfo, PathPlanning pathPlanning, TargetSelector<Building> buildingSelector) {
+    public ActionSearchCivilian(AgentInfo agentInfo, PathPlanning pathPlanning, BuildingSelector buildingSelector) {
         super();
         this.agentInfo = agentInfo;
         this.pathPlanning = pathPlanning;

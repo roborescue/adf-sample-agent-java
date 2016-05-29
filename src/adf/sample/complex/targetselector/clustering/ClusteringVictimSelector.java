@@ -3,8 +3,10 @@ package adf.sample.complex.targetselector.clustering;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.Clustering;
-import adf.component.complex.TargetSelector;
+import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.module.algorithm.Clustering;
+import adf.component.module.complex.HumanSelector;
 import adf.sample.util.DistanceSorter;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
@@ -15,24 +17,28 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ClusteringVictimSelector extends TargetSelector<Human> {
+public class ClusteringVictimSelector extends HumanSelector {
 
     private EntityID result;
-    private Clustering clustering;
     private int clusterIndex;
 
-    public ClusteringVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Clustering clustering) {
-        super(ai, wi, si);
-        this.clustering = clustering;
+    public ClusteringVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+        super(ai, wi, si, moduleManager);
         this.clusterIndex = -1;
     }
 
     @Override
-    public TargetSelector<Human> calc() {
-        if(this.clusterIndex == -1) {
-            this.clusterIndex = this.clustering.getClusterIndex(this.agentInfo.getID());
+    public HumanSelector calc() {
+        Clustering clustering = null;
+        try {
+            clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
-        Collection<StandardEntity> elements = this.clustering.getClusterEntities(this.clusterIndex);
+        if(this.clusterIndex == -1) {
+            this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
+        }
+        Collection<StandardEntity> elements = clustering.getClusterEntities(this.clusterIndex);
 
         List<Human> targets = new ArrayList<>();
         for (StandardEntity next : worldInfo.getEntitiesOfType(
@@ -64,5 +70,20 @@ public class ClusteringVictimSelector extends TargetSelector<Human> {
     @Override
     public EntityID getTarget() {
         return this.result;
+    }
+
+    @Override
+    public HumanSelector precompute(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public HumanSelector resume(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public HumanSelector preparate() {
+        return this;
     }
 }
