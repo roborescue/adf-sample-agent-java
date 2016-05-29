@@ -5,9 +5,11 @@ import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.PathPlanning;
-import adf.component.complex.TargetSelector;
+import adf.component.module.algorithm.PathPlanning;
+import adf.component.module.complex.BuildingSelector;
+import adf.component.module.complex.HumanSelector;
 import adf.component.tactics.TacticsAmbulance;
 import adf.sample.algorithm.pathplanning.SamplePathPlanning;
 import adf.sample.complex.targetselector.SearchBuildingSelector;
@@ -21,10 +23,12 @@ import rescuecore2.worldmodel.EntityID;
 
 public class SampleTacticsAmbulance extends TacticsAmbulance {
 
+    public ModuleManager moduleManager;
+
     private PathPlanning pathPlanning;
 
-    private TargetSelector<Human> victimSelector;
-    private TargetSelector<Building> buildingSelector;
+    private HumanSelector victimSelector;
+    private BuildingSelector buildingSelector;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
@@ -42,9 +46,10 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
-        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
-        this.victimSelector = new VictimSelector(agentInfo, worldInfo, scenarioInfo);
-        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning);
+        this.moduleManager = new ModuleManager(agentInfo, worldInfo, scenarioInfo);
+        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.victimSelector = new VictimSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.buildingSelector = new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
     }
 
     @Override

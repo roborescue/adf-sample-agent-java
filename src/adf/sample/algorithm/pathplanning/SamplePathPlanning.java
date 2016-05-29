@@ -3,9 +3,9 @@ package adf.sample.algorithm.pathplanning;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.algorithm.PathPlanning;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
+import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.misc.collections.LazyMap;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.worldmodel.Entity;
@@ -21,8 +21,8 @@ public class SamplePathPlanning extends PathPlanning {
     private Collection<EntityID> targets;
     private List<EntityID> result;
 
-    public SamplePathPlanning(AgentInfo ai, WorldInfo wi, ScenarioInfo si) {
-        super(ai, wi, si);
+    public SamplePathPlanning(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+        super(ai, wi, si, moduleManager);
         this.init();
     }
 
@@ -58,6 +58,21 @@ public class SamplePathPlanning extends PathPlanning {
 			this.targets = targets;
 			return this;
 		}
+
+    @Override
+    public PathPlanning precompute(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public PathPlanning resume(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public PathPlanning preparate() {
+        return this;
+    }
 
     @Override
     public PathPlanning calc() {

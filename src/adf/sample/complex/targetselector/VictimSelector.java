@@ -3,7 +3,9 @@ package adf.sample.complex.targetselector;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.complex.TargetSelector;
+import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.module.complex.HumanSelector;
 import adf.sample.util.DistanceSorter;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
@@ -13,16 +15,16 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VictimSelector extends TargetSelector<Human> {
+public class VictimSelector extends HumanSelector {
 
     private EntityID result;
 
-    public VictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si) {
-        super(ai, wi, si);
+    public VictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+        super(ai, wi, si, moduleManager);
     }
 
     @Override
-    public TargetSelector<Human> calc() {
+    public HumanSelector calc() {
         List<Human> targets = new ArrayList<>();
         for (StandardEntity next : worldInfo.getEntitiesOfType(
                 StandardEntityURN.CIVILIAN,
@@ -51,5 +53,21 @@ public class VictimSelector extends TargetSelector<Human> {
     @Override
     public EntityID getTarget() {
         return this.result;
+    }
+
+
+    @Override
+    public HumanSelector precompute(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public HumanSelector resume(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public HumanSelector preparate() {
+        return this;
     }
 }

@@ -3,7 +3,9 @@ package adf.sample.complex.targetselector;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.complex.TargetSelector;
+import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.module.complex.BlockadeSelector;
 import adf.sample.util.DistanceSorter;
 import rescuecore2.misc.geometry.GeometryTools2D;
 import rescuecore2.misc.geometry.Line2D;
@@ -16,18 +18,18 @@ import java.util.Collection;
 import java.util.List;
 
 
-public class BlockadeSelector extends TargetSelector<Blockade> {
+public class SampleBlockadeSelector extends BlockadeSelector {
 
     private int distance;
-    EntityID result;
+    private EntityID result;
 
-    public BlockadeSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si) {
-        super(ai, wi, si);
+    public SampleBlockadeSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+        super(ai, wi, si, moduleManager);
         this.distance = si.getClearRepairDistance();
     }
 
     @Override
-    public TargetSelector<Blockade> calc() {
+    public BlockadeSelector calc() {
         Area location = this.agentInfo.getPositionArea();
         Blockade result = getTargetBlockade(location, distance);
         if (result != null) {
@@ -96,5 +98,21 @@ public class BlockadeSelector extends TargetSelector<Blockade> {
         }
         result.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
         return result.get(0).getBlockades().get(0);
+    }
+
+
+    @Override
+    public BlockadeSelector precompute(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public BlockadeSelector resume(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public BlockadeSelector preparate() {
+        return this;
     }
 }

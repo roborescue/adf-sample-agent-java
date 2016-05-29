@@ -3,7 +3,9 @@ package adf.sample.complex.targetselector;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
-import adf.component.complex.TargetSelector;
+import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.module.complex.BuildingSelector;
 import adf.sample.util.DistanceSorter;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntity;
@@ -13,16 +15,16 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BurningBuildingSelector extends TargetSelector<Building> {
+public class BurningBuildingSelector extends BuildingSelector {
 
     private EntityID result;
 
-    public BurningBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si) {
-        super(ai, wi, si);
+    public BurningBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+        super(ai, wi, si, moduleManager);
     }
 
     @Override
-    public TargetSelector<Building> calc() {
+    public BuildingSelector calc() {
         List<Building> buildingList = new ArrayList<>();
         for (StandardEntity next : this.worldInfo.getEntitiesOfType(StandardEntityURN.BUILDING)) {
             if (next.getStandardURN().equals(StandardEntityURN.BUILDING)) {
@@ -41,5 +43,20 @@ public class BurningBuildingSelector extends TargetSelector<Building> {
     @Override
     public EntityID getTarget() {
         return this.result;
+    }
+
+    @Override
+    public BuildingSelector precompute(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public BuildingSelector resume(PrecomputeData precomputeData) {
+        return this;
+    }
+
+    @Override
+    public BuildingSelector preparate() {
+        return this;
     }
 }

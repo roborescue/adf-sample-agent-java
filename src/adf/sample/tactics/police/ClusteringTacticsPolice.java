@@ -14,8 +14,7 @@ import adf.component.tactics.TacticsPolice;
 import adf.sample.algorithm.clustering.PathBasedKMeans;
 import adf.sample.algorithm.clustering.StandardKMeans;
 import adf.sample.algorithm.pathplanning.SamplePathPlanning;
-import adf.sample.complex.targetselector.BlockadeSelector;
-import adf.sample.complex.targetselector.SearchBuildingSelector;
+import adf.sample.complex.targetselector.SampleBlockadeSelector;
 import adf.sample.complex.targetselector.clustering.ClusteringSearchBuildingSelector;
 import adf.sample.extaction.ActionExtClear;
 import adf.sample.extaction.ActionSearchCivilian;
@@ -50,7 +49,7 @@ public class ClusteringTacticsPolice extends TacticsPolice {
         );
         this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
         this.clusterIndex = -1;
-        this.blockadeSelector = new BlockadeSelector(agentInfo, worldInfo, scenarioInfo);
+        this.blockadeSelector = new SampleBlockadeSelector(agentInfo, worldInfo, scenarioInfo);
     }
 
     @Override

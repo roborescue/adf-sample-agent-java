@@ -1,11 +1,11 @@
 package adf.sample.algorithm.clustering;
 
-
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.Clustering;
+import adf.component.module.algorithm.Clustering;
 import adf.util.WorldUtil;
 import rescuecore2.misc.Pair;
 import rescuecore2.misc.collections.LazyMap;
@@ -20,35 +20,41 @@ import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 
 public class StandardKMeans extends Clustering {
-    public static final String KEY_ALL_ELEMENTS = "sample.clustering.elements";
+    public static final String KEY_ALL_ELEMENTS = "sample.clustering.entities";
     public static final String KEY_CLUSTER_SIZE = "sample.clustering.size";
     public static final String KEY_CLUSTER_CENTER = "sample.clustering.centers";
     public static final String KEY_CLUSTER_ENTITY = "sample.clustering.entities.";
     public static final String KEY_ASSIGN_AGENT = "sample.clustering.assign";
 
+    private Collection<StandardEntity> entities;
+
     protected List<StandardEntity> centerList;
     protected List<List<StandardEntity>> clusterEntityList;
+
+    private int clusterSize;
 
     private boolean assignAgentsFlag;
 
     private int repeat = 50;
 
-    public StandardKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Collection<StandardEntity> elements, boolean assignAgentsFlag) {
-        super(ai, wi, si, elements);
+    public StandardKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+        this(ai, wi, si, moduleManager, 10, true, wi.getEntitiesOfType(
+                StandardEntityURN.ROAD,
+                StandardEntityURN.HYDRANT,
+                StandardEntityURN.BUILDING,
+                StandardEntityURN.REFUGE,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
+        ));
+    }
+
+    protected StandardKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, int size, boolean assignAgentsFlag, Collection<StandardEntity> entities) {
+        super(ai, wi, si, moduleManager);
+        this.clusterSize = size;
         this.assignAgentsFlag = assignAgentsFlag;
-    }
-
-    public StandardKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Collection<StandardEntity> elements, int size, boolean assignAgentsFlag) {
-        super(ai, wi, si, elements, size);
-        this.assignAgentsFlag = assignAgentsFlag;
-    }
-
-    public StandardKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Collection<StandardEntity> elements) {
-        this(ai, wi, si, elements, true);
-    }
-
-    public StandardKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Collection<StandardEntity> elements, int size) {
-        this(ai, wi, si, elements, size, true);
+        this.entities = entities;
     }
 
     @Override
@@ -77,6 +83,17 @@ public class StandardKMeans extends Clustering {
         this.clusterEntityList.sort(comparing(List::size, reverseOrder()));
         this.assignAgentsFlag = precomputeData.getBoolean(KEY_ASSIGN_AGENT);
         return this;
+    }
+
+    @Override
+    public Clustering preparate() {
+        return this;
+    }
+
+    @Override
+    public int getClusterNumber() {
+        //The number of clusters
+        return this.clusterSize;
     }
 
     @Override

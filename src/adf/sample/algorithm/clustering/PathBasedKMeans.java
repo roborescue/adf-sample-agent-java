@@ -3,8 +3,9 @@ package adf.sample.algorithm.clustering;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.Clustering;
+import adf.component.module.algorithm.Clustering;
 import adf.util.WorldUtil;
 import rescuecore2.misc.Pair;
 import rescuecore2.misc.collections.LazyMap;
@@ -20,11 +21,12 @@ import static java.util.Comparator.reverseOrder;
 
 public class PathBasedKMeans extends Clustering {
 
-    public static final String KEY_ALL_ELEMENTS = "sample.clustering.elements";
+    public static final String KEY_ALL_ELEMENTS = "sample.clustering.entities";
     public static final String KEY_CLUSTER_SIZE = "sample.clustering.size";
     public static final String KEY_CLUSTER_CENTER = "sample.clustering.centers";
     public static final String KEY_CLUSTER_ENTITY = "sample.clustering.entities.";
     public static final String KEY_ASSIGN_AGENT = "sample.clustering.assign";
+    private Collection<StandardEntity> entities;
 
     protected List<StandardEntity> centerList;
     protected List<List<StandardEntity>> clusterEntityList;
@@ -33,24 +35,28 @@ public class PathBasedKMeans extends Clustering {
 
     private int repeat = 10;
 
+    private int clusterSize;
+
     private Map<EntityID, Set<EntityID>> shortestPathGraph;
 
-    public PathBasedKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Collection<StandardEntity> elements, boolean assignAgentsFlag) {
-        super(ai, wi, si, elements);
+    public PathBasedKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+        this(ai, wi, si, moduleManager, 10, true, wi.getEntitiesOfType(
+                StandardEntityURN.ROAD,
+                StandardEntityURN.HYDRANT,
+                StandardEntityURN.BUILDING,
+                StandardEntityURN.REFUGE,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
+        ));
+    }
+
+    protected PathBasedKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, int size, boolean assignAgentsFlag, Collection<StandardEntity> entities) {
+        super(ai, wi, si, moduleManager);
+        this.clusterSize = size;
         this.assignAgentsFlag = assignAgentsFlag;
-    }
-
-    public PathBasedKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Collection<StandardEntity> elements, int size, boolean assignAgentsFlag) {
-        super(ai, wi, si, elements, size);
-        this.assignAgentsFlag = assignAgentsFlag;
-    }
-
-    public PathBasedKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Collection<StandardEntity> elements) {
-        this(ai, wi, si, elements, true);
-    }
-
-    public PathBasedKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, Collection<StandardEntity> elements, int size) {
-        this(ai, wi, si, elements, size, true);
+        this.entities = entities;
     }
 
     @Override
@@ -78,6 +84,16 @@ public class PathBasedKMeans extends Clustering {
         this.clusterEntityList.sort(comparing(List::size, reverseOrder()));
         this.assignAgentsFlag = precomputeData.getBoolean(KEY_ASSIGN_AGENT);
         return this;
+    }
+
+    @Override
+    public Clustering preparate() {
+        return this;
+    }
+
+    @Override
+    public int getClusterNumber() {
+        return 0;
     }
 
     @Override
@@ -275,15 +291,13 @@ public class PathBasedKMeans extends Clustering {
     private double getPathDistance(WorldInfo worldInfo, List<EntityID> path) {
         double distance = 0.0D;
 
-        if (path == null)
-        {
+        if (path == null) {
             return Double.MAX_VALUE;
         }
 
         int limit = path.size() - 1;
 
-        if(path.size() == 1)
-        {
+        if(path.size() == 1) {
             return 0.0D;
         }
 
@@ -314,10 +328,8 @@ public class PathBasedKMeans extends Clustering {
                 neighbours.get(next.getID()).addAll(areaNeighbours);
             }
         }
-        for (Map.Entry<EntityID, Set<EntityID>> graph : neighbours.entrySet()) // fix graph
-        {
-            for (EntityID entityID : graph.getValue())
-            {
+        for (Map.Entry<EntityID, Set<EntityID>> graph : neighbours.entrySet()) {// fix graph
+            for (EntityID entityID : graph.getValue()) {
                 neighbours.get(entityID).add(graph.getKey());
             }
         }
