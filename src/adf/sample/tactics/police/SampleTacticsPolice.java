@@ -11,8 +11,6 @@ import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BlockadeSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsPolice;
-import adf.sample.extaction.ActionExtClear;
-import adf.sample.extaction.ActionSearchCivilian;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
@@ -33,11 +31,14 @@ public class SampleTacticsPolice extends TacticsPolice {
                 StandardEntityURN.BLOCKADE
         );
         //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
         //new SampleBlockadeSelector(agentInfo, worldInfo, scenarioInfo, moduleManager);
-        this.blockadeSelector = (BlockadeSelector)moduleManager.getModule("adf.component.module.complex.BlockadeSelector");
+        this.blockadeSelector = moduleManager.getModule("adf.component.module.complex.BlockadeSelector");
         //new SearchBuilding(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
+        //init ExtAction
+        moduleManager.getExtAction("ActionExtClear");
+        moduleManager.getExtAction("ActionSearchCivilian");
     }
 
     @Override

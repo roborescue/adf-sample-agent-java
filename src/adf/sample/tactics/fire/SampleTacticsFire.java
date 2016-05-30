@@ -12,9 +12,6 @@ import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsFire;
-import adf.sample.extaction.ActionFireFighting;
-import adf.sample.extaction.ActionRefill;
-import adf.sample.extaction.ActionSearchCivilian;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
@@ -35,11 +32,16 @@ public class SampleTacticsFire extends TacticsFire {
                 StandardEntityURN.GAS_STATION
         );
         //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
         //new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.burningBuildingSelector = (BuildingSelector)moduleManager.getModule("adf.sample.module.targetselector.BuildingSelector");
+        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.targetselector.BuildingSelector");
         //new SearchBuilding(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.search = (Search)moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
+
+        //init ExtAction
+        moduleManager.getExtAction("ActionRefill");
+        moduleManager.getExtAction("ActionFireFighting");
+        moduleManager.getExtAction("ActionSearchCivilian");
     }
 
     @Override

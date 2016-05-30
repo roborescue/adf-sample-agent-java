@@ -13,8 +13,6 @@ import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.HumanSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsAmbulance;
-import adf.sample.extaction.ActionSearchCivilian;
-import adf.sample.extaction.ActionTransport;
 import adf.util.WorldUtil;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
@@ -52,6 +50,10 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         this.clusterIndex = -1;
         //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
         this.pathPlanning = moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
+
+        //init ExtAction
+        moduleManager.getExtAction("ActionTransport");
+        moduleManager.getExtAction("ActionSearchCivilian");
     }
 
     @Override

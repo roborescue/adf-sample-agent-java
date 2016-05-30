@@ -11,8 +11,6 @@ import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.HumanSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsAmbulance;
-import adf.sample.extaction.ActionSearchCivilian;
-import adf.sample.extaction.ActionTransport;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -41,12 +39,15 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
                 StandardEntityURN.POLICE_OFFICE
         );
         //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
         //new VictimSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.victimSelector = (HumanSelector)moduleManager.getModule("adf.component.module.complex.HumanSelector");
+        this.victimSelector = moduleManager.getModule("adf.component.module.complex.HumanSelector");
         //new SearchBuilding(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.search = (Search)moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
 
+        //init ExtAction
+        moduleManager.getExtAction("ActionTransport");
+        moduleManager.getExtAction("ActionSearchCivilian");
     }
 
 

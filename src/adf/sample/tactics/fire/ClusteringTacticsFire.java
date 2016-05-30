@@ -14,9 +14,6 @@ import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsFire;
-import adf.sample.extaction.ActionFireFighting;
-import adf.sample.extaction.ActionRefill;
-import adf.sample.extaction.ActionSearchCivilian;
 import adf.util.WorldUtil;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
@@ -48,38 +45,42 @@ public class ClusteringTacticsFire extends TacticsFire {
                 StandardEntityURN.POLICE_OFFICE
         );
         this.clusterIndex = -1;
-        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
+        //init ExtAction
+        moduleManager.getExtAction("ActionRefill");
+        moduleManager.getExtAction("ActionFireFighting");
+        moduleManager.getExtAction("ActionSearchCivilian");
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = (Clustering) moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
+        this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.calc();
         this.clustering.precompute(precomputeData);
-        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
         this.burningBuildingSelector.precompute(precomputeData);
-        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
         this.search.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
         this.pathPlanning.resume(precomputeData);
-        this.clustering = (Clustering) moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
+        this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.resume(precomputeData);
-        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
         this.burningBuildingSelector.resume(precomputeData);
-        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
         this.search.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
-        this.clustering = (Clustering) moduleManager.getModule("adf.sample.module.algorithm.clustering.StandardKMeans");
+        this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.StandardKMeans");
         this.clustering.calc();
-        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
-        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
     }
 
     @Override
