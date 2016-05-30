@@ -6,6 +6,7 @@ import adf.agent.action.fire.ActionExtinguish;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.worldmodel.EntityID;
@@ -17,19 +18,23 @@ public class ActionFireFighting extends ExtAction {
 
     private WorldInfo worldInfo;
     private AgentInfo agentInfo;
-    private PathPlanning pathPlanning;
     private int maxDistance;
     private int maxPower;
     private EntityID target;
 
-    public ActionFireFighting(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PathPlanning pathPlanning, EntityID target) {
-        super();
+    public ActionFireFighting(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
+        super(agentInfo, worldInfo, scenarioInfo, moduleManager);
         this.worldInfo = worldInfo;
         this.agentInfo = agentInfo;
-        this.pathPlanning = pathPlanning;
-        this.target = target;
+        this.target = null;
         this.maxDistance = scenarioInfo.getFireExtinguishMaxDistance();
         this.maxPower = scenarioInfo.getFireExtinguishMaxSum();
+    }
+
+    @Override
+    public ExtAction setTarget(EntityID... targets) {
+        this.target = targets[0];
+        return this;
     }
 
     @Override
@@ -53,7 +58,8 @@ public class ActionFireFighting extends ExtAction {
         if (targets.isEmpty()) {
             return null;
         }
-        this.pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(targets).calc();
-        return this.pathPlanning.getResult();
+        PathPlanning pathPlanning = this.moduleManager.getModule("PathPlanning");
+        pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(targets).calc();
+        return pathPlanning.getResult();
     }
 }

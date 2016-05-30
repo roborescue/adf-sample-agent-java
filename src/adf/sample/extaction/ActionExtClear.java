@@ -4,7 +4,9 @@ import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.action.police.ActionClear;
 import adf.agent.info.AgentInfo;
+import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.misc.geometry.GeometryTools2D;
@@ -17,23 +19,26 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.List;
 
 public class ActionExtClear extends ExtAction {
-
-
-    private WorldInfo worldInfo;
-    private AgentInfo agentInfo;
-    private PathPlanning pathPlanning;
     private EntityID target;
 
-    public ActionExtClear(AgentInfo ai, WorldInfo wi, PathPlanning pathPlanning, EntityID target) {
-        this.worldInfo = wi;
-        this.agentInfo = ai;
-        this.pathPlanning = pathPlanning;
-        this.target = target;
+    public ActionExtClear(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+        super(ai, wi, si, moduleManager);
+    }
+
+    @Override
+    public ExtAction setTarget(EntityID... targets) {
+        if(targets != null) {
+            this.target = targets[0];
+        }
+        return this;
     }
 
     @Override
     public ExtAction calc() {
         this.result = new ActionRest();
+        if(this.target == null) {
+            return this;
+        }
         int agentX = ((Human)this.agentInfo.me()).getX();
         int agentY = ((Human)this.agentInfo.me()).getY();
         Blockade blockade;
@@ -69,8 +74,8 @@ public class ActionExtClear extends ExtAction {
             this.result = new ActionClear((int) (agentX + v.getX()), (int) (agentY + v.getY()));
         }
         else {
-            List<EntityID> path =
-                    this.pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(road.getID()).calc().getResult();
+            PathPlanning pathPlanning = this.moduleManager.getModule("PathPlanning");
+            List<EntityID> path = pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(road.getID()).calc().getResult();
             if(path != null) {
                 this.result = new ActionMove(path, blockade.getX(), blockade.getY());
             }

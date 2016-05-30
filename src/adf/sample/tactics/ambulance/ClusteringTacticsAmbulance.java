@@ -51,38 +51,38 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         );
         this.clusterIndex = -1;
         //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = (Clustering) moduleManager.getModuleInstance("adf.sample.module.algorithm.clustering.PathBasedKMeans");
+        this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.calc();
         this.clustering.precompute(precomputeData);
-        this.victimSelector = (HumanSelector)moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringVictimSelector");
+        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringVictimSelector");
         this.victimSelector.precompute(precomputeData);
-        this.search = (Search) moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
         this.search.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
         this.pathPlanning.resume(precomputeData);
-        this.clustering = (Clustering) moduleManager.getModuleInstance("adf.sample.module.algorithm.clustering.PathBasedKMeans");
+        this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.resume(precomputeData);
-        this.victimSelector = (HumanSelector)moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringVictimSelector");
+        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringVictimSelector");
         this.victimSelector.resume(precomputeData);
-        this.search = (Search)moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
         this.search.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
-        this.clustering = (Clustering) moduleManager.getModuleInstance("adf.sample.module.algorithm.clustering.StandardKMeans");
+        this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.StandardKMeans");
         this.clustering.calc();
-        this.victimSelector = (HumanSelector)moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringVictimSelector");
-        this.search = (Search)moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringVictimSelector");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
     }
 
     @Override
@@ -94,7 +94,7 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {
-            return new ActionTransport(agentInfo, worldInfo, this.pathPlanning, injured).calc().getAction();
+            return moduleManager.getExtAction("ActionTransport").setTarget(injured.getID()).calc().getAction();
         }
 
         if(this.clusterIndex == -1) {
@@ -112,13 +112,13 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         // Go through targets (sorted by distance) and check for things we can do
         EntityID target = this.victimSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanning, (Human)worldInfo.getEntity(target)).calc().getAction();
+            Action action = moduleManager.getExtAction("ActionTransport").setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
 
         // Nothing to do
-        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.search).calc().getAction();
+        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
     }
 }

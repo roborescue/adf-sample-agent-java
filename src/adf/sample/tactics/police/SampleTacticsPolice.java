@@ -33,11 +33,11 @@ public class SampleTacticsPolice extends TacticsPolice {
                 StandardEntityURN.BLOCKADE
         );
         //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
         //new SampleBlockadeSelector(agentInfo, worldInfo, scenarioInfo, moduleManager);
-        this.blockadeSelector = (BlockadeSelector)moduleManager.getModuleInstance("adf.component.module.complex.BlockadeSelector");
+        this.blockadeSelector = (BlockadeSelector)moduleManager.getModule("adf.component.module.complex.BlockadeSelector");
         //new SearchBuilding(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.search = (Search) moduleManager.getModuleInstance("adf.sample.module.complex.SearchBuilding");
+        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
     }
 
     @Override
@@ -60,13 +60,13 @@ public class SampleTacticsPolice extends TacticsPolice {
 
         EntityID target = this.blockadeSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionExtClear(agentInfo, worldInfo, this.pathPlanning, target).calc().getAction();
+            Action action = moduleManager.getExtAction("ActionExtClear").setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
 
         // Nothing to do
-        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.search).calc().getAction();
+        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
     }
 }

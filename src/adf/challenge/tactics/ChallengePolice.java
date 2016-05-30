@@ -1,4 +1,4 @@
-package adf.sample.tactics.police;
+package adf.challenge.tactics;
 
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
@@ -23,7 +23,7 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.Collection;
 import java.util.List;
 
-public class ClusteringTacticsPolice extends TacticsPolice {
+public class ChallengePolice extends TacticsPolice {
 
     private PathPlanning pathPlanning;
 
@@ -42,9 +42,9 @@ public class ClusteringTacticsPolice extends TacticsPolice {
                 StandardEntityURN.REFUGE,
                 StandardEntityURN.BLOCKADE
         );
-        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
         this.clusterIndex = -1;
-        this.blockadeSelector = (BlockadeSelector)moduleManager.getModule("adf.component.module.complex.BlockadeSelector");
+        this.blockadeSelector = moduleManager.getModule("adf.component.module.complex.BlockadeSelector");
     }
 
     @Override
@@ -82,27 +82,6 @@ public class ClusteringTacticsPolice extends TacticsPolice {
         this.blockadeSelector.updateInfo(messageManager);
         this.search.updateInfo(messageManager);
 
-        if(this.clusterIndex == -1) {
-            this.clusterIndex = this.clustering.getClusterIndex(agentInfo.getID());
-        }
-        Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
-        if(!list.contains(agentInfo.me())) {
-            List<EntityID> path =
-                    this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(WorldUtil.convertToID(list)).getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-        }
-
-        EntityID target = this.blockadeSelector.calc().getTarget();
-        if(target != null) {
-            Action action = moduleManager.getExtAction("ActionExtClear").setTarget(target).calc().getAction();
-            if(action != null) {
-                return action;
-            }
-        }
-
-        // Nothing to do
-        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
+        return null;
     }
 }

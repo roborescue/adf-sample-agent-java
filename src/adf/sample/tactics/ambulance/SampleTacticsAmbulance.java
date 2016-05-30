@@ -41,11 +41,11 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
                 StandardEntityURN.POLICE_OFFICE
         );
         //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
         //new VictimSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.victimSelector = (HumanSelector)moduleManager.getModuleInstance("adf.component.module.complex.HumanSelector");
+        this.victimSelector = (HumanSelector)moduleManager.getModule("adf.component.module.complex.HumanSelector");
         //new SearchBuilding(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.search = (Search)moduleManager.getModuleInstance("adf.sample.module.complex.SearchBuilding");
+        this.search = (Search)moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
 
     }
 
@@ -58,20 +58,20 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {
-            return new ActionTransport(agentInfo, worldInfo, this.pathPlanning, injured).calc().getAction();
+            return moduleManager.getExtAction("ActionTransport").setTarget(injured.getID()).calc().getAction();
         }
 
         // Go through targets (sorted by distance) and check for things we can do
         EntityID target = this.victimSelector.calc().getTarget();
         if(target != null) {
-            Action action = new ActionTransport(agentInfo, worldInfo, this.pathPlanning, (Human)worldInfo.getEntity(target)).calc().getAction();
+            Action action = moduleManager.getExtAction("ActionTransport").setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
 
         // Nothing to do
-        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.search).calc().getAction();
+        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
     }
 
     @Override

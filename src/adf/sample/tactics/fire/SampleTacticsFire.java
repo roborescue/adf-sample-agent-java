@@ -35,11 +35,11 @@ public class SampleTacticsFire extends TacticsFire {
                 StandardEntityURN.GAS_STATION
         );
         //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
         //new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.burningBuildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.module.targetselector.BuildingSelector");
+        this.burningBuildingSelector = (BuildingSelector)moduleManager.getModule("adf.sample.module.targetselector.BuildingSelector");
         //new SearchBuilding(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.search = (Search)moduleManager.getModuleInstance("adf.sample.module.complex.SearchBuilding");
+        this.search = (Search)moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
     }
 
     @Override
@@ -62,7 +62,7 @@ public class SampleTacticsFire extends TacticsFire {
 
         // Are we currently filling with water?
         // Are we out of water?
-        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanning).calc().getAction();
+        Action action = moduleManager.getExtAction("ActionRefill").calc().getAction();
         if(action != null) {
             return action;
         }
@@ -70,13 +70,13 @@ public class SampleTacticsFire extends TacticsFire {
         // cannot fire fighting
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
             // search civilian
-            return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.search).calc().getAction();
+            return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
         }
 
         // Find all buildings that are on fire
         EntityID target = this.burningBuildingSelector.calc().getTarget();
         if(target != null) {
-            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, target).calc().getAction();
+            action = moduleManager.getExtAction("ActionFireFighting").setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
             }

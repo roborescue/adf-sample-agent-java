@@ -1,7 +1,8 @@
-package adf.sample.tactics.police;
+package adf.challenge.tactics;
 
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
+import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -10,10 +11,11 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
-import adf.component.module.complex.BlockadeSelector;
+import adf.component.module.complex.BuildingSelector;
 import adf.component.module.complex.Search;
-import adf.component.tactics.TacticsPolice;
-import adf.sample.extaction.ActionExtClear;
+import adf.component.tactics.TacticsFire;
+import adf.sample.extaction.ActionFireFighting;
+import adf.sample.extaction.ActionRefill;
 import adf.sample.extaction.ActionSearchCivilian;
 import adf.util.WorldUtil;
 import rescuecore2.standard.entities.StandardEntity;
@@ -23,11 +25,11 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.Collection;
 import java.util.List;
 
-public class ClusteringTacticsPolice extends TacticsPolice {
+public class ChallengeFire extends TacticsFire {
 
     private PathPlanning pathPlanning;
 
-    private BlockadeSelector blockadeSelector;
+    private BuildingSelector burningBuildingSelector;
     private Search search;
 
     private Clustering clustering;
@@ -40,11 +42,13 @@ public class ClusteringTacticsPolice extends TacticsPolice {
                 StandardEntityURN.HYDRANT,
                 StandardEntityURN.BUILDING,
                 StandardEntityURN.REFUGE,
-                StandardEntityURN.BLOCKADE
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
         );
-        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
         this.clusterIndex = -1;
-        this.blockadeSelector = (BlockadeSelector)moduleManager.getModule("adf.component.module.complex.BlockadeSelector");
+        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
     }
 
     @Override
@@ -53,7 +57,8 @@ public class ClusteringTacticsPolice extends TacticsPolice {
         this.clustering = (Clustering) moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.calc();
         this.clustering.precompute(precomputeData);
-        this.blockadeSelector.precompute(precomputeData);
+        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.burningBuildingSelector.precompute(precomputeData);
         this.search = (Search) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
         this.search.precompute(precomputeData);
     }
@@ -63,8 +68,9 @@ public class ClusteringTacticsPolice extends TacticsPolice {
         this.pathPlanning.resume(precomputeData);
         this.clustering = (Clustering) moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.resume(precomputeData);
-        this.blockadeSelector.resume(precomputeData);
-        this.search = (Search)moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.burningBuildingSelector.resume(precomputeData);
+        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
         this.search.resume(precomputeData);
     }
 
@@ -72,37 +78,17 @@ public class ClusteringTacticsPolice extends TacticsPolice {
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
         this.clustering = (Clustering) moduleManager.getModule("adf.sample.module.algorithm.clustering.StandardKMeans");
         this.clustering.calc();
-        this.search = (Search)moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
     }
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         this.pathPlanning.updateInfo(messageManager);
         this.clustering.updateInfo(messageManager);
-        this.blockadeSelector.updateInfo(messageManager);
+        this.burningBuildingSelector.updateInfo(messageManager);
         this.search.updateInfo(messageManager);
 
-        if(this.clusterIndex == -1) {
-            this.clusterIndex = this.clustering.getClusterIndex(agentInfo.getID());
-        }
-        Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
-        if(!list.contains(agentInfo.me())) {
-            List<EntityID> path =
-                    this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(WorldUtil.convertToID(list)).getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-        }
-
-        EntityID target = this.blockadeSelector.calc().getTarget();
-        if(target != null) {
-            Action action = moduleManager.getExtAction("ActionExtClear").setTarget(target).calc().getAction();
-            if(action != null) {
-                return action;
-            }
-        }
-
-        // Nothing to do
-        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
+        return new ActionRest();
     }
 }

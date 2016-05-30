@@ -48,38 +48,38 @@ public class ClusteringTacticsFire extends TacticsFire {
                 StandardEntityURN.POLICE_OFFICE
         );
         this.clusterIndex = -1;
-        this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        this.pathPlanning = (PathPlanning)moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = (Clustering) moduleManager.getModuleInstance("adf.sample.module.algorithm.clustering.PathBasedKMeans");
+        this.clustering = (Clustering) moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.calc();
         this.clustering.precompute(precomputeData);
-        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
         this.burningBuildingSelector.precompute(precomputeData);
-        this.search = (Search) moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
         this.search.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
         this.pathPlanning.resume(precomputeData);
-        this.clustering = (Clustering) moduleManager.getModuleInstance("adf.sample.module.algorithm.clustering.PathBasedKMeans");
+        this.clustering = (Clustering) moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.resume(precomputeData);
-        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
         this.burningBuildingSelector.resume(precomputeData);
-        this.search = (Search) moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
         this.search.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
-        this.clustering = (Clustering) moduleManager.getModuleInstance("adf.sample.module.algorithm.clustering.StandardKMeans");
+        this.clustering = (Clustering) moduleManager.getModule("adf.sample.module.algorithm.clustering.StandardKMeans");
         this.clustering.calc();
-        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
-        this.search = (Search) moduleManager.getModuleInstance("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.search = (Search) moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
     }
 
     @Override
@@ -91,7 +91,7 @@ public class ClusteringTacticsFire extends TacticsFire {
 
         // Are we currently filling with water?
         // Are we out of water?
-        Action action = new ActionRefill(agentInfo, worldInfo, scenarioInfo, this.pathPlanning).calc().getAction();
+        Action action = moduleManager.getExtAction("ActionRefill").calc().getAction();
         if(action != null) {
             return action;
         }
@@ -111,13 +111,13 @@ public class ClusteringTacticsFire extends TacticsFire {
         // cannot fire fighting
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
             // search civilian
-            return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.search).calc().getAction();
+            return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
         }
 
         // Find all buildings that are on fire
         EntityID target = this.burningBuildingSelector.calc().getTarget();
         if(target != null) {
-            action = new ActionFireFighting(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, target).calc().getAction();
+            action = moduleManager.getExtAction("ActionFireFighting").setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
             }

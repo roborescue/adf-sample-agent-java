@@ -6,31 +6,34 @@ import adf.agent.action.ambulance.ActionUnload;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.info.AgentInfo;
+import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
-import rescuecore2.standard.entities.Civilian;
-import rescuecore2.standard.entities.Human;
-import rescuecore2.standard.entities.Refuge;
-import rescuecore2.standard.entities.StandardEntityURN;
+import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
 
 public class ActionTransport extends ExtAction {
 
-    private WorldInfo worldInfo;
-    private AgentInfo agentInfo;
-    private PathPlanning pathPlanning;
-
     private Human target;
 
-    public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, PathPlanning pathPlanning, Human target) {
-        super();
-        this.worldInfo = worldInfo;
-        this.agentInfo = agentInfo;
-        this.pathPlanning = pathPlanning;
-        this.target = target;
+    public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
+        super(agentInfo, worldInfo, scenarioInfo, moduleManager);
+        this.target = null;
+    }
+
+    @Override
+    public ExtAction setTarget(EntityID... targets) {
+        if(targets != null) {
+            StandardEntity entity = this.worldInfo.getEntity(targets[0]);
+            if(entity instanceof Human) {
+                this.target = (Human)entity;
+            }
+        }
+        return this;
     }
 
     @Override
@@ -41,10 +44,11 @@ public class ActionTransport extends ExtAction {
                 this.result = new ActionUnload();
             }
             else {
-                this.pathPlanning.setFrom(agentInfo.getPosition());
-                this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-                this.pathPlanning.calc();
-                List<EntityID> path = this.pathPlanning.getResult();
+                PathPlanning pathPlanning = this.moduleManager.getModule("PathPlanning");
+                pathPlanning.setFrom(agentInfo.getPosition());
+                pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+                pathPlanning.calc();
+                List<EntityID> path = pathPlanning.getResult();
                 if (path != null) {
                     this.result = new ActionMove(path);
                 }
@@ -58,10 +62,11 @@ public class ActionTransport extends ExtAction {
                     this.result = new ActionRescue(target.getID());
                 }
             } else {
-                this.pathPlanning.setFrom(agentInfo.getPosition());
-                this.pathPlanning.setDestination(target.getPosition());
-                this.pathPlanning.calc();
-                List<EntityID> path = this.pathPlanning.getResult();
+                PathPlanning pathPlanning = this.moduleManager.getModule("PathPlanning");
+                pathPlanning.setFrom(agentInfo.getPosition());
+                pathPlanning.setDestination(target.getPosition());
+                pathPlanning.calc();
+                List<EntityID> path = pathPlanning.getResult();
                 if (path != null) {
                     this.result = new ActionMove(path);
                 }
