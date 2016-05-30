@@ -19,15 +19,13 @@ import rescuecore2.worldmodel.EntityID;
 
 public class SampleTacticsAmbulance extends TacticsAmbulance {
 
-    public ModuleManager moduleManager;
-
     private PathPlanning pathPlanning;
 
     private HumanSelector victimSelector;
     private BuildingSelector buildingSelector;
 
     @Override
-    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         worldInfo.indexClass(
                 StandardEntityURN.CIVILIAN,
                 StandardEntityURN.FIRE_BRIGADE,
@@ -42,34 +40,18 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
-        this.moduleManager = new ModuleManager(agentInfo, worldInfo, scenarioInfo);
-        try {
-            //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-            this.pathPlanning = (PathPlanning)this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
-            //new VictimSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-            this.victimSelector = (HumanSelector)this.moduleManager.getModuleInstance("adf.component.module.complex.HumanSelector");
-            //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-            this.buildingSelector = (BuildingSelector)this.moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        //new VictimSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.victimSelector = (HumanSelector)moduleManager.getModuleInstance("adf.component.module.complex.HumanSelector");
+        //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.buildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
 
     }
 
-    @Override
-    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
-    }
 
     @Override
-    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
-    }
-
-    @Override
-    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo) {
-    }
-
-    @Override
-    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         this.pathPlanning.updateInfo(messageManager);
         this.victimSelector.updateInfo(messageManager);
         this.buildingSelector.updateInfo(messageManager);
@@ -90,5 +72,20 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
 
         // Nothing to do
         return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.buildingSelector).calc().getAction();
+    }
+
+    @Override
+    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
+
+    }
+
+    @Override
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
+
+    }
+
+    @Override
+    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
+
     }
 }

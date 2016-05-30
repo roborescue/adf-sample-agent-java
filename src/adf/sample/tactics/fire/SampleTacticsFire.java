@@ -19,14 +19,13 @@ import rescuecore2.worldmodel.EntityID;
 
 public class SampleTacticsFire extends TacticsFire {
 
-    private ModuleManager moduleManager;
     private PathPlanning pathPlanning;
 
     private BuildingSelector burningBuildingSelector;
     private BuildingSelector searchBuildingSelector;
 
     @Override
-    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         worldInfo.indexClass(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.BUILDING,
@@ -34,33 +33,28 @@ public class SampleTacticsFire extends TacticsFire {
                 StandardEntityURN.HYDRANT,
                 StandardEntityURN.GAS_STATION
         );
-        this.moduleManager = new ModuleManager(agentInfo, worldInfo, scenarioInfo);
-        try {
-            //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-            this.pathPlanning = (PathPlanning)this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
-            //new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-            this.burningBuildingSelector = (BuildingSelector) this.moduleManager.getModuleInstance("adf.sample.complex.targetselector.BuildingSelector");
-            //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-            this.searchBuildingSelector = (BuildingSelector) this.moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        //new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.burningBuildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.complex.targetselector.BuildingSelector");
+        //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.searchBuildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
     }
 
     @Override
-    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
     }
 
     @Override
-    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
     }
 
     @Override
-    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo) {
+    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
     }
 
     @Override
-    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         this.burningBuildingSelector.updateInfo(messageManager);
         this.searchBuildingSelector.updateInfo(messageManager);
         this.pathPlanning.updateInfo(messageManager);

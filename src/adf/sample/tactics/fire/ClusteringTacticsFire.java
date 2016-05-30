@@ -7,10 +7,11 @@ import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.algorithm.Clustering;
-import adf.component.algorithm.PathPlanning;
-import adf.component.complex.TargetSelector;
+import adf.component.module.algorithm.Clustering;
+import adf.component.module.algorithm.PathPlanning;
+import adf.component.module.complex.BuildingSelector;
 import adf.component.tactics.TacticsFire;
 import adf.sample.algorithm.clustering.PathBasedKMeans;
 import adf.sample.algorithm.clustering.StandardKMeans;
@@ -21,7 +22,6 @@ import adf.sample.extaction.ActionFireFighting;
 import adf.sample.extaction.ActionRefill;
 import adf.sample.extaction.ActionSearchCivilian;
 import adf.util.WorldUtil;
-import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -33,14 +33,14 @@ public class ClusteringTacticsFire extends TacticsFire {
 
     private PathPlanning pathPlanning;
 
-    private TargetSelector<Building> burningBuildingSelector;
-    private TargetSelector<Building> searchBuildingSelector;
+    private BuildingSelector burningBuildingSelector;
+    private BuildingSelector searchBuildingSelector;
 
     private Clustering clustering;
     private int clusterIndex;
 
     @Override
-    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         worldInfo.indexClass(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -52,75 +52,46 @@ public class ClusteringTacticsFire extends TacticsFire {
                 StandardEntityURN.POLICE_OFFICE
         );
         this.clusterIndex = -1;
-        this.pathPlanning = new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo);
+        this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
     }
 
     @Override
-    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
-                StandardEntityURN.ROAD,
-                StandardEntityURN.HYDRANT,
-                StandardEntityURN.BUILDING,
-                StandardEntityURN.REFUGE,
-                StandardEntityURN.GAS_STATION,
-                StandardEntityURN.AMBULANCE_CENTRE,
-                StandardEntityURN.FIRE_STATION,
-                StandardEntityURN.POLICE_OFFICE
-        )
-        );
+        this.clustering = (Clustering) moduleManager.getModuleInstance("adf.sample.algorithm.clustering.PathBasedKMeans");
         this.clustering.calc();
         this.clustering.precompute(precomputeData);
-        this.burningBuildingSelector = new ClusteringBurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
+        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModuleInstance("adf.sample.complex.targetselector.clustering.ClusteringBurningBuildingSelector");
         this.burningBuildingSelector.precompute(precomputeData);
-        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
+        this.searchBuildingSelector = (BuildingSelector) moduleManager.getModuleInstance("adf.sample.complex.targetselector.clustering.ClusteringSearchBuildingSelector");
         this.searchBuildingSelector.precompute(precomputeData);
     }
 
     @Override
-    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
         this.pathPlanning.resume(precomputeData);
-        this.clustering = new PathBasedKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
-                StandardEntityURN.ROAD,
-                StandardEntityURN.HYDRANT,
-                StandardEntityURN.BUILDING,
-                StandardEntityURN.REFUGE,
-                StandardEntityURN.GAS_STATION,
-                StandardEntityURN.AMBULANCE_CENTRE,
-                StandardEntityURN.FIRE_STATION,
-                StandardEntityURN.POLICE_OFFICE
-        )
-        );
+        this.clustering = (Clustering) moduleManager.getModuleInstance("adf.sample.algorithm.clustering.PathBasedKMeans");
         this.clustering.resume(precomputeData);
-        this.burningBuildingSelector = new ClusteringBurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.clustering);
+        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModuleInstance("adf.sample.complex.targetselector.clustering.ClusteringBurningBuildingSelector");
         this.burningBuildingSelector.resume(precomputeData);
-        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
+        this.searchBuildingSelector = (BuildingSelector) moduleManager.getModuleInstance("adf.sample.complex.targetselector.clustering.ClusteringSearchBuildingSelector");
         this.searchBuildingSelector.resume(precomputeData);
     }
 
     @Override
-    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo) {
-        this.clustering = new StandardKMeans(agentInfo, worldInfo, scenarioInfo, worldInfo.getEntitiesOfType(
-                StandardEntityURN.ROAD,
-                StandardEntityURN.HYDRANT,
-                StandardEntityURN.BUILDING,
-                StandardEntityURN.REFUGE,
-                StandardEntityURN.GAS_STATION,
-                StandardEntityURN.AMBULANCE_CENTRE,
-                StandardEntityURN.FIRE_STATION,
-                StandardEntityURN.POLICE_OFFICE
-        )
-        );
+    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
+        this.clustering = (Clustering) moduleManager.getModuleInstance("adf.sample.algorithm.clustering.StandardKMeans");
         this.clustering.calc();
-        this.searchBuildingSelector = new ClusteringSearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.pathPlanning, this.clustering);
+        this.burningBuildingSelector = (BuildingSelector) moduleManager.getModuleInstance("adf.sample.complex.targetselector.clustering.ClusteringBurningBuildingSelector");
+        this.searchBuildingSelector = (BuildingSelector) moduleManager.getModuleInstance("adf.sample.complex.targetselector.clustering.ClusteringSearchBuildingSelector");
     }
 
     @Override
-    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
-        this.pathPlanning.updateInfo();
-        this.clustering.updateInfo();
-        this.burningBuildingSelector.updateInfo();
-        this.searchBuildingSelector.updateInfo();
+    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
+        this.pathPlanning.updateInfo(messageManager);
+        this.clustering.updateInfo(messageManager);
+        this.burningBuildingSelector.updateInfo(messageManager);
+        this.searchBuildingSelector.updateInfo(messageManager);
 
         // Are we currently filling with water?
         // Are we out of water?

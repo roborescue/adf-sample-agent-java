@@ -31,45 +31,37 @@ public class ClusteringSearchBuildingSelector extends BuildingSelector {
 
     @Override
     public BuildingSelector updateInfo(MessageManager messageManager) {
-        try {
-            Clustering clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
-            if(this.clusterIndex == -1) {
-                this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
-            }
-            if(this.unexploredBuildings.isEmpty()) {
-                for (StandardEntity next : clustering.getClusterEntities(this.clusterIndex)) {
-                    if(StandardEntityURN.BUILDING.equals(next.getStandardURN())) {
-                        this.unexploredBuildings.add(next.getID());
-                    }
+        Clustering clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
+        if(this.clusterIndex == -1) {
+            this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
+        }
+        if(this.unexploredBuildings.isEmpty()) {
+            for (StandardEntity next : clustering.getClusterEntities(this.clusterIndex)) {
+                if(StandardEntityURN.BUILDING.equals(next.getStandardURN())) {
+                    this.unexploredBuildings.add(next.getID());
                 }
             }
-            for (EntityID next : this.worldInfo.getChanged().getChangedEntities()) {
-                this.unexploredBuildings.remove(next);
-            }
-            if(this.unexploredBuildings.isEmpty()) {
-                for (StandardEntity next : clustering.getClusterEntities(this.clusterIndex)) {
-                    if(StandardEntityURN.BUILDING.equals(next.getStandardURN())) {
-                        this.unexploredBuildings.add(next.getID());
-                    }
+        }
+        for (EntityID next : this.worldInfo.getChanged().getChangedEntities()) {
+            this.unexploredBuildings.remove(next);
+        }
+        if(this.unexploredBuildings.isEmpty()) {
+            for (StandardEntity next : clustering.getClusterEntities(this.clusterIndex)) {
+                if(StandardEntityURN.BUILDING.equals(next.getStandardURN())) {
+                    this.unexploredBuildings.add(next.getID());
                 }
             }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
         }
         return this;
     }
 
     @Override
     public BuildingSelector calc() {
-        try {
-            PathPlanning pathPlanning = (PathPlanning) this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
-            List<EntityID> path =
-                    pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(this.unexploredBuildings).calc().getResult();
-            if (path != null) {
-                this.result = path.get(path.size() - 1);
-            }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        PathPlanning pathPlanning = (PathPlanning) this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        List<EntityID> path =
+                pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(this.unexploredBuildings).calc().getResult();
+        if (path != null) {
+            this.result = path.get(path.size() - 1);
         }
         return this;
     }

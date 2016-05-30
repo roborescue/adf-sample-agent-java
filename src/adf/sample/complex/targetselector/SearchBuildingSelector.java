@@ -50,15 +50,10 @@ public class SearchBuildingSelector extends BuildingSelector {
 
     @Override
     public BuildingSelector calc() {
-        try {
-            PathPlanning pathPlanning = (PathPlanning) this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
-            List<EntityID> path =
-                    pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(this.unexploredBuildings).calc().getResult();
-            if (path != null) {
-                this.result = path.get(path.size() - 1);
-            }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        PathPlanning pathPlanning = (PathPlanning) this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        List<EntityID> path = pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(this.unexploredBuildings).calc().getResult();
+        if( path != null) {
+            this.result = path.get(path.size() - 1);
         }
         return this;
     }

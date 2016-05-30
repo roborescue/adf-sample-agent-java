@@ -29,12 +29,7 @@ public class ClusteringVictimSelector extends HumanSelector {
 
     @Override
     public HumanSelector calc() {
-        Clustering clustering = null;
-        try {
-            clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        Clustering clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
         if(this.clusterIndex == -1) {
             this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
         }

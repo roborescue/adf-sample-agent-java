@@ -22,10 +22,9 @@ public class SampleTacticsPolice extends TacticsPolice {
 
     private BlockadeSelector blockadeSelector;
     private BuildingSelector buildingSelector;
-    private ModuleManager moduleManager;
 
     @Override
-    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         worldInfo.indexClass(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -33,34 +32,28 @@ public class SampleTacticsPolice extends TacticsPolice {
                 StandardEntityURN.REFUGE,
                 StandardEntityURN.BLOCKADE
         );
-        this.moduleManager = new ModuleManager(agentInfo, worldInfo, scenarioInfo);
-        try {
-            //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-            this.pathPlanning = (PathPlanning)this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
-            //new SampleBlockadeSelector(agentInfo, worldInfo, scenarioInfo, moduleManager);
-            this.blockadeSelector = (BlockadeSelector)this.moduleManager.getModuleInstance("adf.component.module.complex.BlockadeSelector");
-            //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-            this.buildingSelector = (BuildingSelector)this.moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
+        //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
+        //new SampleBlockadeSelector(agentInfo, worldInfo, scenarioInfo, moduleManager);
+        this.blockadeSelector = (BlockadeSelector)moduleManager.getModuleInstance("adf.component.module.complex.BlockadeSelector");
+        //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.buildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
     }
 
     @Override
-    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
     }
 
     @Override
-    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, PrecomputeData precomputeData) {
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
     }
 
     @Override
-    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo) {
+    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
     }
 
     @Override
-    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager) {
+    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         this.pathPlanning.updateInfo(messageManager);
         this.blockadeSelector.updateInfo(messageManager);
         this.buildingSelector.updateInfo(messageManager);

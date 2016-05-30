@@ -30,27 +30,22 @@ public class ClusteringBurningBuildingSelector extends BuildingSelector {
 
     @Override
     public BuildingSelector calc() {
-        try {
-            Clustering clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
-            if(this.clusterIndex == -1) {
-                this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
-            }
-            List<Building> buildingList = new ArrayList<>();
-            for (StandardEntity next : clustering.getClusterEntities(this.clusterIndex)) {
-                if (next.getStandardURN().equals(StandardEntityURN.BUILDING)) {
-                    Building b = (Building)next;
-                    if (b.isOnFire()) {
-                        buildingList.add(b);
-                    }
+        Clustering clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
+        if(this.clusterIndex == -1) {
+            this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
+        }
+        List<Building> buildingList = new ArrayList<>();
+        for (StandardEntity next : clustering.getClusterEntities(this.clusterIndex)) {
+            if (next.getStandardURN().equals(StandardEntityURN.BUILDING)) {
+                Building b = (Building)next;
+                if (b.isOnFire()) {
+                    buildingList.add(b);
                 }
             }
-            // Sort by distance
-            buildingList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
-            this.result = buildingList.isEmpty() ? null : buildingList.get(0).getID();
-
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
         }
+        // Sort by distance
+        buildingList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
+        this.result = buildingList.isEmpty() ? null : buildingList.get(0).getID();
         return this;
     }
 
