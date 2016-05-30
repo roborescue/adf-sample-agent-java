@@ -8,8 +8,8 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.PathPlanning;
-import adf.component.module.complex.BuildingSelector;
 import adf.component.module.complex.HumanSelector;
+import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsAmbulance;
 import adf.sample.extaction.ActionSearchCivilian;
 import adf.sample.extaction.ActionTransport;
@@ -22,7 +22,7 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
     private PathPlanning pathPlanning;
 
     private HumanSelector victimSelector;
-    private BuildingSelector buildingSelector;
+    private Search search;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
@@ -44,8 +44,8 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
         this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
         //new VictimSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
         this.victimSelector = (HumanSelector)moduleManager.getModuleInstance("adf.component.module.complex.HumanSelector");
-        //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.buildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
+        //new SearchBuilding(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.search = (Search)moduleManager.getModuleInstance("adf.sample.module.complex.SearchBuilding");
 
     }
 
@@ -54,7 +54,7 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         this.pathPlanning.updateInfo(messageManager);
         this.victimSelector.updateInfo(messageManager);
-        this.buildingSelector.updateInfo(messageManager);
+        this.search.updateInfo(messageManager);
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {
@@ -71,7 +71,7 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
         }
 
         // Nothing to do
-        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.buildingSelector).calc().getAction();
+        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.search).calc().getAction();
     }
 
     @Override

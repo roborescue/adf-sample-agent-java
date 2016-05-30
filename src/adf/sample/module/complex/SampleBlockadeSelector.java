@@ -1,4 +1,4 @@
-package adf.sample.complex.targetselector;
+package adf.sample.module.complex;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;

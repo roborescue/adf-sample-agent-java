@@ -10,6 +10,7 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
+import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsFire;
 import adf.sample.extaction.ActionFireFighting;
 import adf.sample.extaction.ActionRefill;
@@ -22,7 +23,7 @@ public class SampleTacticsFire extends TacticsFire {
     private PathPlanning pathPlanning;
 
     private BuildingSelector burningBuildingSelector;
-    private BuildingSelector searchBuildingSelector;
+    private Search search;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
@@ -36,9 +37,9 @@ public class SampleTacticsFire extends TacticsFire {
         //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
         this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
         //new BurningBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.burningBuildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.complex.targetselector.BuildingSelector");
-        //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.searchBuildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
+        this.burningBuildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.module.targetselector.BuildingSelector");
+        //new SearchBuilding(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.search = (Search)moduleManager.getModuleInstance("adf.sample.module.complex.SearchBuilding");
     }
 
     @Override
@@ -56,7 +57,7 @@ public class SampleTacticsFire extends TacticsFire {
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         this.burningBuildingSelector.updateInfo(messageManager);
-        this.searchBuildingSelector.updateInfo(messageManager);
+        this.search.updateInfo(messageManager);
         this.pathPlanning.updateInfo(messageManager);
 
         // Are we currently filling with water?
@@ -69,7 +70,7 @@ public class SampleTacticsFire extends TacticsFire {
         // cannot fire fighting
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
             // search civilian
-            return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.searchBuildingSelector).calc().getAction();
+            return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.search).calc().getAction();
         }
 
         // Find all buildings that are on fire

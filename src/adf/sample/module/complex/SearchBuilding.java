@@ -1,4 +1,4 @@
-package adf.sample.complex.targetselector;
+package adf.sample.module.complex;
 
 import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
@@ -8,6 +8,7 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
+import adf.component.module.complex.Search;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -16,18 +17,18 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-public class SearchBuildingSelector extends BuildingSelector {
+public class SearchBuilding extends Search {
 
     private Collection<EntityID> unexploredBuildings;
     private EntityID result;
 
-    public SearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+    public SearchBuilding(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
         super(ai, wi, si, moduleManager);
         this.unexploredBuildings = new HashSet<>();
     }
 
     @Override
-    public BuildingSelector updateInfo(MessageManager messageManager) {
+    public Search updateInfo(MessageManager messageManager) {
         if(this.unexploredBuildings.isEmpty()) {
             for (StandardEntity next : this.worldInfo) {
                 if(StandardEntityURN.BUILDING.equals(next.getStandardURN())) {
@@ -49,7 +50,7 @@ public class SearchBuildingSelector extends BuildingSelector {
     }
 
     @Override
-    public BuildingSelector calc() {
+    public Search calc() {
         PathPlanning pathPlanning = (PathPlanning) this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
         List<EntityID> path = pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(this.unexploredBuildings).calc().getResult();
         if( path != null) {
@@ -64,17 +65,17 @@ public class SearchBuildingSelector extends BuildingSelector {
     }
 
     @Override
-    public BuildingSelector precompute(PrecomputeData precomputeData) {
+    public Search precompute(PrecomputeData precomputeData) {
         return this;
     }
 
     @Override
-    public BuildingSelector resume(PrecomputeData precomputeData) {
+    public Search resume(PrecomputeData precomputeData) {
         return this;
     }
 
     @Override
-    public BuildingSelector preparate() {
+    public Search preparate() {
         return this;
     }
 

@@ -1,4 +1,4 @@
-package adf.sample.complex.targetselector.clustering;
+package adf.sample.module.complex.clustering;
 
 import adf.agent.communication.MessageManager;
 import adf.agent.info.AgentInfo;
@@ -9,6 +9,7 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
+import adf.component.module.complex.Search;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -17,20 +18,20 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-public class ClusteringSearchBuildingSelector extends BuildingSelector {
+public class ClusteringSearchBuilding extends Search {
 
     private int clusterIndex;
     private Collection<EntityID> unexploredBuildings;
     private EntityID result;
 
-    public ClusteringSearchBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+    public ClusteringSearchBuilding(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
         super(ai, wi, si, moduleManager);
         this.unexploredBuildings = new HashSet<>();
         this.clusterIndex = -1;
     }
 
     @Override
-    public BuildingSelector updateInfo(MessageManager messageManager) {
+    public Search updateInfo(MessageManager messageManager) {
         Clustering clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
         if(this.clusterIndex == -1) {
             this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
@@ -56,7 +57,7 @@ public class ClusteringSearchBuildingSelector extends BuildingSelector {
     }
 
     @Override
-    public BuildingSelector calc() {
+    public Search calc() {
         PathPlanning pathPlanning = (PathPlanning) this.moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
         List<EntityID> path =
                 pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(this.unexploredBuildings).calc().getResult();
@@ -72,17 +73,17 @@ public class ClusteringSearchBuildingSelector extends BuildingSelector {
     }
 
     @Override
-    public BuildingSelector precompute(PrecomputeData precomputeData) {
+    public Search precompute(PrecomputeData precomputeData) {
         return this;
     }
 
     @Override
-    public BuildingSelector resume(PrecomputeData precomputeData) {
+    public Search resume(PrecomputeData precomputeData) {
         return this;
     }
 
     @Override
-    public BuildingSelector preparate() {
+    public Search preparate() {
         return this;
     }
 

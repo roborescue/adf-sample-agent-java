@@ -9,7 +9,7 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BlockadeSelector;
-import adf.component.module.complex.BuildingSelector;
+import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsPolice;
 import adf.sample.extaction.ActionExtClear;
 import adf.sample.extaction.ActionSearchCivilian;
@@ -21,7 +21,7 @@ public class SampleTacticsPolice extends TacticsPolice {
     private PathPlanning pathPlanning;
 
     private BlockadeSelector blockadeSelector;
-    private BuildingSelector buildingSelector;
+    private Search search;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
@@ -36,8 +36,8 @@ public class SampleTacticsPolice extends TacticsPolice {
         this.pathPlanning = (PathPlanning)moduleManager.getModuleInstance("adf.component.module.algorithm.PathPlanning");
         //new SampleBlockadeSelector(agentInfo, worldInfo, scenarioInfo, moduleManager);
         this.blockadeSelector = (BlockadeSelector)moduleManager.getModuleInstance("adf.component.module.complex.BlockadeSelector");
-        //new SearchBuildingSelector(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.buildingSelector = (BuildingSelector)moduleManager.getModuleInstance("adf.sample.complex.targetselector.SearchBuildingSelector");
+        //new SearchBuilding(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
+        this.search = (Search) moduleManager.getModuleInstance("adf.sample.module.complex.SearchBuilding");
     }
 
     @Override
@@ -56,7 +56,7 @@ public class SampleTacticsPolice extends TacticsPolice {
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         this.pathPlanning.updateInfo(messageManager);
         this.blockadeSelector.updateInfo(messageManager);
-        this.buildingSelector.updateInfo(messageManager);
+        this.search.updateInfo(messageManager);
 
         EntityID target = this.blockadeSelector.calc().getTarget();
         if(target != null) {
@@ -67,6 +67,6 @@ public class SampleTacticsPolice extends TacticsPolice {
         }
 
         // Nothing to do
-        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.buildingSelector).calc().getAction();
+        return new ActionSearchCivilian(agentInfo, this.pathPlanning, this.search).calc().getAction();
     }
 }

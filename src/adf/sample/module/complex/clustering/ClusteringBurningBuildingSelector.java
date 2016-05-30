@@ -1,10 +1,12 @@
-package adf.sample.complex.targetselector;
+package adf.sample.module.complex.clustering;
+
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.BuildingSelector;
 import adf.sample.util.DistanceSorter;
 import rescuecore2.standard.entities.Building;
@@ -15,18 +17,25 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BurningBuildingSelector extends BuildingSelector {
+public class ClusteringBurningBuildingSelector extends BuildingSelector {
 
     private EntityID result;
 
-    public BurningBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+    private int clusterIndex;
+
+    public ClusteringBurningBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
         super(ai, wi, si, moduleManager);
+        this.clusterIndex = -1;
     }
 
     @Override
     public BuildingSelector calc() {
+        Clustering clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
+        if(this.clusterIndex == -1) {
+            this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
+        }
         List<Building> buildingList = new ArrayList<>();
-        for (StandardEntity next : this.worldInfo.getEntitiesOfType(StandardEntityURN.BUILDING)) {
+        for (StandardEntity next : clustering.getClusterEntities(this.clusterIndex)) {
             if (next.getStandardURN().equals(StandardEntityURN.BUILDING)) {
                 Building b = (Building)next;
                 if (b.isOnFire()) {

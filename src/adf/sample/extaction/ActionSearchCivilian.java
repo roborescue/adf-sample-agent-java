@@ -5,8 +5,7 @@ import adf.agent.action.common.ActionRest;
 import adf.agent.info.AgentInfo;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
-import adf.component.module.complex.BuildingSelector;
-import rescuecore2.standard.entities.Building;
+import adf.component.module.complex.Search;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
@@ -16,19 +15,20 @@ public class ActionSearchCivilian extends ExtAction {
 
     private PathPlanning pathPlanning;
 
-    private BuildingSelector buildingSelector;
+    private Search search;
 
-    public ActionSearchCivilian(AgentInfo agentInfo, PathPlanning pathPlanning, BuildingSelector buildingSelector) {
+
+    public ActionSearchCivilian(AgentInfo agentInfo, PathPlanning pathPlanning, Search search) {
         super();
         this.agentInfo = agentInfo;
         this.pathPlanning = pathPlanning;
-        this.buildingSelector = buildingSelector;
+        this.search = search;
     }
 
     @Override
     public ExtAction calc() {
         this.result = new ActionRest();
-        EntityID searchBuildingID = this.buildingSelector.calc().getTarget();
+        EntityID searchBuildingID = this.search.calc().getTarget();
         if(searchBuildingID != null) {
             List<EntityID> path =
                     this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(searchBuildingID).calc().getResult();

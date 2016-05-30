@@ -1,10 +1,11 @@
-package adf.sample.complex.targetselector;
+package adf.sample.module.complex.clustering;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.HumanSelector;
 import adf.sample.util.DistanceSorter;
 import rescuecore2.standard.entities.Human;
@@ -13,18 +14,27 @@ import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-public class VictimSelector extends HumanSelector {
+public class ClusteringVictimSelector extends HumanSelector {
 
     private EntityID result;
+    private int clusterIndex;
 
-    public VictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+    public ClusteringVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
         super(ai, wi, si, moduleManager);
+        this.clusterIndex = -1;
     }
 
     @Override
     public HumanSelector calc() {
+        Clustering clustering = (Clustering) this.moduleManager.getModuleInstance("adf.component.module.algorithm.Clustering");
+        if(this.clusterIndex == -1) {
+            this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
+        }
+        Collection<StandardEntity> elements = clustering.getClusterEntities(this.clusterIndex);
+
         List<Human> targets = new ArrayList<>();
         for (StandardEntity next : worldInfo.getEntitiesOfType(
                 StandardEntityURN.CIVILIAN,
@@ -32,17 +42,19 @@ public class VictimSelector extends HumanSelector {
                 StandardEntityURN.POLICE_FORCE,
                 StandardEntityURN.AMBULANCE_TEAM)
                 ) {
-            Human h = (Human)next;
-            if (agentInfo.getID() == h.getID()) {
+            if (agentInfo.getID() == next.getID()) {
                 continue;
             }
-            if (h.isHPDefined()
-                    && h.isBuriednessDefined()
-                    && h.isDamageDefined()
-                    && h.isPositionDefined()
-                    && h.getHP() > 0
-                    && (h.getBuriedness() > 0 || h.getDamage() > 0)) {
-                targets.add(h);
+            Human h = (Human) next;
+            if(elements.contains(this.worldInfo.getPosition(h)) || elements.contains(h)) {
+                if (h.isHPDefined()
+                        && h.isBuriednessDefined()
+                        && h.isDamageDefined()
+                        && h.isPositionDefined()
+                        && h.getHP() > 0
+                        && (h.getBuriedness() > 0 || h.getDamage() > 0)) {
+                    targets.add(h);
+                }
             }
         }
         targets.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
@@ -54,7 +66,6 @@ public class VictimSelector extends HumanSelector {
     public EntityID getTarget() {
         return this.result;
     }
-
 
     @Override
     public HumanSelector precompute(PrecomputeData precomputeData) {
