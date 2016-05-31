@@ -44,43 +44,43 @@ public class SampleAmbulance extends TacticsAmbulance {
                 StandardEntityURN.POLICE_OFFICE
         );
         //init ExtAction
-        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT);
-        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH);
+        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT, "adf.sample.extaction.ActionTransport");
+        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch");
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
-        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
+        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.precompute(precomputeData);
-        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH);
+        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
         this.search.precompute(precomputeData);
-        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR);
+        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR, "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
-        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.resume(precomputeData);
-        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
+        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.resume(precomputeData);
-        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH);
+        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
         this.search.resume(precomputeData);
-        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR);
+        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR, "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
-        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.preparate();
-        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
+        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.preparate();
-        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH);
+        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
         this.search.preparate();
-        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR);
+        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR, "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.preparate();
     }
 

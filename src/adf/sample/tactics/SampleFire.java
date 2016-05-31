@@ -40,44 +40,44 @@ public class SampleFire extends TacticsFire {
                 StandardEntityURN.POLICE_OFFICE
         );
         //init ExtAction
-        moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_FIREFIGHTING);
-        moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_REFILL);
-        moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_SEARCH);
+        moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_FIREFIGHTING, "adf.sample.extaction.ActionFireFighting");
+        moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_REFILL, "adf.sample.extaction.ActionRefill");
+        moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch");
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
-        this.pathPlanning = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+        this.pathPlanning = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING);
+        this.clustering = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.precompute(precomputeData);
-        this.search = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_SEARCH);
+        this.search = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
         this.search.precompute(precomputeData);
-        this.buildingSelector = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_BUILDING_SELECTOR);
+        this.buildingSelector = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_BUILDING_SELECTOR, "adf.sample.module.complex.SampleBuildingSelector");
         this.buildingSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
-        this.pathPlanning = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+        this.pathPlanning = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.resume(precomputeData);
-        this.clustering = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING);
+        this.clustering = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.resume(precomputeData);
-        this.search = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_SEARCH);
+        this.search = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
         this.search.resume(precomputeData);
-        this.buildingSelector = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_BUILDING_SELECTOR);
+        this.buildingSelector = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_BUILDING_SELECTOR, "adf.sample.module.complex.SampleBuildingSelector");
         this.buildingSelector.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
-        this.pathPlanning = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+        this.pathPlanning = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.preparate();
-        this.clustering = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING);
+        this.clustering = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.preparate();
-        this.search = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_SEARCH);
+        this.search = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
         this.search.preparate();
-        this.buildingSelector = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_BUILDING_SELECTOR);
+        this.buildingSelector = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_BUILDING_SELECTOR, "adf.sample.module.complex.SampleBuildingSelector");
         this.buildingSelector.preparate();
     }
 
