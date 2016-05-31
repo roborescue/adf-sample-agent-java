@@ -105,20 +105,20 @@ public class SamplePolice extends TacticsPolice {
         if(this.clusterIndex == -1) {
             this.clusterIndex = this.clustering.getClusterIndex(agentInfo.getID());
         }
-        Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
-        if(!list.contains(agentInfo.me())) {
-            List<EntityID> path =
-                    this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(WorldUtil.convertToID(list)).getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-        }
 
         EntityID target = this.blockadeSelector.calc().getTarget();
         if(target != null) {
             Action action = moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR).setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
+            }
+        }
+        Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
+        if(!list.contains(agentInfo.me())) {
+            List<EntityID> path =
+                    this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(WorldUtil.convertToID(list)).getResult();
+            if (path != null) {
+                return new ActionMove(path);
             }
         }
         // Nothing to do
