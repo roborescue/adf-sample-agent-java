@@ -113,6 +113,13 @@ public class SamplePolice extends TacticsPolice {
                 return action;
             }
         }
+
+        // Nothing to do
+        target = this.search.calc().getTarget();
+        Action action = moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH).setTarget(target).calc().getAction();
+        if(action != null) {
+            return action;
+        }
         Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
         if(!list.contains(agentInfo.me())) {
             List<EntityID> path =
@@ -121,9 +128,7 @@ public class SamplePolice extends TacticsPolice {
                 return new ActionMove(path);
             }
         }
-        // Nothing to do
-        target = this.search.calc().getTarget();
-        return moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH).setTarget(target).calc().getAction();
+        return new ActionRest();
     }
 
     private void sendMessage(WorldInfo worldInfo, MessageManager messageManager) {
