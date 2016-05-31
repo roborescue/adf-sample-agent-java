@@ -37,7 +37,7 @@ public class SampleKMeans extends StaticClustering {
 
     private boolean assignAgentsFlag;
 
-    private int repeat = 50;
+    private int repeat = 10;
 
     private Map<EntityID, Set<EntityID>> shortestPathGraph;
 
@@ -63,6 +63,7 @@ public class SampleKMeans extends StaticClustering {
 
     @Override
     public Clustering precompute(PrecomputeData precomputeData) {
+        this.repeat = 7;
         this.calc();
         precomputeData.setEntityIDList(KEY_ALL_ELEMENTS, (List<EntityID>) WorldUtil.convertToID(this.entities));
         precomputeData.setInteger(KEY_CLUSTER_SIZE, this.clusterSize);
@@ -91,6 +92,7 @@ public class SampleKMeans extends StaticClustering {
 
     @Override
     public Clustering preparate() {
+        this.repeat = 30;
         this.calc();
         return this;
     }
