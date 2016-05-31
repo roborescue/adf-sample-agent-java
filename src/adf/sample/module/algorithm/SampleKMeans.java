@@ -22,16 +22,16 @@ import static java.util.Comparator.reverseOrder;
 
 
 public class SampleKMeans extends StaticClustering {
-    protected static final String KEY_ALL_ELEMENTS = "sample.clustering.entities";
-    protected static final String KEY_CLUSTER_SIZE = "sample.clustering.size";
-    protected static final String KEY_CLUSTER_CENTER = "sample.clustering.centers";
-    protected static final String KEY_CLUSTER_ENTITY = "sample.clustering.entities.";
-    protected static final String KEY_ASSIGN_AGENT = "sample.clustering.assign";
+    private static final String KEY_ALL_ELEMENTS = "sample.clustering.entities";
+    private static final String KEY_CLUSTER_SIZE = "sample.clustering.size";
+    private static final String KEY_CLUSTER_CENTER = "sample.clustering.centers";
+    private static final String KEY_CLUSTER_ENTITY = "sample.clustering.entities.";
+    private static final String KEY_ASSIGN_AGENT = "sample.clustering.assign";
 
     private Collection<StandardEntity> entities;
 
-    protected List<StandardEntity> centerList;
-    protected List<List<StandardEntity>> clusterEntityList;
+    private List<StandardEntity> centerList;
+    private List<List<StandardEntity>> clusterEntityList;
 
     private int clusterSize;
 
@@ -128,8 +128,6 @@ public class SampleKMeans extends StaticClustering {
         return WorldUtil.convertToID(this.getClusterEntities(index));
     }
 
-
-
     @Override
     public Clustering calc() {
         if(this.scenarioInfo.getMode() == ScenarioInfo.Mode.NON_PRECOMPUTE) {
@@ -141,7 +139,7 @@ public class SampleKMeans extends StaticClustering {
         return this;
     }
 
-    protected void calcStandard() {
+    private void calcStandard() {
         this.initShortestPath(this.worldInfo);
         Random random = new Random();
 
@@ -219,20 +217,7 @@ public class SampleKMeans extends StaticClustering {
         }
     }
 
-    protected StandardEntity getNearEntityByLine(WorldInfo world, List<StandardEntity> srcEntityList, StandardEntity targetEntity) {
-        Pair<Integer, Integer> location = world.getLocation(targetEntity);
-        return this.getNearEntityByLine(world, srcEntityList, location.first(), location.second());
-    }
-
-    protected StandardEntity getNearEntityByLine(WorldInfo world, List<StandardEntity> srcEntityList, int targetX, int targetY) {
-        StandardEntity result = null;
-        for(StandardEntity entity : srcEntityList) {
-            result = ((result != null) ? this.compareLineDistance(world, targetX, targetY, result, entity) : entity);
-        }
-        return result;
-    }
-
-    protected void calcPathBased() {
+    private void calcPathBased() {
         this.initShortestPath(this.worldInfo);
         Random random = new Random();
         List<StandardEntity> entityList = new ArrayList<>(this.entities);
@@ -316,6 +301,19 @@ public class SampleKMeans extends StaticClustering {
         }
     }
 
+    private StandardEntity getNearEntityByLine(WorldInfo world, List<StandardEntity> srcEntityList, StandardEntity targetEntity) {
+        Pair<Integer, Integer> location = world.getLocation(targetEntity);
+        return this.getNearEntityByLine(world, srcEntityList, location.first(), location.second());
+    }
+
+    private StandardEntity getNearEntityByLine(WorldInfo world, List<StandardEntity> srcEntityList, int targetX, int targetY) {
+        StandardEntity result = null;
+        for(StandardEntity entity : srcEntityList) {
+            result = ((result != null) ? this.compareLineDistance(world, targetX, targetY, result, entity) : entity);
+        }
+        return result;
+    }
+
     private StandardEntity getNearAgent(WorldInfo worldInfo, List<StandardEntity> srcAgentList, StandardEntity targetEntity) {
         StandardEntity result = null;
         for (StandardEntity agent : srcAgentList) {
@@ -340,41 +338,42 @@ public class SampleKMeans extends StaticClustering {
         return result;
     }
 
-    public Point2D getEdgePoint(Edge edge) {
+    private Point2D getEdgePoint(Edge edge) {
         Point2D start = edge.getStart();
         Point2D end = edge.getEnd();
         return new Point2D(((start.getX() + end.getX()) / 2.0D), ((start.getY() + end.getY()) / 2.0D));
     }
 
 
-    public double getDistance(double fromX, double fromY, double toX, double toY) {
+    private double getDistance(double fromX, double fromY, double toX, double toY) {
         double dx = fromX - toX;
         double dy = fromY - toY;
         return Math.hypot(dx, dy);
     }
-    public double getDistance(Pair<Integer, Integer> from, Point2D to) {
+
+    private double getDistance(Pair<Integer, Integer> from, Point2D to) {
         return getDistance(from.first(), from.second(), to.getX(), to.getY());
     }
-    public double getDistance(Pair<Integer, Integer> from, Edge to) {
+
+    private double getDistance(Pair<Integer, Integer> from, Edge to) {
         return getDistance(from, getEdgePoint(to));
     }
 
-    public double getDistance(Point2D from, Point2D to) {
+    private double getDistance(Point2D from, Point2D to) {
         return getDistance(from.getX(), from.getY(), to.getX(), to.getY());
     }
-    public double getDistance(Edge from, Edge to) {
+
+    private double getDistance(Edge from, Edge to) {
         return getDistance(getEdgePoint(from), getEdgePoint(to));
     }
 
-    private StandardEntity compareLineDistance(WorldInfo worldInfo, int targetX, int targetY, StandardEntity first, StandardEntity second)
-    {
+    private StandardEntity compareLineDistance(WorldInfo worldInfo, int targetX, int targetY, StandardEntity first, StandardEntity second) {
         double firstDistance = getDistance(first.getLocation(worldInfo.getRawWorld()).first(), first.getLocation(worldInfo.getRawWorld()).second(), targetX, targetY);
         double secondDistance = getDistance(second.getLocation(worldInfo.getRawWorld()).first(), second.getLocation(worldInfo.getRawWorld()).second(), targetX, targetY);
         return (firstDistance < secondDistance ? first : second);
     }
 
-    private StandardEntity getNearEntity(WorldInfo worldInfo, List<StandardEntity> srcEntityList, StandardEntity targetEntity)
-    {
+    private StandardEntity getNearEntity(WorldInfo worldInfo, List<StandardEntity> srcEntityList, StandardEntity targetEntity) {
         StandardEntity result = null;
         for (StandardEntity entity : srcEntityList) {
             result = (result != null) ? this.comparePathDistance(worldInfo, targetEntity, result, entity) : entity;
@@ -389,27 +388,19 @@ public class SampleKMeans extends StaticClustering {
     }
 
     private double getPathDistance(WorldInfo worldInfo, List<EntityID> path) {
+        if (path == null) return Double.MAX_VALUE;
+        if (path.size() <= 1) return 0.0D;
+
         double distance = 0.0D;
-
-        if (path == null) {
-            return Double.MAX_VALUE;
-        }
-
         int limit = path.size() - 1;
-
-        if(path.size() == 1) {
-            return 0.0D;
-        }
 
         Area area = (Area)worldInfo.getEntity(path.get(0));
         distance += getDistance(area.getLocation(worldInfo.getRawWorld()), area.getEdgeTo(path.get(1)));
         area = (Area)worldInfo.getEntity(path.get(limit));
         distance += getDistance(area.getLocation(worldInfo.getRawWorld()), area.getEdgeTo(path.get(limit - 1)));
 
-        EntityID areaID;
         for(int i = 1; i < limit; i++) {
-            areaID = path.get(i);
-            area = (Area)worldInfo.getEntity(areaID);
+            area = (Area)worldInfo.getEntity(path.get(i));
             distance += getDistance(area.getEdgeTo(path.get(i - 1)), area.getEdgeTo(path.get(i + 1)));
         }
         return distance;
@@ -454,9 +445,8 @@ public class SampleKMeans extends StaticClustering {
                 break;
             }
             Collection<EntityID> neighbours = shortestPathGraph.get(next);
-            if (neighbours.isEmpty()) {
-                continue;
-            }
+            if (neighbours.isEmpty()) continue;
+
             for (EntityID neighbour : neighbours) {
                 if (isGoal(neighbour, goals)) {
                     ancestors.put(neighbour, next);
@@ -464,11 +454,9 @@ public class SampleKMeans extends StaticClustering {
                     found = true;
                     break;
                 }
-                else {
-                    if (!ancestors.containsKey(neighbour)) {
-                        open.add(neighbour);
-                        ancestors.put(neighbour, next);
-                    }
+                else if (!ancestors.containsKey(neighbour)) {
+                    open.add(neighbour);
+                    ancestors.put(neighbour, next);
                 }
             }
         } while (!found && !open.isEmpty());
@@ -482,9 +470,7 @@ public class SampleKMeans extends StaticClustering {
         do {
             path.add(0, current);
             current = ancestors.get(current);
-            if (current == null) {
-                throw new RuntimeException("Found a node with no ancestor! Something is broken.");
-            }
+            if (current == null) throw new RuntimeException("Found a node with no ancestor! Something is broken.");
         } while (current != start);
         return path;
     }
