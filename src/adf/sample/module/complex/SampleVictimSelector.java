@@ -1,11 +1,11 @@
-package adf.challenge.module.complex;
+package adf.sample.module.complex;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.challenge.SampleModuleKey;
+import adf.sample.SampleModuleKey;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.HumanSelector;
 import adf.sample.util.DistanceSorter;

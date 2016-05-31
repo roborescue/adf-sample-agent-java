@@ -1,6 +1,6 @@
 #!/bin/sh
 
-LOADER="adf.sample.ChallengeLoader"
+LOADER="adf.sample.SampleLoader"
 
 cd `dirname $0`
 

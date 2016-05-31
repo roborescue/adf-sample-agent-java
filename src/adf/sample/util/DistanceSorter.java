@@ -5,7 +5,7 @@ import rescuecore2.standard.entities.StandardEntity;
 
 import java.util.Comparator;
 
-public class DistanceSorter  implements Comparator<StandardEntity> {
+public class DistanceSorter implements Comparator<StandardEntity> {
     private StandardEntity reference;
     private WorldInfo worldInfo;
 

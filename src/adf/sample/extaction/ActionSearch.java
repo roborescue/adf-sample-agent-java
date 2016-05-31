@@ -1,4 +1,4 @@
-package adf.challenge.extaction;
+package adf.sample.extaction;
 
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
@@ -6,7 +6,7 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
-import adf.challenge.SampleModuleKey;
+import adf.sample.SampleModuleKey;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.StandardEntityURN;

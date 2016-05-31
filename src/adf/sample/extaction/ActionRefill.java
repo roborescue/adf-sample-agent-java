@@ -7,6 +7,7 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
+import adf.sample.SampleModuleKey;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.Area;
@@ -40,41 +41,35 @@ public class ActionRefill extends ExtAction{
             // refuge
             if(water < this.maxWater && location.getStandardURN().equals(StandardEntityURN.REFUGE)) {
                 this.result = new ActionRest();
+                return this;
             }
-            // hydrant
-            int hydrantWaterLimit = ((this.maxWater / 10) * 2);
-            if(water < hydrantWaterLimit && location.getStandardURN().equals(StandardEntityURN.HYDRANT)) {
-                // move refuge
-                PathPlanning pathPlanning = this.moduleManager.getModule("PathPlanning");
+            int waterLimit = ((this.maxWater / 10) * 2);
+            if(water < waterLimit) {
+                PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
                 pathPlanning.setFrom(agentInfo.getPosition());
-                if(this.targets != null) {
-                    pathPlanning.setDestination(this.targets);
-                }else {
-                    pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+                if(location.getStandardURN().equals(StandardEntityURN.HYDRANT)) {
+                    if (this.targets != null) {
+                        pathPlanning.setDestination(this.targets);
+                    } else {
+                        pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+                    }
+                    pathPlanning.calc();
+                    List<EntityID> path = pathPlanning.getResult();
+                    this.result = path != null ? new ActionMove(path) : new ActionRest();
+                } else {
+                    if (this.targets != null) {
+                        pathPlanning.setDestination(this.targets);
+                    } else {
+                        pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+                    }
+                    pathPlanning.calc();
+                    List<EntityID> path = pathPlanning.getResult();
+                    if (path == null) {
+                        pathPlanning.setFrom(agentInfo.getPosition()).setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
+                        path = pathPlanning.calc().getResult();
+                    }
+                    this.result = path != null ? new ActionMove(path) : null;
                 }
-                pathPlanning.calc();
-                List<EntityID> path = pathPlanning.getResult();
-                this.result = path != null ? new ActionMove(path) : new ActionRest();
-            }
-        }
-
-        // Are we out of water?
-        if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
-            // Head for a refuge
-            PathPlanning pathPlanning = this.moduleManager.getModule("PathPlanning");
-            pathPlanning.setFrom(agentInfo.getPosition());
-            pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            pathPlanning.calc();
-            List<EntityID> path = pathPlanning.getResult();
-            // Head for a hydrant
-            if (path == null) {
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
-                pathPlanning.calc();
-                path = pathPlanning.getResult();
-            }
-            if(path != null) {
-                this.result = new ActionMove(path);
             }
         }
         return this;

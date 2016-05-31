@@ -1,12 +1,12 @@
 package adf.sample.extaction;
 
 import adf.agent.action.common.ActionMove;
-import adf.agent.action.common.ActionRest;
 import adf.agent.action.police.ActionClear;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
+import adf.sample.SampleModuleKey;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.misc.geometry.GeometryTools2D;
@@ -19,6 +19,7 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.List;
 
 public class ActionExtClear extends ExtAction {
+
     private EntityID target;
 
     public ActionExtClear(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
@@ -35,7 +36,7 @@ public class ActionExtClear extends ExtAction {
 
     @Override
     public ExtAction calc() {
-        this.result = new ActionRest();
+        this.result = null;
         if(this.target == null) {
             return this;
         }
@@ -74,7 +75,7 @@ public class ActionExtClear extends ExtAction {
             this.result = new ActionClear((int) (agentX + v.getX()), (int) (agentY + v.getY()));
         }
         else {
-            PathPlanning pathPlanning = this.moduleManager.getModule("PathPlanning");
+            PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
             List<EntityID> path = pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(road.getID()).calc().getResult();
             if(path != null) {
                 this.result = new ActionMove(path, blockade.getX(), blockade.getY());

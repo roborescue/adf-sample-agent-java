@@ -20,7 +20,7 @@ cd ./library/rescue/adf
 # core
 $WGET 'adf-core.jar' "https://raw.githubusercontent.com/RCRS-ADF/core/master/build/libs/adf-core.jar?$$"
 # modules
-$WGET 'adf-modules.jar' "https://raw.githubusercontent.com/RCRS-ADF/modules/master/build/libs/adf-modules.jar?$$"
+# $WGET 'adf-modules.jar' "https://raw.githubusercontent.com/RCRS-ADF/modules/master/build/libs/adf-modules.jar?$$"
 cd sources
 $WGET 'adf-core-sources.jar' "https://raw.githubusercontent.com/RCRS-ADF/core/master/build/libs/adf-core-sources.jar?$$"
-$WGET 'adf-modules-sources.jar' "https://raw.githubusercontent.com/RCRS-ADF/modules/master/build/libs/adf-modules-sources.jar?$$"
+# $WGET 'adf-modules-sources.jar' "https://raw.githubusercontent.com/RCRS-ADF/modules/master/build/libs/adf-modules-sources.jar?$$"

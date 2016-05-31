@@ -4,11 +4,11 @@ import adf.agent.action.ambulance.ActionLoad;
 import adf.agent.action.ambulance.ActionRescue;
 import adf.agent.action.ambulance.ActionUnload;
 import adf.agent.action.common.ActionMove;
-import adf.agent.action.common.ActionRest;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
+import adf.sample.SampleModuleKey;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.*;
@@ -38,17 +38,18 @@ public class ActionTransport extends ExtAction {
 
     @Override
     public ExtAction calc() {
-        this.result = new ActionRest();
+        this.result = null;
+        if(this.target == null) {
+            return this;
+        }
         if(this.target.getPosition().equals(this.agentInfo.getID())) {
             if(agentInfo.getPositionArea().getStandardURN().equals(StandardEntityURN.REFUGE)) {
                 this.result = new ActionUnload();
             }
             else {
-                PathPlanning pathPlanning = this.moduleManager.getModule("PathPlanning");
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-                pathPlanning.calc();
-                List<EntityID> path = pathPlanning.getResult();
+                PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+                pathPlanning.setFrom(agentInfo.getPosition()).setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+                List<EntityID> path = pathPlanning.calc().getResult();
                 if (path != null) {
                     this.result = new ActionMove(path);
                 }
@@ -62,11 +63,9 @@ public class ActionTransport extends ExtAction {
                     this.result = new ActionRescue(target.getID());
                 }
             } else {
-                PathPlanning pathPlanning = this.moduleManager.getModule("PathPlanning");
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(target.getPosition());
-                pathPlanning.calc();
-                List<EntityID> path = pathPlanning.getResult();
+                PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+                pathPlanning.setFrom(agentInfo.getPosition()).setDestination(target.getPosition());
+                List<EntityID> path = pathPlanning.calc().getResult();
                 if (path != null) {
                     this.result = new ActionMove(path);
                 }

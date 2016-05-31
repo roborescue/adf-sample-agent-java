@@ -100,7 +100,6 @@ public class SampleBlockadeSelector extends BlockadeSelector {
         return result.get(0).getBlockades().get(0);
     }
 
-
     @Override
     public BlockadeSelector precompute(PrecomputeData precomputeData) {
         return this;

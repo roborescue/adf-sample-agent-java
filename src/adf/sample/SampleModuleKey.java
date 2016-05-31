@@ -1,4 +1,4 @@
-package adf.challenge;
+package adf.sample;
 
 public class SampleModuleKey {
     public static final String AMBULANCE_MODULE_PATH_PLANNING = "TacticsAmbulance.PathPlanning";
