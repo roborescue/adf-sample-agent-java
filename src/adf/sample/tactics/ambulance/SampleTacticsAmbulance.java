@@ -47,7 +47,7 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
 
         //init ExtAction
         moduleManager.getExtAction("ActionTransport");
-        moduleManager.getExtAction("ActionSearchCivilian");
+        moduleManager.getExtAction("ActionSearch");
     }
 
 
@@ -72,7 +72,7 @@ public class SampleTacticsAmbulance extends TacticsAmbulance {
         }
 
         // Nothing to do
-        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
+        return moduleManager.getExtAction("ActionSearch").calc().getAction();
     }
 
     @Override

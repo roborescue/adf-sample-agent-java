@@ -41,7 +41,7 @@ public class SampleTacticsFire extends TacticsFire {
         //init ExtAction
         moduleManager.getExtAction("ActionRefill");
         moduleManager.getExtAction("ActionFireFighting");
-        moduleManager.getExtAction("ActionSearchCivilian");
+        moduleManager.getExtAction("ActionSearch");
     }
 
     @Override
@@ -72,7 +72,7 @@ public class SampleTacticsFire extends TacticsFire {
         // cannot fire fighting
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
             // search civilian
-            return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
+            return moduleManager.getExtAction("ActionSearch").calc().getAction();
         }
 
         // Find all buildings that are on fire

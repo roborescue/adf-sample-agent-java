@@ -45,7 +45,7 @@ public class ClusteringTacticsPolice extends TacticsPolice {
         this.blockadeSelector = moduleManager.getModule("adf.component.module.complex.BlockadeSelector");
         //init ExtAction
         moduleManager.getExtAction("ActionExtClear");
-        moduleManager.getExtAction("ActionSearchCivilian");
+        moduleManager.getExtAction("ActionSearch");
     }
 
     @Override
@@ -55,7 +55,7 @@ public class ClusteringTacticsPolice extends TacticsPolice {
         this.clustering.calc();
         this.clustering.precompute(precomputeData);
         this.blockadeSelector.precompute(precomputeData);
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.SampleSearch");
         this.search.precompute(precomputeData);
     }
 
@@ -65,7 +65,7 @@ public class ClusteringTacticsPolice extends TacticsPolice {
         this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.resume(precomputeData);
         this.blockadeSelector.resume(precomputeData);
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.SampleSearch");
         this.search.resume(precomputeData);
     }
 
@@ -73,7 +73,7 @@ public class ClusteringTacticsPolice extends TacticsPolice {
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
         this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.StandardKMeans");
         this.clustering.calc();
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.SampleSearch");
     }
 
     @Override
@@ -104,6 +104,6 @@ public class ClusteringTacticsPolice extends TacticsPolice {
         }
 
         // Nothing to do
-        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
+        return moduleManager.getExtAction("ActionSearch").calc().getAction();
     }
 }

@@ -49,7 +49,7 @@ public class ClusteringTacticsFire extends TacticsFire {
         //init ExtAction
         moduleManager.getExtAction("ActionRefill");
         moduleManager.getExtAction("ActionFireFighting");
-        moduleManager.getExtAction("ActionSearchCivilian");
+        moduleManager.getExtAction("ActionSearch");
     }
 
     @Override
@@ -58,9 +58,9 @@ public class ClusteringTacticsFire extends TacticsFire {
         this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.calc();
         this.clustering.precompute(precomputeData);
-        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.complex.clustering.SampleBuildingSelector");
         this.burningBuildingSelector.precompute(precomputeData);
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.SampleSearch");
         this.search.precompute(precomputeData);
     }
 
@@ -69,9 +69,9 @@ public class ClusteringTacticsFire extends TacticsFire {
         this.pathPlanning.resume(precomputeData);
         this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.resume(precomputeData);
-        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
+        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.complex.clustering.SampleBuildingSelector");
         this.burningBuildingSelector.resume(precomputeData);
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.SampleSearch");
         this.search.resume(precomputeData);
     }
 
@@ -79,8 +79,8 @@ public class ClusteringTacticsFire extends TacticsFire {
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
         this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.StandardKMeans");
         this.clustering.calc();
-        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringBurningBuildingSelector");
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.burningBuildingSelector = moduleManager.getModule("adf.sample.module.complex.clustering.SampleBuildingSelector");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.SampleSearch");
     }
 
     @Override
@@ -112,7 +112,7 @@ public class ClusteringTacticsFire extends TacticsFire {
         // cannot fire fighting
         if (agentInfo.isWaterDefined() && agentInfo.getWater() == 0) {
             // search civilian
-            return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
+            return moduleManager.getExtAction("ActionSearch").calc().getAction();
         }
 
         // Find all buildings that are on fire

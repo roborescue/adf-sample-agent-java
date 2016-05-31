@@ -1,4 +1,4 @@
-package adf.challenge.module.algorithm.pathplanning;
+package adf.challenge.module.algorithm;
 
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;

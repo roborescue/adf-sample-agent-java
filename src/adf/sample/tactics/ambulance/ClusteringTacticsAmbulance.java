@@ -53,7 +53,7 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
 
         //init ExtAction
         moduleManager.getExtAction("ActionTransport");
-        moduleManager.getExtAction("ActionSearchCivilian");
+        moduleManager.getExtAction("ActionSearch");
     }
 
     @Override
@@ -62,9 +62,9 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.calc();
         this.clustering.precompute(precomputeData);
-        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringVictimSelector");
+        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.SampleVictimSelector");
         this.victimSelector.precompute(precomputeData);
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.SampleSearch");
         this.search.precompute(precomputeData);
     }
 
@@ -73,9 +73,9 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         this.pathPlanning.resume(precomputeData);
         this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
         this.clustering.resume(precomputeData);
-        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringVictimSelector");
+        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.SampleVictimSelector");
         this.victimSelector.resume(precomputeData);
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.SampleSearch");
         this.search.resume(precomputeData);
     }
 
@@ -83,8 +83,8 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
         this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.StandardKMeans");
         this.clustering.calc();
-        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringVictimSelector");
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.SampleVictimSelector");
+        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.SampleSearch");
     }
 
     @Override
@@ -121,6 +121,6 @@ public class ClusteringTacticsAmbulance extends TacticsAmbulance {
         }
 
         // Nothing to do
-        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
+        return moduleManager.getExtAction("ActionSearch").calc().getAction();
     }
 }

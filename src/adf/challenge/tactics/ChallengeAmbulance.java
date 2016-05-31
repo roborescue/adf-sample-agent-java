@@ -7,6 +7,7 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.challenge.SampleModuleKey;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.HumanSelector;
@@ -17,13 +18,12 @@ import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 public class ChallengeAmbulance extends TacticsAmbulance {
-    private PathPlanning pathPlanning;
 
-    private HumanSelector victimSelector;
+    private PathPlanning pathPlanning;
+    private HumanSelector humanSelector;
     private Search search;
 
     private Clustering clustering;
-    private int clusterIndex;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
@@ -41,66 +41,68 @@ public class ChallengeAmbulance extends TacticsAmbulance {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
-        this.clusterIndex = -1;
-        //new SamplePathPlanning(agentInfo, worldInfo, scenarioInfo, this.moduleManager);
-        this.pathPlanning = moduleManager.getModule("adf.component.module.algorithm.PathPlanning");
         //init ExtAction
-        moduleManager.getExtAction("ActionTransport");
-        moduleManager.getExtAction("ActionSearchCivilian");
+        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT);
+        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH);
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
+        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
-        this.clustering.calc();
+        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
         this.clustering.precompute(precomputeData);
-        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringVictimSelector");
-        this.victimSelector.precompute(precomputeData);
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH);
         this.search.precompute(precomputeData);
+        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR);
+        this.humanSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
+        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
         this.pathPlanning.resume(precomputeData);
-        this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.PathBasedKMeans");
+        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
         this.clustering.resume(precomputeData);
-        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringVictimSelector");
-        this.victimSelector.resume(precomputeData);
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH);
         this.search.resume(precomputeData);
+        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR);
+        this.humanSelector.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
-        this.clustering = moduleManager.getModule("adf.sample.module.algorithm.clustering.StandardKMeans");
-        this.clustering.calc();
-        this.victimSelector = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringVictimSelector");
-        this.search = moduleManager.getModule("adf.sample.module.complex.clustering.ClusteringSearchBuilding");
+        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+        this.pathPlanning.preparate();
+        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
+        this.clustering.preparate();
+        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH);
+        this.search.preparate();
+        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR);
+        this.humanSelector.preparate();
     }
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         this.pathPlanning.updateInfo(messageManager);
-        this.victimSelector.updateInfo(messageManager);
+        this.clustering.updateInfo(messageManager);
+        this.humanSelector.updateInfo(messageManager);
         this.search.updateInfo(messageManager);
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {
-            return moduleManager.getExtAction("ActionTransport").setTarget(injured.getID()).calc().getAction();
+            return moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT).setTarget(injured.getID()).calc().getAction();
         }
 
-        // Go through targets (sorted by distance) and check for things we can do
-        EntityID target = this.victimSelector.calc().getTarget();
+        EntityID target = this.humanSelector.calc().getTarget();
         if(target != null) {
-            Action action = moduleManager.getExtAction("ActionTransport").setTarget(target).calc().getAction();
+            Action action = moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT).setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
-
         // Nothing to do
-        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
+        target = this.search.calc().getTarget();
+        return moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH).setTarget(target).calc().getAction();
     }
 }

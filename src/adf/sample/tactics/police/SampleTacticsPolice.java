@@ -38,7 +38,7 @@ public class SampleTacticsPolice extends TacticsPolice {
         this.search = moduleManager.getModule("adf.sample.module.complex.SearchBuilding");
         //init ExtAction
         moduleManager.getExtAction("ActionExtClear");
-        moduleManager.getExtAction("ActionSearchCivilian");
+        moduleManager.getExtAction("ActionSearch");
     }
 
     @Override
@@ -68,6 +68,6 @@ public class SampleTacticsPolice extends TacticsPolice {
         }
 
         // Nothing to do
-        return moduleManager.getExtAction("ActionSearchCivilian").calc().getAction();
+        return moduleManager.getExtAction("ActionSearch").calc().getAction();
     }
 }
