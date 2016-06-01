@@ -136,6 +136,12 @@ public class SampleAmbulance extends TacticsAmbulance {
                     }
                 }
             }
+            else if(entity instanceof Road) {
+                Road road = (Road)entity;
+                if(road.isBlockadesDefined() && road.getBlockades().isEmpty()) {
+                    messageManager.addMessage(new MessageRoad(true, road, null, true));
+                }
+            }
         }
     }
 

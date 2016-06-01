@@ -1,49 +1,59 @@
 package adf.sample.module.complex;
 
+
+import adf.agent.communication.MessageManager;
+import adf.agent.communication.standard.bundle.information.MessageRoad;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.communication.CommunicationMessage;
 import adf.component.module.complex.RoadSelector;
 import adf.sample.util.DistanceSorter;
-import rescuecore2.misc.geometry.GeometryTools2D;
-import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.standard.entities.*;
+import rescuecore2.standard.entities.Area;
+import rescuecore2.standard.entities.Road;
+import rescuecore2.standard.entities.StandardEntity;
+import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
+public class SampleRoadSelector  extends RoadSelector {
 
-public class SampleRoadSelector extends RoadSelector {
+    private Set<Road> impassableArea;
 
-    private int distance;
     private EntityID result;
 
     public SampleRoadSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
         super(ai, wi, si, moduleManager);
-        this.distance = si.getClearRepairDistance();
+        this.result = null;
+        this.impassableArea = new HashSet<>();
     }
 
     @Override
     public RoadSelector calc() {
-        Area location = this.agentInfo.getPositionArea();
-        Blockade result = getTargetBlockade(location, distance);
-        if (result != null) {
-            this.result = result.getID();
+        this.result = null;
+        Area area = this.agentInfo.getPositionArea();
+        if(this.impassableArea.contains(area)){
+            this.result = area.getID();
+            return this;
         }
-        for (EntityID next : location.getNeighbours()) {
-            location = (Area)this.worldInfo.getEntity(next);
-            result = getTargetBlockade(location, distance);
-            if (result != null) {
-                this.result = result.getID();
+        List<Road> impassableList = new ArrayList<>();
+        for(EntityID id : area.getNeighbours()) {
+            StandardEntity entity = this.worldInfo.getEntity(id);
+            if(entity instanceof Road && impassableArea.contains(entity)) {
+                impassableList.add((Road)entity);
             }
         }
-        if(this.result == null) {
-            this.result = this.getOtherBlockade();
+        if(impassableList.size() > 0) {
+            impassableList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
+            this.result = impassableList.get(0).getID();
+            return this;
         }
+        impassableList = Arrays.asList((Road[])this.impassableArea.toArray());
+        impassableList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
+        this.result = impassableList.get(0).getID();
         return this;
     }
 
@@ -52,50 +62,51 @@ public class SampleRoadSelector extends RoadSelector {
         return this.result;
     }
 
-    private Blockade getTargetBlockade(Area area, int maxDistance) {
-        if (area == null || !area.isBlockadesDefined()) {
-            return null;
-        }
-        List<EntityID> ids = area.getBlockades();
-        int x = ((Human)this.agentInfo.me()).getX();
-        int y = ((Human)this.agentInfo.me()).getY();
-        for (EntityID next : ids) {
-            Blockade b = (Blockade)this.worldInfo.getEntity(next);
-            double d = findDistanceTo(b, x, y);
-            if (maxDistance < 0 || d < maxDistance) {
-                return b;
-            }
-        }
-        return null;
+    @Override
+    public RoadSelector precompute(PrecomputeData precomputeData) {
+        super.precompute(precomputeData);
+        return this;
     }
 
-    private int findDistanceTo(Blockade b, int x, int y) {
-        List<Line2D> lines = GeometryTools2D.pointsToLines(GeometryTools2D.vertexArrayToPoints(b.getApexes()), true);
-        double best = Double.MAX_VALUE;
-        Point2D origin = new Point2D(x, y);
-        for (Line2D next : lines) {
-            Point2D closest = GeometryTools2D.getClosestPointOnSegment(next, origin);
-            double d = GeometryTools2D.getDistance(origin, closest);
-            if (d < best) {
-                best = d;
-            }
+    @Override
+    public RoadSelector resume(PrecomputeData precomputeData) {
+        super.resume(precomputeData);
+        for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.ROAD, StandardEntityURN.HYDRANT)) {
+            this.impassableArea.add((Road)entity);
         }
-        return (int)best;
+        return this;
     }
 
-    private EntityID getOtherBlockade() {
-        Collection<StandardEntity> e = this.worldInfo.getEntitiesOfType(StandardEntityURN.ROAD, StandardEntityURN.HYDRANT);
-        List<Road> result = new ArrayList<>();
-        for (StandardEntity next : e) {
-            Road r = (Road)next;
-            if (r.isBlockadesDefined() && !r.getBlockades().isEmpty()) {
-                result.add(r);
+    @Override
+    public RoadSelector preparate() {
+        super.preparate();
+        for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.ROAD, StandardEntityURN.HYDRANT)) {
+            this.impassableArea.add((Road)entity);
+        }
+        return this;
+    }
+
+    @Override
+    public RoadSelector updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
+        for(EntityID id : worldInfo.getChanged().getChangedEntities()) {
+            StandardEntity entity = worldInfo.getEntity(id);
+            if(entity instanceof Road) {
+                Road road = (Road)entity;
+                if(road.isBlockadesDefined() && road.getBlockades().isEmpty()) {
+                    this.impassableArea.remove(road);
+                    messageManager.addMessage(new MessageRoad(true, road, null, true));
+                }
             }
         }
-        if(result.isEmpty()) {
-            return null;
+        for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
+            if(message.getClass() == MessageRoad.class) {
+                MessageRoad messageRoad = (MessageRoad)message;
+                if(messageRoad.isPassable()) {
+                    this.impassableArea.remove(this.worldInfo.getEntity(messageRoad.getRoadID()));
+                }
+            }
         }
-        result.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
-        return result.get(0).getBlockades().get(0);
+        return this;
     }
 }

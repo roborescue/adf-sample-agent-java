@@ -70,16 +70,19 @@ public class SampleBuildingSelector extends BuildingSelector {
 
     @Override
     public BuildingSelector precompute(PrecomputeData precomputeData) {
+        super.precompute(precomputeData);
         return this;
     }
 
     @Override
     public BuildingSelector resume(PrecomputeData precomputeData) {
+        super.resume(precomputeData);
         return this;
     }
 
     @Override
     public BuildingSelector preparate() {
+        super.preparate();
         return this;
     }
 }

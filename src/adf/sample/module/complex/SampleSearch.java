@@ -112,16 +112,19 @@ public class SampleSearch extends Search {
 
     @Override
     public Search precompute(PrecomputeData precomputeData) {
+        super.precompute(precomputeData);
         return this;
     }
 
     @Override
     public Search resume(PrecomputeData precomputeData) {
+        super.resume(precomputeData);
         return this;
     }
 
     @Override
     public Search preparate() {
+        super.preparate();
         return this;
     }
 }

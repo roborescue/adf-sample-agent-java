@@ -99,16 +99,19 @@ public class SampleVictimSelector extends HumanSelector {
 
     @Override
     public HumanSelector precompute(PrecomputeData precomputeData) {
+        super.precompute(precomputeData);
         return this;
     }
 
     @Override
     public HumanSelector resume(PrecomputeData precomputeData) {
+        super.resume(precomputeData);
         return this;
     }
 
     @Override
     public HumanSelector preparate() {
+        super.preparate();
         return this;
     }
 }

@@ -61,16 +61,19 @@ public class SamplePathPlanning extends PathPlanning {
 
     @Override
     public PathPlanning precompute(PrecomputeData precomputeData) {
+        super.precompute(precomputeData);
         return this;
     }
 
     @Override
     public PathPlanning resume(PrecomputeData precomputeData) {
+        super.resume(precomputeData);
         return this;
     }
 
     @Override
     public PathPlanning preparate() {
+        super.preparate();
         return this;
     }
 

@@ -64,7 +64,9 @@ public class SampleKMeans extends StaticClustering {
     @Override
     public Clustering precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
-        if(this.)
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
         this.repeat = 7;
         this.calc();
         precomputeData.setEntityIDList(KEY_ALL_ELEMENTS, (List<EntityID>) WorldUtil.convertToID(this.entities));
@@ -79,6 +81,10 @@ public class SampleKMeans extends StaticClustering {
 
     @Override
     public Clustering resume(PrecomputeData precomputeData) {
+        super.resume(precomputeData);
+        if(this.getCountResume() >= 2) {
+            return this;
+        }
         this.entities = WorldUtil.convertToEntity(precomputeData.getEntityIDList(KEY_ALL_ELEMENTS), this.worldInfo);
         this.clusterSize = precomputeData.getInteger(KEY_CLUSTER_SIZE);
         this.centerList = new ArrayList<>(WorldUtil.convertToEntity(precomputeData.getEntityIDList(KEY_CLUSTER_CENTER), this.worldInfo));
@@ -94,6 +100,10 @@ public class SampleKMeans extends StaticClustering {
 
     @Override
     public Clustering preparate() {
+        super.preparate();
+        if(this.getCountPreparate() >= 2) {
+            return this;
+        }
         this.repeat = 30;
         this.calc();
         return this;
