@@ -20,3 +20,5 @@ hs_err_pid*
 build/
 !library/rescue/adf/*.jar
 !library/rescue/adf/sources/*.jar
+
+*.bin
