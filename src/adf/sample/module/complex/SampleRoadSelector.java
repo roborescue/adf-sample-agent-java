@@ -39,19 +39,11 @@ public class SampleRoadSelector  extends RoadSelector {
             this.result = area.getID();
             return this;
         }
+        Object[] roadArray = this.impassableArea.toArray();
         List<Road> impassableList = new ArrayList<>();
-        for(EntityID id : area.getNeighbours()) {
-            StandardEntity entity = this.worldInfo.getEntity(id);
-            if(entity instanceof Road && impassableArea.contains(entity)) {
-                impassableList.add((Road)entity);
-            }
+        for(Object obj : roadArray) {
+            impassableList.add((Road)obj);
         }
-        if(impassableList.size() > 0) {
-            impassableList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
-            this.result = impassableList.get(0).getID();
-            return this;
-        }
-        impassableList = Arrays.asList((Road[])this.impassableArea.toArray());
         impassableList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
         this.result = impassableList.get(0).getID();
         return this;
