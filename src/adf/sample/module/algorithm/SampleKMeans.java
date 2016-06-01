@@ -63,6 +63,8 @@ public class SampleKMeans extends StaticClustering {
 
     @Override
     public Clustering precompute(PrecomputeData precomputeData) {
+        super.precompute(precomputeData);
+        if(this.)
         this.repeat = 7;
         this.calc();
         precomputeData.setEntityIDList(KEY_ALL_ELEMENTS, (List<EntityID>) WorldUtil.convertToID(this.entities));

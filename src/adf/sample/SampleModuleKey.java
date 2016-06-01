@@ -13,7 +13,7 @@ public class SampleModuleKey {
 
     public static final String POLICE_MODULE_PATH_PLANNING = "TacticsPolice.PathPlanning";
     public static final String POLICE_MODULE_CLUSTERING = "TacticsPolice.Clustering";
-    public static final String POLICE_MODULE_BLOCKADE_SELECTOR = "TacticsPolice.BlockadeSelector";
+    public static final String POLICE_MODULE_ROAD_SELECTOR = "TacticsPolice.RoadSelector";
     public static final String POLICE_MODULE_SEARCH = "TacticsPolice.Search";
 
     public static final String AMBULANCE_ACTION_TRANSPORT = "TacticsAmbulance.ActionTransport";

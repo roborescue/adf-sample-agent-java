@@ -13,7 +13,7 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
-import adf.component.module.complex.BlockadeSelector;
+import adf.component.module.complex.RoadSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsPolice;
 import adf.sample.SampleModuleKey;
@@ -27,7 +27,7 @@ import java.util.List;
 public class SamplePolice extends TacticsPolice {
 
     private PathPlanning pathPlanning;
-    private BlockadeSelector blockadeSelector;
+    private RoadSelector roadSelector;
     private Search search;
     private Clustering clustering;
 
@@ -56,8 +56,8 @@ public class SamplePolice extends TacticsPolice {
         this.clustering.precompute(precomputeData);
         this.search = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
         this.search.precompute(precomputeData);
-        this.blockadeSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_BLOCKADE_SELECTOR, "adf.sample.module.complex.SampleBlockadeSelector");
-        this.blockadeSelector.precompute(precomputeData);
+        this.roadSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_ROAD_SELECTOR, "adf.sample.module.complex.SampleRoadSelector");
+        this.roadSelector.precompute(precomputeData);
     }
 
     @Override
@@ -68,8 +68,8 @@ public class SamplePolice extends TacticsPolice {
         this.clustering.resume(precomputeData);
         this.search = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
         this.search.resume(precomputeData);
-        this.blockadeSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_BLOCKADE_SELECTOR, "adf.sample.module.complex.SampleBlockadeSelector");
-        this.blockadeSelector.resume(precomputeData);
+        this.roadSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_ROAD_SELECTOR, "adf.sample.module.complex.SampleRoadSelector");
+        this.roadSelector.resume(precomputeData);
     }
 
     @Override
@@ -80,15 +80,15 @@ public class SamplePolice extends TacticsPolice {
         this.clustering.preparate();
         this.search = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
         this.search.preparate();
-        this.blockadeSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_BLOCKADE_SELECTOR, "adf.sample.module.complex.SampleBlockadeSelector");
-        this.blockadeSelector.preparate();
+        this.roadSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_ROAD_SELECTOR, "adf.sample.module.complex.SampleRoadSelector");
+        this.roadSelector.preparate();
     }
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
         this.pathPlanning.updateInfo(messageManager);
         this.clustering.updateInfo(messageManager);
-        this.blockadeSelector.updateInfo(messageManager);
+        this.roadSelector.updateInfo(messageManager);
         this.search.updateInfo(messageManager);
 
         this.updateInfo(worldInfo, messageManager);
@@ -106,7 +106,7 @@ public class SamplePolice extends TacticsPolice {
             this.clusterIndex = this.clustering.getClusterIndex(agentInfo.getID());
         }
 
-        EntityID target = this.blockadeSelector.calc().getTarget();
+        EntityID target = this.roadSelector.calc().getTarget();
         if(target != null) {
             Action action = moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR).setTarget(target).calc().getAction();
             if(action != null) {
