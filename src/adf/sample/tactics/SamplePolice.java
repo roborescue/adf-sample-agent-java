@@ -108,7 +108,8 @@ public class SamplePolice extends TacticsPolice {
 
         EntityID target = this.roadSelector.calc().getTarget();
         if(target != null) {
-            Action action = moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR).setTarget(target).calc().getAction();
+            Action action = moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR, "adf.sample.extaction.ActionExtClear")
+                                         .setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
             }
@@ -116,7 +117,8 @@ public class SamplePolice extends TacticsPolice {
 
         // Nothing to do
         target = this.search.calc().getTarget();
-        Action action = moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH).setTarget(target).calc().getAction();
+        Action action = moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch")
+                                     .setTarget(target).calc().getAction();
         if(action != null) {
             return action;
         }

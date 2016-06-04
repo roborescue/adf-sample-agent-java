@@ -101,7 +101,8 @@ public class SampleFire extends TacticsFire {
 
         // Are we currently filling with water?
         // Are we out of water?
-        Action action = moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_REFILL).calc().getAction();
+        Action action = moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_REFILL, "adf.sample.extaction.ActionRefill")
+                                     .calc().getAction();
         if(action != null) {
             return action;
         }
@@ -109,14 +110,16 @@ public class SampleFire extends TacticsFire {
         // Find all buildings that are on fire
         EntityID target = this.buildingSelector.calc().getTarget();
         if(target != null) {
-            action = moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_FIREFIGHTING).setTarget(target).calc().getAction();
+            action = moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_FIREFIGHTING, "adf.sample.extaction.ActionFireFighting")
+                                  .setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
         // Nothing to do
         target = this.search.calc().getTarget();
-        return moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH).setTarget(target).calc().getAction();
+        return moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch")
+                            .setTarget(target).calc().getAction();
     }
 
     private void sendMessage(WorldInfo worldInfo, MessageManager messageManager) {

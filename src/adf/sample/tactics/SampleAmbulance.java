@@ -104,19 +104,22 @@ public class SampleAmbulance extends TacticsAmbulance {
 
         Human injured = agentInfo.someoneOnBoard();
         if (injured != null) {
-            return moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT).setTarget(injured.getID()).calc().getAction();
+            return moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT, "adf.sample.extaction.ActionTransport")
+                                .setTarget(injured.getID()).calc().getAction();
         }
 
         EntityID target = this.humanSelector.calc().getTarget();
         if(target != null) {
-            Action action = moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT).setTarget(target).calc().getAction();
+            Action action = moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT, "adf.sample.extaction.ActionTransport")
+                                         .setTarget(target).calc().getAction();
             if(action != null) {
                 return action;
             }
         }
         // Nothing to do
         target = this.search.calc().getTarget();
-        return moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH).setTarget(target).calc().getAction();
+        return moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch")
+                            .setTarget(target).calc().getAction();
     }
 
     private void sendMessage(WorldInfo worldInfo, MessageManager messageManager) {
