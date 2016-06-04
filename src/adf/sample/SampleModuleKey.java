@@ -23,6 +23,6 @@ public class SampleModuleKey {
     public static final String FIRE_ACTION_REFILL = "TacticsFire.ActionRefill";
     public static final String FIRE_ACTION_SEARCH = "TacticsFire.ActionSearch";
 
-    public static final String POLICE_ACTION_EXT_CLEAR = "TacticsFire.ActionExtClear";
-    public static final String POLICE_ACTION_SEARCH = "TacticsFire.ActionSearch";
+    public static final String POLICE_ACTION_EXT_CLEAR = "TacticsPolice.ActionExtClear";
+    public static final String POLICE_ACTION_SEARCH = "TacticsPolice.ActionSearch";
 }
