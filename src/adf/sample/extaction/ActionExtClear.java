@@ -56,15 +56,18 @@ public class ActionExtClear extends ExtAction {
             blockade = (Blockade) entity;
             if(!blockade.isPositionDefined()) { return this; }
             road = (Road) this.worldInfo.getEntity(blockade.getPosition());
+            this.result = this.getClearAction(agentX, agentY, road, blockade);
+            return this;
         }
         else if(entity.getStandardURN().equals(StandardEntityURN.ROAD) || entity.getStandardURN().equals(StandardEntityURN.HYDRANT)) {
             road = (Road)entity;
             this.result = this.moveImpassableArea(me, road);
+            // check need to move
+            // result != null -> move
+            // result == null -> clear or check Area node
             if(this.result != null) { return this; }
-
-            if(!road.isBlockadesDefined()) {
-                return this;
-            }
+            // check Blockade on target area
+            if(!road.isBlockadesDefined()) { return this; }
             double d = Double.MAX_VALUE;
             for(EntityID id : road.getBlockades()) {
                 Blockade b = (Blockade) this.worldInfo.getEntity(id);
@@ -74,9 +77,9 @@ public class ActionExtClear extends ExtAction {
                     blockade = b;
                 }
             }
-            if(blockade == null) {
-                return this;
-            }
+            if(blockade == null) { return this; }
+            // check distance
+            // move to blockade
             if(this.getDistance(me.getX(), me.getY(), blockade.getX(), blockade.getY()) > this.distance) {
                 PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
                 List<EntityID> path = pathPlanning.setFrom(me.getPosition()).setDestination(blockade.getPosition()).calc().getResult();
@@ -85,10 +88,14 @@ public class ActionExtClear extends ExtAction {
                     return this;
                 }
             }
+            // run clear action
+            this.result = this.getClearAction(agentX, agentY, road, blockade);
         }
-        else {
-            return this;
-        }
+        return this;
+    }
+
+    private Action getClearAction(int agentX, int agentY, Road road, Blockade blockade) {
+        if(blockade == null) {return null;}
 
         List<Line2D> lines = GeometryTools2D.pointsToLines(GeometryTools2D.vertexArrayToPoints(blockade.getApexes()), true);
         double best = Double.MAX_VALUE;
@@ -105,16 +112,16 @@ public class ActionExtClear extends ExtAction {
         if(bestPoint != null) {
             Vector2D v = bestPoint.minus(new Point2D(agentX, agentY));
             v = v.normalised().scale(1000000);
-            this.result = new ActionClear((int) (agentX + v.getX()), (int) (agentY + v.getY()));
+            return new ActionClear((int) (agentX + v.getX()), (int) (agentY + v.getY()));
         }
         else {
             PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
             List<EntityID> path = pathPlanning.setFrom(this.agentInfo.getPosition()).setDestination(road.getID()).calc().getResult();
-            if(path != null) {
-                this.result = new ActionMove(path, blockade.getX(), blockade.getY());
+            if(path != null && path.size() > 0) {
+                return new ActionMove(path, blockade.getX(), blockade.getY());
             }
         }
-        return this;
+        return null;
     }
 
 
@@ -122,7 +129,8 @@ public class ActionExtClear extends ExtAction {
         PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
         if(this.worldInfo.getDistance(me, area) > this.distance) {
             List<EntityID> path = pathPlanning.setFrom(me.getPosition()).setDestination(area.getID()).calc().getResult();
-            if(path != null && path.size() > 1) {
+            // fix
+            if(path != null && path.size() > 0) {
                 return new ActionMove(path);
             }
         }
