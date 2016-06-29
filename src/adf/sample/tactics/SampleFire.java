@@ -118,7 +118,7 @@ public class SampleFire extends TacticsFire {
         }
         // Nothing to do
         target = this.search.calc().getTarget();
-        return moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch")
+        return moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch")
                             .setTarget(target).calc().getAction();
     }
 
