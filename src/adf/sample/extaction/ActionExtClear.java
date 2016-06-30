@@ -10,6 +10,7 @@ import adf.agent.module.ModuleManager;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import adf.sample.SampleModuleKey;
+import com.infomatiq.jsi.Point;
 import rescuecore2.misc.geometry.GeometryTools2D;
 import rescuecore2.misc.geometry.Line2D;
 import rescuecore2.misc.geometry.Point2D;
@@ -95,7 +96,7 @@ public class ActionExtClear extends ExtAction {
     }
 
     private Action getClearAction(int agentX, int agentY, Road road, Blockade blockade) {
-        if(blockade == null) {return null;}
+        if(road == null || blockade == null) {return null;}
 
         List<Line2D> lines = GeometryTools2D.pointsToLines(GeometryTools2D.vertexArrayToPoints(blockade.getApexes()), true);
         double best = Double.MAX_VALUE;
@@ -127,6 +128,45 @@ public class ActionExtClear extends ExtAction {
 
     private Action moveImpassableArea(Human me, Area area) {
         PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
+        if (this.worldInfo.getDistance(me, area) > this.distance) {
+            List<EntityID> path = pathPlanning.setFrom(me.getPosition()).setDestination(area.getID()).calc().getResult();
+            // fix
+            if (path != null && path.size() > 0) {
+                return new ActionMove(path);
+            }
+        }
+        /*int[] apexList = area.getApexList();
+        double meX = me.getX();
+        double meY = me.getY();
+        Set<Point2D> pointSet = this.pointCache.get(area.getID());
+        if (pointSet == null) {
+            pointSet = new HashSet<>();
+            for (int i = 0; i < apexList.length; i += 2) {
+                pointSet.add(new Point2D(apexList[i], apexList[i + 1]));
+            }
+        }
+        Set<Point2D> removeSet = new HashSet<>();
+        for(Point2D point : pointSet) {
+            if(this.getDistance(meX, meY, point.getX(), point.getY()) < this.distance) {
+                removeSet.add(point);
+            }
+        }
+        pointSet.removeAll(removeSet);
+        if(pointSet.size() > 0) {
+            for(Point2D point : pointSet) {
+                List<EntityID> path = pathPlanning.setFrom(me.getPosition()).setDestination(area.getID()).calc().getResult();
+                if (path != null && path.size() > 0) {
+                    this.pointCache.put(area.getID(), pointSet);
+                    return new ActionMove(path, (int) point.getX(), (int) point.getX());
+                }
+            }
+        }
+        this.pointCache.put(area.getID(), pointSet);*/
+        return null;
+    }
+
+    /*private Action moveImpassableArea(Human me, Area area) {
+        PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
         if(this.worldInfo.getDistance(me, area) > this.distance) {
             List<EntityID> path = pathPlanning.setFrom(me.getPosition()).setDestination(area.getID()).calc().getResult();
             // fix
@@ -146,7 +186,7 @@ public class ActionExtClear extends ExtAction {
             double y = apexList[i+1];
             Point2D point = new Point2D(x, y);
             if(this.getDistance(meX, meY, x, y) > this.distance) {
-                if(!pointSet.contains(point)) {
+                if(!this.contains(pointSet, point, 2000.0)) {
                     List<EntityID> path = pathPlanning.setFrom(me.getPosition()).setDestination(area.getID()).calc().getResult();
                     if (path != null && path.size() > 0) {
                         this.pointCache.put(area.getID(), pointSet);
@@ -159,12 +199,25 @@ public class ActionExtClear extends ExtAction {
         }
         this.pointCache.put(area.getID(), pointSet);
         return null;
-    }
+    }*/
 
     private double getDistance(double fromX, double fromY, double toX, double toY) {
         double dx = fromX - toX;
         double dy = fromY - toY;
         return Math.hypot(dx, dy);
     }
+
+    private boolean equals(Point2D point1, Point2D point2, double e) {
+        return (point1.getX() - e) <= point2.getX() && (point1.getX() + e) >= point2.getX() && (point1.getY() - e) <= point2.getY() && (point1.getY() + e) >= point2.getY();
+    }
+
+    /*private boolean contains(Set<Point2D> pointSet, Point2D point, double e) {
+        for(Point2D p : pointSet) {
+            if(() {
+                return true;
+            }
+        }
+        return false;
+    }*/
 
 }

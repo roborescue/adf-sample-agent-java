@@ -18,11 +18,13 @@ import java.util.List;
 
 public class ActionRefill extends ExtAction{
     private final int maxWater;
+    private final int maxPower;
     private EntityID[] targets;
 
     public ActionRefill(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager);
         this.maxWater = scenarioInfo.getFireTankMaximum();
+        this.maxPower = scenarioInfo.getFireExtinguishMaxSum();
     }
 
     @Override
@@ -43,7 +45,8 @@ public class ActionRefill extends ExtAction{
                 this.result = new ActionRest();
                 return this;
             }
-            int waterLimit = ((this.maxWater / 10) * 2);
+            // fix
+            int waterLimit = this.maxPower;//((this.maxWater / 10) * 2);
             if(water < waterLimit) {
                 PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
                 pathPlanning.setFrom(agentInfo.getPosition());
