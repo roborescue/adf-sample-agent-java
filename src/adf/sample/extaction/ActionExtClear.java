@@ -135,33 +135,6 @@ public class ActionExtClear extends ExtAction {
                 return new ActionMove(path);
             }
         }
-        /*int[] apexList = area.getApexList();
-        double meX = me.getX();
-        double meY = me.getY();
-        Set<Point2D> pointSet = this.pointCache.get(area.getID());
-        if (pointSet == null) {
-            pointSet = new HashSet<>();
-            for (int i = 0; i < apexList.length; i += 2) {
-                pointSet.add(new Point2D(apexList[i], apexList[i + 1]));
-            }
-        }
-        Set<Point2D> removeSet = new HashSet<>();
-        for(Point2D point : pointSet) {
-            if(this.getDistance(meX, meY, point.getX(), point.getY()) < this.distance) {
-                removeSet.add(point);
-            }
-        }
-        pointSet.removeAll(removeSet);
-        if(pointSet.size() > 0) {
-            for(Point2D point : pointSet) {
-                List<EntityID> path = pathPlanning.setFrom(me.getPosition()).setDestination(area.getID()).calc().getResult();
-                if (path != null && path.size() > 0) {
-                    this.pointCache.put(area.getID(), pointSet);
-                    return new ActionMove(path, (int) point.getX(), (int) point.getX());
-                }
-            }
-        }
-        this.pointCache.put(area.getID(), pointSet);*/
         return null;
     }
 
