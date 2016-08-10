@@ -3,7 +3,9 @@ package adf.sample.tactics;
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
+import adf.agent.communication.standard.bundle.MessageUtil;
 import adf.agent.communication.standard.bundle.information.*;
+import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -16,7 +18,6 @@ import adf.component.module.complex.BuildingSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsFire;
 import adf.sample.SampleModuleKey;
-import adf.util.WorldUtil;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
@@ -28,7 +29,7 @@ public class SampleFire extends TacticsFire {
     private Clustering clustering;
 
     @Override
-    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
+    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DebugData debugData) {
         worldInfo.indexClass(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -46,7 +47,7 @@ public class SampleFire extends TacticsFire {
     }
 
     @Override
-    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
+    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DebugData debugData) {
         this.pathPlanning = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.precompute(precomputeData);
         this.clustering = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
@@ -58,7 +59,7 @@ public class SampleFire extends TacticsFire {
     }
 
     @Override
-    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DebugData debugData) {
         this.pathPlanning = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.resume(precomputeData);
         this.clustering = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
@@ -70,7 +71,7 @@ public class SampleFire extends TacticsFire {
     }
 
     @Override
-    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
+    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DebugData debugData) {
         this.pathPlanning = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.preparate();
         this.clustering = moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
@@ -82,7 +83,7 @@ public class SampleFire extends TacticsFire {
     }
 
     @Override
-    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
+    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DebugData debugData) {
         this.pathPlanning.updateInfo(messageManager);
         this.clustering.updateInfo(messageManager);
         this.buildingSelector.updateInfo(messageManager);
@@ -162,15 +163,15 @@ public class SampleFire extends TacticsFire {
         for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
             if(message.getClass() == MessageCivilian.class) {
                 MessageCivilian mc = (MessageCivilian) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mc.getAgentID())) WorldUtil.reflectMessage(worldInfo, mc);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mc.getAgentID())) MessageUtil.reflectMessage(worldInfo, mc);
             }
             else if(message.getClass() == MessageBuilding.class) {
                 MessageBuilding mb = (MessageBuilding)message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mb.getBuildingID())) WorldUtil.reflectMessage(worldInfo, mb);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mb.getBuildingID())) MessageUtil.reflectMessage(worldInfo, mb);
             }
             else if(message.getClass() == MessageAmbulanceTeam.class) {
                 MessageAmbulanceTeam mat = (MessageAmbulanceTeam)message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mat.getAgentID())) WorldUtil.reflectMessage(worldInfo, mat);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mat.getAgentID())) MessageUtil.reflectMessage(worldInfo, mat);
                 if(mat.getAction() == MessageAmbulanceTeam.ACTION_RESCUE) {
                     StandardEntity entity = worldInfo.getEntity(mat.getTargetID());
                     if(entity != null && entity instanceof Human) {
@@ -191,11 +192,11 @@ public class SampleFire extends TacticsFire {
             }
             else if(message.getClass() == MessageFireBrigade.class) {
                 MessageFireBrigade mfb = (MessageFireBrigade) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mfb.getAgentID())) WorldUtil.reflectMessage(worldInfo, mfb);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mfb.getAgentID())) MessageUtil.reflectMessage(worldInfo, mfb);
             }
             else if(message.getClass() == MessagePoliceForce.class) {
                 MessagePoliceForce mpf = (MessagePoliceForce) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mpf.getAgentID())) WorldUtil.reflectMessage(worldInfo, mpf);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mpf.getAgentID())) MessageUtil.reflectMessage(worldInfo, mpf);
             }
         }
     }

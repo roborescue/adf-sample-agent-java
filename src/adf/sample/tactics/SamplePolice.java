@@ -4,7 +4,9 @@ import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
+import adf.agent.communication.standard.bundle.MessageUtil;
 import adf.agent.communication.standard.bundle.information.*;
+import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -17,12 +19,12 @@ import adf.component.module.complex.RoadSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsPolice;
 import adf.sample.SampleModuleKey;
-import adf.util.WorldUtil;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SamplePolice extends TacticsPolice {
 
@@ -34,7 +36,7 @@ public class SamplePolice extends TacticsPolice {
     private int clusterIndex;
 
     @Override
-    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
+    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DebugData debugData) {
         worldInfo.indexClass(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -49,7 +51,7 @@ public class SamplePolice extends TacticsPolice {
     }
 
     @Override
-    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
+    public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DebugData debugData) {
         this.pathPlanning = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.precompute(precomputeData);
         this.clustering = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
@@ -61,7 +63,7 @@ public class SamplePolice extends TacticsPolice {
     }
 
     @Override
-    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData) {
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DebugData debugData) {
         this.pathPlanning = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.resume(precomputeData);
         this.clustering = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
@@ -73,7 +75,7 @@ public class SamplePolice extends TacticsPolice {
     }
 
     @Override
-    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
+    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DebugData debugData) {
         this.pathPlanning = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.preparate();
         this.clustering = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
@@ -85,7 +87,7 @@ public class SamplePolice extends TacticsPolice {
     }
 
     @Override
-    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager) {
+    public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DebugData debugData) {
         this.pathPlanning.updateInfo(messageManager);
         this.clustering.updateInfo(messageManager);
         this.roadSelector.updateInfo(messageManager);
@@ -125,7 +127,7 @@ public class SamplePolice extends TacticsPolice {
         Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
         if(!list.contains(agentInfo.me())) {
             List<EntityID> path =
-                    this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(WorldUtil.convertToID(list)).getResult();
+                    this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(this.convertToID(list)).getResult();
             if (path != null) {
                 return new ActionMove(path);
             }
@@ -173,15 +175,15 @@ public class SamplePolice extends TacticsPolice {
         for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
             if(message.getClass() == MessageCivilian.class) {
                 MessageCivilian mc = (MessageCivilian) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mc.getAgentID())) WorldUtil.reflectMessage(worldInfo, mc);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mc.getAgentID())) MessageUtil.reflectMessage(worldInfo, mc);
             }
             else if(message.getClass() == MessageBuilding.class) {
                 MessageBuilding mb = (MessageBuilding)message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mb.getBuildingID())) WorldUtil.reflectMessage(worldInfo, mb);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mb.getBuildingID())) MessageUtil.reflectMessage(worldInfo, mb);
             }
             else if(message.getClass() == MessageAmbulanceTeam.class) {
                 MessageAmbulanceTeam mat = (MessageAmbulanceTeam)message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mat.getAgentID())) WorldUtil.reflectMessage(worldInfo, mat);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mat.getAgentID())) MessageUtil.reflectMessage(worldInfo, mat);
                 if(mat.getAction() == MessageAmbulanceTeam.ACTION_RESCUE) {
                     StandardEntity entity = worldInfo.getEntity(mat.getTargetID());
                     if(entity != null && entity instanceof Human) {
@@ -202,12 +204,16 @@ public class SamplePolice extends TacticsPolice {
             }
             else if(message.getClass() == MessageFireBrigade.class) {
                 MessageFireBrigade mfb = (MessageFireBrigade) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mfb.getAgentID())) WorldUtil.reflectMessage(worldInfo, mfb);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mfb.getAgentID())) MessageUtil.reflectMessage(worldInfo, mfb);
             }
             else if(message.getClass() == MessagePoliceForce.class) {
                 MessagePoliceForce mpf = (MessagePoliceForce) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mpf.getAgentID())) WorldUtil.reflectMessage(worldInfo, mpf);
+                if(!worldInfo.getChanged().getChangedEntities().contains(mpf.getAgentID())) MessageUtil.reflectMessage(worldInfo, mpf);
             }
         }
+    }
+
+    private Collection<EntityID> convertToID(Collection<StandardEntity> entities) {
+        return entities.stream().map(StandardEntity::getID).collect(Collectors.toList());
     }
 }

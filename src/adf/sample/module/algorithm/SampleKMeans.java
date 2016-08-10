@@ -1,5 +1,6 @@
 package adf.sample.module.algorithm;
 
+import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -7,7 +8,6 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.StaticClustering;
-import adf.util.WorldUtil;
 import rescuecore2.misc.Pair;
 import rescuecore2.misc.collections.LazyMap;
 import rescuecore2.misc.geometry.Point2D;
@@ -16,6 +16,7 @@ import rescuecore2.worldmodel.Entity;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
@@ -41,7 +42,7 @@ public class SampleKMeans extends StaticClustering {
 
     private Map<EntityID, Set<EntityID>> shortestPathGraph;
 
-    public SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
+    public SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DebugData debugData) {
         this(ai, wi, si, moduleManager, 10, true, wi.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -51,11 +52,12 @@ public class SampleKMeans extends StaticClustering {
                 StandardEntityURN.AMBULANCE_CENTRE,
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
-        ));
+        ),
+        debugData);
     }
 
-    protected SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, int size, boolean assignAgentsFlag, Collection<StandardEntity> entities) {
-        super(ai, wi, si, moduleManager);
+    protected SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, int size, boolean assignAgentsFlag, Collection<StandardEntity> entities, DebugData debugData) {
+        super(ai, wi, si, moduleManager, debugData);
         this.clusterSize = size;
         this.assignAgentsFlag = assignAgentsFlag;
         this.entities = entities;
@@ -69,11 +71,11 @@ public class SampleKMeans extends StaticClustering {
         }
         this.repeat = 7;
         this.calc();
-        precomputeData.setEntityIDList(KEY_ALL_ELEMENTS, (List<EntityID>) WorldUtil.convertToID(this.entities));
+        precomputeData.setEntityIDList(KEY_ALL_ELEMENTS, (List<EntityID>) this.convertToID(this.entities));
         precomputeData.setInteger(KEY_CLUSTER_SIZE, this.clusterSize);
-        precomputeData.setEntityIDList(KEY_CLUSTER_CENTER, (List<EntityID>)WorldUtil.convertToID(this.centerList));
+        precomputeData.setEntityIDList(KEY_CLUSTER_CENTER, (List<EntityID>) this.convertToID(this.centerList));
         for(int i = 0; i < this.clusterSize; i++) {
-            precomputeData.setEntityIDList(KEY_CLUSTER_ENTITY + i, (List<EntityID>)WorldUtil.convertToID(this.clusterEntityList.get(i)));
+            precomputeData.setEntityIDList(KEY_CLUSTER_ENTITY + i, (List<EntityID>) this.convertToID(this.clusterEntityList.get(i)));
         }
         precomputeData.setBoolean(KEY_ASSIGN_AGENT, this.assignAgentsFlag);
         return this;
@@ -85,12 +87,12 @@ public class SampleKMeans extends StaticClustering {
         if(this.getCountResume() >= 2) {
             return this;
         }
-        this.entities = WorldUtil.convertToEntity(precomputeData.getEntityIDList(KEY_ALL_ELEMENTS), this.worldInfo);
+        this.entities = this.convertToEntity(precomputeData.getEntityIDList(KEY_ALL_ELEMENTS));
         this.clusterSize = precomputeData.getInteger(KEY_CLUSTER_SIZE);
-        this.centerList = new ArrayList<>(WorldUtil.convertToEntity(precomputeData.getEntityIDList(KEY_CLUSTER_CENTER), this.worldInfo));
+        this.centerList = new ArrayList<>(this.convertToEntity(precomputeData.getEntityIDList(KEY_CLUSTER_CENTER)));
         this.clusterEntityList = new ArrayList<>(this.clusterSize);
         for(int i = 0; i < this.clusterSize; i++) {
-            List<StandardEntity> list = new ArrayList<>(WorldUtil.convertToEntity(precomputeData.getEntityIDList(KEY_CLUSTER_ENTITY + i), this.worldInfo));
+            List<StandardEntity> list = new ArrayList<>(this.convertToEntity(precomputeData.getEntityIDList(KEY_CLUSTER_ENTITY + i)));
             this.clusterEntityList.add(i, list);
         }
         this.clusterEntityList.sort(comparing(List::size, reverseOrder()));
@@ -137,7 +139,7 @@ public class SampleKMeans extends StaticClustering {
 
     @Override
     public Collection<EntityID> getClusterEntityIDs(int index) {
-        return WorldUtil.convertToID(this.getClusterEntities(index));
+        return this.convertToID(this.getClusterEntities(index));
     }
 
     @Override
@@ -186,7 +188,7 @@ public class SampleKMeans extends StaticClustering {
             for (int index = 0; index < this.clusterSize; index++) {
                 int sumX = 0, sumY = 0;
                 for (StandardEntity entity : this.clusterEntityList.get(index)) {
-                    Pair<Integer, Integer> location = entity.getLocation(this.worldInfo.getRawWorld());
+                    Pair<Integer, Integer> location = this.worldInfo.getLocation(entity);
                     sumX += location.first();
                     sumY += location.second();
                 }
@@ -259,7 +261,7 @@ public class SampleKMeans extends StaticClustering {
             for (int index = 0; index < this.clusterSize; index++) {
                 int sumX = 0, sumY = 0;
                 for (StandardEntity entity : this.clusterEntityList.get(index)) {
-                    Pair<Integer, Integer> location = entity.getLocation(this.worldInfo.getRawWorld());
+                    Pair<Integer, Integer> location = this.worldInfo.getLocation(entity);
                     sumX += location.first();
                     sumY += location.second();
                 }
@@ -380,8 +382,10 @@ public class SampleKMeans extends StaticClustering {
     }
 
     private StandardEntity compareLineDistance(WorldInfo worldInfo, int targetX, int targetY, StandardEntity first, StandardEntity second) {
-        double firstDistance = getDistance(first.getLocation(worldInfo.getRawWorld()).first(), first.getLocation(worldInfo.getRawWorld()).second(), targetX, targetY);
-        double secondDistance = getDistance(second.getLocation(worldInfo.getRawWorld()).first(), second.getLocation(worldInfo.getRawWorld()).second(), targetX, targetY);
+        Pair<Integer, Integer> firstLocation = worldInfo.getLocation(first);
+        Pair<Integer, Integer> secondLocation = worldInfo.getLocation(second);
+        double firstDistance = getDistance(firstLocation.first(), firstLocation.second(), targetX, targetY);
+        double secondDistance = getDistance(secondLocation.first(), secondLocation.second(), targetX, targetY);
         return (firstDistance < secondDistance ? first : second);
     }
 
@@ -407,9 +411,9 @@ public class SampleKMeans extends StaticClustering {
         int limit = path.size() - 1;
 
         Area area = (Area)worldInfo.getEntity(path.get(0));
-        distance += getDistance(area.getLocation(worldInfo.getRawWorld()), area.getEdgeTo(path.get(1)));
+        distance += getDistance(worldInfo.getLocation(area), area.getEdgeTo(path.get(1)));
         area = (Area)worldInfo.getEntity(path.get(limit));
-        distance += getDistance(area.getLocation(worldInfo.getRawWorld()), area.getEdgeTo(path.get(limit - 1)));
+        distance += getDistance(worldInfo.getLocation(area), area.getEdgeTo(path.get(limit - 1)));
 
         for(int i = 1; i < limit; i++) {
             area = (Area)worldInfo.getEntity(path.get(i));
@@ -489,5 +493,13 @@ public class SampleKMeans extends StaticClustering {
 
     private boolean isGoal(EntityID e, Collection<EntityID> test) {
         return test.contains(e);
+    }
+
+    private Collection<EntityID> convertToID(Collection<StandardEntity> entities) {
+        return entities.stream().map(StandardEntity::getID).collect(Collectors.toList());
+    }
+
+    private Collection<StandardEntity> convertToEntity(Collection<EntityID> entityIDs) {
+        return entityIDs.stream().map(entityID -> this.worldInfo.getEntity(entityID)).collect(Collectors.toList());
     }
 }
