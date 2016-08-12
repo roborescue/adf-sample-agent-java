@@ -10,13 +10,13 @@ import adf.agent.precompute.PrecomputeData;
 import adf.sample.SampleModuleKey;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.BuildingSelector;
-import adf.sample.util.DistanceSorter;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class SampleBuildingSelector extends BuildingSelector {
@@ -85,5 +85,21 @@ public class SampleBuildingSelector extends BuildingSelector {
     public BuildingSelector preparate() {
         super.preparate();
         return this;
+    }
+
+    private class DistanceSorter implements Comparator<StandardEntity> {
+        private StandardEntity reference;
+        private WorldInfo worldInfo;
+
+        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+            this.reference = reference;
+            this.worldInfo = wi;
+        }
+
+        public int compare(StandardEntity a, StandardEntity b) {
+            int d1 = this.worldInfo.getDistance(this.reference, a);
+            int d2 = this.worldInfo.getDistance(this.reference, b);
+            return d1 - d2;
+        }
     }
 }

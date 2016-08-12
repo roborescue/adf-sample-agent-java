@@ -11,7 +11,6 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.complex.RoadSelector;
-import adf.sample.util.DistanceSorter;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.StandardEntity;
@@ -101,5 +100,21 @@ public class SampleRoadSelector  extends RoadSelector {
             }
         }
         return this;
+    }
+
+    private class DistanceSorter implements Comparator<StandardEntity> {
+        private StandardEntity reference;
+        private WorldInfo worldInfo;
+
+        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+            this.reference = reference;
+            this.worldInfo = wi;
+        }
+
+        public int compare(StandardEntity a, StandardEntity b) {
+            int d1 = this.worldInfo.getDistance(this.reference, a);
+            int d2 = this.worldInfo.getDistance(this.reference, b);
+            return d1 - d2;
+        }
     }
 }

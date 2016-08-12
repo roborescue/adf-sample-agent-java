@@ -3,6 +3,7 @@ package adf.sample.extaction;
 
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
+import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -21,8 +22,8 @@ public class ActionRefill extends ExtAction{
     private final int maxPower;
     private EntityID[] targets;
 
-    public ActionRefill(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
-        super(agentInfo, worldInfo, scenarioInfo, moduleManager);
+    public ActionRefill(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DebugData debugData) {
+        super(agentInfo, worldInfo, scenarioInfo, moduleManager, debugData);
         this.maxWater = scenarioInfo.getFireTankMaximum();
         this.maxPower = scenarioInfo.getFireExtinguishMaxSum();
     }

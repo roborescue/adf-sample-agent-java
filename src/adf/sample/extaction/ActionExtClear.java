@@ -3,6 +3,7 @@ package adf.sample.extaction;
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.police.ActionClear;
+import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -10,7 +11,6 @@ import adf.agent.module.ModuleManager;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import adf.sample.SampleModuleKey;
-import com.infomatiq.jsi.Point;
 import rescuecore2.misc.geometry.GeometryTools2D;
 import rescuecore2.misc.geometry.Line2D;
 import rescuecore2.misc.geometry.Point2D;
@@ -27,8 +27,8 @@ public class ActionExtClear extends ExtAction {
 
     private Map<EntityID, Set<Point2D>> pointCache;
 
-    public ActionExtClear(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager) {
-        super(ai, wi, si, moduleManager);
+    public ActionExtClear(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DebugData debugData) {
+        super(ai, wi, si, moduleManager, debugData);
         this.distance = this.scenarioInfo.getClearRepairDistance();
         this.pointCache = new HashMap<>();
     }

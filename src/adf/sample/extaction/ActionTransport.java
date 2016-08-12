@@ -4,6 +4,7 @@ import adf.agent.action.ambulance.ActionLoad;
 import adf.agent.action.ambulance.ActionRescue;
 import adf.agent.action.ambulance.ActionUnload;
 import adf.agent.action.common.ActionMove;
+import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -20,8 +21,8 @@ public class ActionTransport extends ExtAction {
 
     private Human target;
 
-    public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager) {
-        super(agentInfo, worldInfo, scenarioInfo, moduleManager);
+    public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DebugData debugData) {
+        super(agentInfo, worldInfo, scenarioInfo, moduleManager, debugData);
         this.target = null;
     }
 
