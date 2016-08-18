@@ -40,7 +40,7 @@ public class ActionFireFighting extends ExtAction {
     @Override
     public ExtAction calc() {
         this.result = null;
-        if(this.targets == null) {
+        if(this.targets == null || this.targets.length == 0) {
             return this;
         }
 
