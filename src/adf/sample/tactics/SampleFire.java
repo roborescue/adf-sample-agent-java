@@ -1,10 +1,11 @@
 package adf.sample.tactics;
 
 import adf.agent.action.Action;
+import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
+import adf.agent.action.fire.ActionExtinguish;
 import adf.agent.communication.MessageManager;
-import adf.agent.communication.standard.bundle.MessageUtil;
-import adf.agent.communication.standard.bundle.information.*;
+import adf.agent.communication.standard.bundle.information.MessageFireBrigade;
 import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -18,8 +19,12 @@ import adf.component.module.complex.BuildingSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsFire;
 import adf.sample.SampleModuleKey;
-import rescuecore2.standard.entities.*;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.FireBrigade;
+import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
+
+import java.util.List;
 
 public class SampleFire extends TacticsFire {
 
@@ -89,115 +94,73 @@ public class SampleFire extends TacticsFire {
         this.buildingSelector.updateInfo(messageManager);
         this.search.updateInfo(messageManager);
 
-        this.updateInfo(worldInfo, messageManager);
-        this.sendMessage(worldInfo, messageManager);
 
         FireBrigade me = (FireBrigade) agentInfo.me();
-        //check buriedness
-        if(me.isBuriednessDefined() && me.getBuriedness() > 0) {
-            this.updateInfo(worldInfo, messageManager);
-            messageManager.addMessage(new MessageFireBrigade(true, me, MessageFireBrigade.ACTION_REST, me.getPosition()));
-            return new ActionRest();
-        }
-
         // Are we currently filling with water?
         // Are we out of water?
-        Action action = moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_REFILL, "adf.sample.extaction.ActionRefill")
-                                     .calc().getAction();
+        Action action = moduleManager
+                .getExtAction(SampleModuleKey.FIRE_ACTION_REFILL)
+                .calc().getAction();
         if(action != null) {
+            CommunicationMessage message = this.getActionMessage(me, action, true);
+            if(message != null) { messageManager.addMessage(message); }
             return action;
         }
 
         // Find all buildings that are on fire
-        EntityID target = this.buildingSelector.calc().getTarget();
-        if(target != null) {
-            action = moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_FIREFIGHTING, "adf.sample.extaction.ActionFireFighting")
-                                  .setTarget(target).calc().getAction();
+        Building targetBuilding = this.buildingSelector.calc().getTargetEntity();
+        if(targetBuilding != null) {
+            action = moduleManager
+                    .getExtAction(SampleModuleKey.FIRE_ACTION_FIREFIGHTING)
+                    .setTarget(targetBuilding.getID())
+                    .calc().getAction();
             if(action != null) {
+                CommunicationMessage message = this.getActionMessage(me, action, false);
+                if(message != null) { messageManager.addMessage(message); }
                 return action;
             }
         }
+
         // Nothing to do
-        target = this.search.calc().getTarget();
-        return moduleManager.getExtAction(SampleModuleKey.FIRE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch")
-                            .setTarget(target).calc().getAction();
+        action = moduleManager
+                .getExtAction(SampleModuleKey.FIRE_ACTION_SEARCH)
+                .setTarget(this.search.calc().getTarget())
+                .calc().getAction();
+        if(action != null) {
+            CommunicationMessage message = this.getActionMessage(me, action, false);
+            if(message != null) { messageManager.addMessage(message); }
+            return action;
+        }
+
+        //check buriedness
+        if(me.getBuriedness() > 0) {
+            messageManager.addMessage(
+                    new MessageFireBrigade(
+                            true, me,
+                            MessageFireBrigade.ACTION_REST,
+                            me.getPosition())
+            );
+        }
+        return new ActionRest();
     }
 
-    private void sendMessage(WorldInfo worldInfo, MessageManager messageManager) {
-        for(EntityID id : worldInfo.getChanged().getChangedEntities()) {
-            StandardEntity entity = worldInfo.getEntity(id);
-            if(entity.getStandardURN() == StandardEntityURN.CIVILIAN) {
-                Civilian civilian = (Civilian)entity;
-                if(this.needSend(worldInfo, civilian)) {
-                    messageManager.addMessage(new MessageCivilian(true, civilian));
-                }
-            }
-            else if(entity instanceof Building) {
-                Building building = (Building)entity;
-                if(building.isFierynessDefined()) {
-                    if(building.getFieryness() >= 1 && building.getFieryness() <= 3) {
-                        messageManager.addMessage(new MessageBuilding(true, building));
-                    }
-                }
-            }
-            else if(entity instanceof Road) {
-                Road road = (Road)entity;
-                if(road.isBlockadesDefined() && road.getBlockades().isEmpty()) {
-                    messageManager.addMessage(new MessageRoad(true, road, null, true));
-                }
-            }
+    private CommunicationMessage getActionMessage(FireBrigade fireBrigade, Action action, boolean isRefill) {
+        Class<? extends Action> actionClass = action.getClass();
+        int actionIndex = -1;
+        EntityID target = null;
+        if (actionClass == ActionMove.class) {
+            List<EntityID> path = ((ActionMove) action).getPath();
+            actionIndex = MessageFireBrigade.ACTION_MOVE;
+            target = path.get(path.size() - 1);
+        } else if(actionClass == ActionExtinguish.class) {
+            actionIndex = MessageFireBrigade.ACTION_EXTINGUISH;
+            target = ((ActionExtinguish)action).getTarget();
+        } else if(actionClass == ActionRest.class) {
+            actionIndex = isRefill ? MessageFireBrigade.ACTION_REFILL : MessageFireBrigade.ACTION_REST;
+            target = fireBrigade.getPosition();
         }
-    }
-
-    private boolean needSend(WorldInfo worldInfo, Civilian civilian) {
-        if(civilian.isBuriednessDefined() && civilian.getBuriedness() > 0) {
-            return true;
-        }
-        else if(civilian.isDamageDefined() && civilian.getDamage() > 0 && civilian.isPositionDefined() && worldInfo.getEntity(civilian.getPosition()) instanceof Road){
-            return true;
-        }
-        return false;
-    }
-
-    private void updateInfo(WorldInfo worldInfo, MessageManager messageManager) {
-        for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
-            if(message.getClass() == MessageCivilian.class) {
-                MessageCivilian mc = (MessageCivilian) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mc.getAgentID())) MessageUtil.reflectMessage(worldInfo, mc);
-            }
-            else if(message.getClass() == MessageBuilding.class) {
-                MessageBuilding mb = (MessageBuilding)message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mb.getBuildingID())) MessageUtil.reflectMessage(worldInfo, mb);
-            }
-            else if(message.getClass() == MessageAmbulanceTeam.class) {
-                MessageAmbulanceTeam mat = (MessageAmbulanceTeam)message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mat.getAgentID())) MessageUtil.reflectMessage(worldInfo, mat);
-                if(mat.getAction() == MessageAmbulanceTeam.ACTION_RESCUE) {
-                    StandardEntity entity = worldInfo.getEntity(mat.getTargetID());
-                    if(entity != null && entity instanceof Human) {
-                        Human human = (Human)entity;
-                        if(!human.isPositionDefined()) {
-                            human.setPosition(mat.getPosition());
-                        }
-                    }
-                } else if(mat.getAction() == MessageAmbulanceTeam.ACTION_LOAD) {
-                    StandardEntity entity = worldInfo.getEntity(mat.getTargetID());
-                    if(entity != null && entity instanceof Civilian) {
-                        Civilian civilian = (Civilian)entity;
-                        if(!civilian.isPositionDefined()) {
-                            civilian.setPosition(mat.getAgentID());
-                        }
-                    }
-                }
-            }
-            else if(message.getClass() == MessageFireBrigade.class) {
-                MessageFireBrigade mfb = (MessageFireBrigade) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mfb.getAgentID())) MessageUtil.reflectMessage(worldInfo, mfb);
-            }
-            else if(message.getClass() == MessagePoliceForce.class) {
-                MessagePoliceForce mpf = (MessagePoliceForce) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mpf.getAgentID())) MessageUtil.reflectMessage(worldInfo, mpf);
-            }
-        }
+        return actionIndex != -1 ?
+                new MessageFireBrigade(true, fireBrigade, actionIndex, target) :
+                null;
     }
 }

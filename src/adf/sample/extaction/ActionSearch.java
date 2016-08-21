@@ -26,6 +26,8 @@ public class ActionSearch extends ExtAction {
     @Override
     public ExtAction setTarget(EntityID... targets) {
         this.searchTargets.clear();
+        if(targets == null) { return this; }
+
         for(EntityID entityID : targets) {
             StandardEntity entity = this.worldInfo.getEntity(entityID);
             if(entity instanceof Area) {

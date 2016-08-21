@@ -3,9 +3,9 @@ package adf.sample.tactics;
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
+import adf.agent.action.police.ActionClear;
 import adf.agent.communication.MessageManager;
-import adf.agent.communication.standard.bundle.MessageUtil;
-import adf.agent.communication.standard.bundle.information.*;
+import adf.agent.communication.standard.bundle.information.MessagePoliceForce;
 import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -19,21 +19,21 @@ import adf.component.module.complex.RoadSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsPolice;
 import adf.sample.SampleModuleKey;
+import rescuecore2.misc.geometry.GeometryTools2D;
+import rescuecore2.misc.geometry.Line2D;
+import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class SamplePolice extends TacticsPolice {
+    private int clearDistance;
 
     private PathPlanning pathPlanning;
     private RoadSelector roadSelector;
     private Search search;
     private Clustering clustering;
-
-    private int clusterIndex;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DebugData debugData) {
@@ -44,7 +44,7 @@ public class SamplePolice extends TacticsPolice {
                 StandardEntityURN.REFUGE,
                 StandardEntityURN.BLOCKADE
         );
-        this.clusterIndex = -1;
+        this.clearDistance = scenarioInfo.getClearRepairDistance();
         //init ExtAction
         moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR, "adf.sample.extaction.ActionExtClear");
         moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch");
@@ -93,127 +93,106 @@ public class SamplePolice extends TacticsPolice {
         this.roadSelector.updateInfo(messageManager);
         this.search.updateInfo(messageManager);
 
-        this.updateInfo(worldInfo, messageManager);
-        this.sendMessage(worldInfo, messageManager);
-
         PoliceForce me = (PoliceForce) agentInfo.me();
-        //check buriedness
-        if(me.isBuriednessDefined() && me.getBuriedness() > 0) {
-            this.updateInfo(worldInfo, messageManager);
-            messageManager.addMessage(new MessagePoliceForce(true, me, MessagePoliceForce.ACTION_REST, me.getPosition()));
-            return new ActionRest();
-        }
-
-        if(this.clusterIndex == -1) {
-            this.clusterIndex = this.clustering.getClusterIndex(agentInfo.getID());
-        }
-
-        EntityID target = this.roadSelector.calc().getTarget();
-        if(target != null) {
-            Action action = moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR, "adf.sample.extaction.ActionExtClear")
-                                         .setTarget(target).calc().getAction();
+        Road targetRoad = this.roadSelector.calc().getTargetEntity();
+        if(targetRoad != null) {
+            Action action = moduleManager
+                    .getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR)
+                    .setTarget(targetRoad.getID())
+                    .calc().getAction();
             if(action != null) {
+                CommunicationMessage message = this.getActionMessage(worldInfo, me, action);
+                if(message != null) { messageManager.addMessage(message); }
                 return action;
             }
         }
 
         // Nothing to do
-        target = this.search.calc().getTarget();
-        Action action = moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch")
-                                     .setTarget(target).calc().getAction();
+        Action action = moduleManager
+                .getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH)
+                .setTarget(this.search.calc().getTarget())
+                .calc().getAction();
         if(action != null) {
+            CommunicationMessage message = this.getActionMessage(worldInfo, me, action);
+            if(message != null) { messageManager.addMessage(message); }
             return action;
         }
-        Collection<StandardEntity> list = this.clustering.getClusterEntities(this.clusterIndex);
-        if(!list.contains(agentInfo.me())) {
-            List<EntityID> path =
-                    this.pathPlanning.setFrom(agentInfo.getPosition()).setDestination(this.convertToID(list)).getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
+
+        //check buriedness
+        if(me.getBuriedness() > 0) {
+            messageManager.addMessage(
+                    new MessagePoliceForce(
+                            true, me,
+                            MessagePoliceForce.ACTION_REST,
+                            me.getPosition())
+            );
         }
         return new ActionRest();
     }
 
-    private void sendMessage(WorldInfo worldInfo, MessageManager messageManager) {
-        for(EntityID id : worldInfo.getChanged().getChangedEntities()) {
-            StandardEntity entity = worldInfo.getEntity(id);
-            if(entity.getStandardURN() == StandardEntityURN.CIVILIAN) {
-                Civilian civilian = (Civilian)entity;
-                if(this.needSend(worldInfo, civilian)) {
-                    messageManager.addMessage(new MessageCivilian(true, civilian));
-                }
-            }
-            else if(entity instanceof Building) {
-                Building building = (Building)entity;
-                if(building.isFierynessDefined()) {
-                    if(building.getFieryness() >= 1 && building.getFieryness() <= 3) {
-                        messageManager.addMessage(new MessageBuilding(true, building));
+    private CommunicationMessage getActionMessage(WorldInfo worldInfo, PoliceForce policeForce, Action action) {
+        Class<? extends Action> actionClass = action.getClass();
+        int actionIndex = -1;
+        EntityID target = null;
+        if(actionClass == ActionMove.class) {
+            List<EntityID> path = ((ActionMove)action).getPath();
+            actionIndex = MessagePoliceForce.ACTION_MOVE;
+            target = path.get(path.size() - 1);
+        } else if(actionClass == ActionClear.class) {
+            actionIndex = MessagePoliceForce.ACTION_CLEAR;
+            ActionClear ac = (ActionClear)action;
+            target = ac.getTarget();
+            if(target == null) {
+                for(StandardEntity entity : worldInfo.getObjectsInRange(ac.getPosX(), ac.getPosY(), this.clearDistance)) {
+                    if(entity.getStandardURN() == StandardEntityURN.BLOCKADE) {
+                        if(this.intersect(
+                                policeForce.getX(), policeForce.getY(),
+                                ac.getPosX(), ac.getPosY(),
+                                (Blockade)entity
+                        )) {
+                            target = entity.getID();
+                            break;
+                        }
                     }
                 }
             }
-            else if(entity instanceof Road) {
-                Road road = (Road)entity;
-                if(road.isBlockadesDefined() && road.getBlockades().isEmpty()) {
-                    messageManager.addMessage(new MessageRoad(true, road, null, true));
-                }
-            }
+        } else if(actionClass == ActionRest.class) {
+            actionIndex = MessagePoliceForce.ACTION_REST;
+            target = policeForce.getPosition();
         }
+        return actionIndex != -1 ?
+                new MessagePoliceForce(true, policeForce, actionIndex, target) :
+                null;
     }
 
-    private boolean needSend(WorldInfo worldInfo, Civilian civilian) {
-        if(civilian.isBuriednessDefined() && civilian.getBuriedness() > 0) {
-            return true;
-        }
-        else if(civilian.isDamageDefined() && civilian.getDamage() > 0 && civilian.isPositionDefined() && worldInfo.getEntity(civilian.getPosition()) instanceof Road){
-            return true;
+    private boolean intersect(double agentX, double agentY, double pointX, double pointY, Blockade blockade) {
+        List<Line2D> lines = GeometryTools2D.pointsToLines(GeometryTools2D.vertexArrayToPoints(blockade.getApexes()), true);
+        for(Line2D line : lines) {
+            Point2D start = line.getOrigin();
+            Point2D end = line.getEndPoint();
+            double startX = start.getX();
+            double startY = start.getY();
+            double endX = end.getX();
+            double endY = end.getY();
+            if(java.awt.geom.Line2D.linesIntersect(
+                    agentX, agentY, pointX, pointY,
+                    startX, startY, endX, endY
+            )) {
+                double midX = (startX + endX) / 2;
+                double midY = (startY + endY) / 2;
+                if(!equalsPoint(pointX, pointY, midX, midY) && !equalsPoint(agentX, agentY, midX, midY)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
 
-    private void updateInfo(WorldInfo worldInfo, MessageManager messageManager) {
-        for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
-            if(message.getClass() == MessageCivilian.class) {
-                MessageCivilian mc = (MessageCivilian) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mc.getAgentID())) MessageUtil.reflectMessage(worldInfo, mc);
-            }
-            else if(message.getClass() == MessageBuilding.class) {
-                MessageBuilding mb = (MessageBuilding)message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mb.getBuildingID())) MessageUtil.reflectMessage(worldInfo, mb);
-            }
-            else if(message.getClass() == MessageAmbulanceTeam.class) {
-                MessageAmbulanceTeam mat = (MessageAmbulanceTeam)message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mat.getAgentID())) MessageUtil.reflectMessage(worldInfo, mat);
-                if(mat.getAction() == MessageAmbulanceTeam.ACTION_RESCUE) {
-                    StandardEntity entity = worldInfo.getEntity(mat.getTargetID());
-                    if(entity != null && entity instanceof Human) {
-                        Human human = (Human)entity;
-                        if(!human.isPositionDefined()) {
-                            human.setPosition(mat.getPosition());
-                        }
-                    }
-                } else if(mat.getAction() == MessageAmbulanceTeam.ACTION_LOAD) {
-                    StandardEntity entity = worldInfo.getEntity(mat.getTargetID());
-                    if(entity != null && entity instanceof Civilian) {
-                        Civilian civilian = (Civilian)entity;
-                        if(!civilian.isPositionDefined()) {
-                            civilian.setPosition(mat.getAgentID());
-                        }
-                    }
-                }
-            }
-            else if(message.getClass() == MessageFireBrigade.class) {
-                MessageFireBrigade mfb = (MessageFireBrigade) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mfb.getAgentID())) MessageUtil.reflectMessage(worldInfo, mfb);
-            }
-            else if(message.getClass() == MessagePoliceForce.class) {
-                MessagePoliceForce mpf = (MessagePoliceForce) message;
-                if(!worldInfo.getChanged().getChangedEntities().contains(mpf.getAgentID())) MessageUtil.reflectMessage(worldInfo, mpf);
-            }
-        }
+    private boolean equalsPoint(double p1X, double p1Y, double p2X, double p2Y) {
+        return this.equalsPoint(p1X, p1Y, p2X, p2Y, 1.0D);
     }
 
-    private Collection<EntityID> convertToID(Collection<StandardEntity> entities) {
-        return entities.stream().map(StandardEntity::getID).collect(Collectors.toList());
+    private boolean equalsPoint(double p1X, double p1Y, double p2X, double p2Y, double range) {
+        return (p2X - range < p1X && p1X < p2X + range) && (p2Y - range < p1Y && p1Y < p2Y + range);
     }
 }

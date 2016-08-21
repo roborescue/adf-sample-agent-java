@@ -39,6 +39,8 @@ public class ActionExtClear extends ExtAction {
     @Override
     public ExtAction setTarget(EntityID... targets) {
         this.target = null;
+        if(targets == null) { return this; }
+
         for(EntityID entityID : targets) {
             StandardEntity entity = this.worldInfo.getEntity(entityID);
             if(entity instanceof Road) {
@@ -107,7 +109,7 @@ public class ActionExtClear extends ExtAction {
                     if(this.intersect(agentX, agentY, clearX, clearY, blockade)) {
                         checkEdges.removeAll(removeEdges);
                         this.edgeCache.put(targetRoad.getID(), checkEdges);
-                        return new ActionClear((int)clearX, (int)clearY);
+                        return new ActionClear((int)clearX, (int)clearY, blockade);
                     }
                     if(this.intersect(agentX, agentY, midX, midY, blockade)) {
                         checkEdges.removeAll(removeEdges);
@@ -131,18 +133,23 @@ public class ActionExtClear extends ExtAction {
             if(action != null) return action;
         }
         double minDistance = Double.MAX_VALUE;
+        Blockade targetBlockade = null;
         double x = Double.MAX_VALUE;
         double y = Double.MAX_VALUE;
         for(Blockade blockade : blockades) {
             double distance = this.getDistance(agentX, agentY, blockade.getX(), blockade.getY());
             if (distance < minDistance) {
                 minDistance = distance;
+                targetBlockade = blockade;
                 x = blockade.getX();
                 y = blockade.getY();
             }
         }
         if(minDistance < this.clearDistance) {
             Vector2D vector = this.scaleClear(this.getVector(agentX, agentY, x, y));
+            if(targetBlockade != null) {
+                return new ActionClear((int) (agentX + vector.getX()), (int) (agentY + vector.getY()), targetBlockade);
+            }
             return new ActionClear((int) (agentX + vector.getX()), (int) (agentY + vector.getY()));
         }
         if(minDistance < Double.MAX_VALUE) {
@@ -172,7 +179,7 @@ public class ActionExtClear extends ExtAction {
                 clearY = agentY + vector.getY();
                 for (Blockade blockade : this.worldInfo.getBlockades(targetRoad)) {
                     if (this.intersect(agentX, agentY, clearX, clearY, blockade)) {
-                        return new ActionClear((int) clearX, (int) clearY);
+                        return new ActionClear((int) clearX, (int) clearY, blockade);
                     }
                 }
             }
@@ -197,12 +204,12 @@ public class ActionExtClear extends ExtAction {
                     double clearY = agentY + vector.getY();
                     for (Blockade blockade : this.worldInfo.getBlockades(positionRoad)) {
                         if (this.intersect(agentX, agentY, clearX, clearY, blockade)) {
-                            return new ActionClear((int) clearX, (int) clearY);
+                            return new ActionClear((int) clearX, (int) clearY, blockade);
                         }
                     }
                     for (Blockade blockade : this.worldInfo.getBlockades(targetRoad)) {
                         if (this.intersect(agentX, agentY, clearX, clearY, blockade)) {
-                            return new ActionClear((int) clearX, (int) clearY);
+                            return new ActionClear((int) clearX, (int) clearY, blockade);
                         }
                     }
                 }
@@ -225,6 +232,7 @@ public class ActionExtClear extends ExtAction {
             return null;
         }
         double minDistance = Double.MAX_VALUE;
+        Blockade targetBlockade = null;
         double nearX = Double.MAX_VALUE;
         double nearY = Double.MAX_VALUE;
         for (Blockade blockade : this.worldInfo.getBlockades(targetRoad)) {
@@ -234,6 +242,7 @@ public class ActionExtClear extends ExtAction {
                     double distance = this.getDistance(agentX, agentY, apex[i], apex[i + 1]);
                     if (distance < minDistance) {
                         minDistance = distance;
+                        targetBlockade = blockade;
                         nearX = apex[i];
                         nearY = apex[i + 1];
                     }
@@ -242,6 +251,7 @@ public class ActionExtClear extends ExtAction {
                 double distance = this.getDistance(agentX, agentY, blockade.getX(), blockade.getY());
                 if (distance < minDistance) {
                     minDistance = distance;
+                    targetBlockade = blockade;
                     nearX = blockade.getX();
                     nearY = blockade.getY();
                 }
@@ -249,6 +259,9 @@ public class ActionExtClear extends ExtAction {
         }
         if (minDistance < this.clearDistance) {
             Vector2D vector = this.scaleClear(this.getVector(agentX, agentY, nearX, nearY));
+            if(targetBlockade != null) {
+                return new ActionClear((int) (agentX + vector.getX()), (int) (agentY + vector.getY()), targetBlockade);
+            }
             return new ActionClear((int) (agentX + vector.getX()), (int) (agentY + vector.getY()));
         }
         return null;
@@ -289,7 +302,7 @@ public class ActionExtClear extends ExtAction {
                 if(this.intersect(agentX, agentY, pX, pY, blockade)) {
                     if(this.getDistance(agentX, agentY, pX, pY) < this.clearDistance) {
                         Vector2D vector = this.scaleClear(this.getVector(agentX, agentY, pX, pY));
-                        return new ActionClear((int)(agentX + vector.getX()), (int)(agentY + vector.getY()));
+                        return new ActionClear((int)(agentX + vector.getX()), (int)(agentY + vector.getY()), blockade);
                     } else {
                         return new ActionMove(Lists.newArrayList(road.getID()), (int)pX, (int)pY);
                     }
