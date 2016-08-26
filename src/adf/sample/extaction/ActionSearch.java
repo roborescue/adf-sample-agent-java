@@ -1,7 +1,7 @@
 package adf.sample.extaction;
 
 import adf.agent.action.common.ActionMove;
-import adf.agent.debug.DebugData;
+import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -18,8 +18,8 @@ import java.util.List;
 public class ActionSearch extends ExtAction {
     private List<EntityID> searchTargets;
 
-    public ActionSearch(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DebugData debugData) {
-        super(agentInfo, worldInfo, scenarioInfo, moduleManager, debugData);
+    public ActionSearch(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
+        super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
         this.searchTargets = new ArrayList<>();
     }
 

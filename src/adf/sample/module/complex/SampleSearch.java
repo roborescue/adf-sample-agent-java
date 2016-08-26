@@ -4,7 +4,7 @@ import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.MessageUtil;
 import adf.agent.communication.standard.bundle.information.*;
 import adf.agent.communication.standard.bundle.topdown.*;
-import adf.agent.debug.DebugData;
+import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -33,8 +33,8 @@ public class SampleSearch extends Search {
     private boolean isScout;
     private Collection<EntityID> scoutEntities;
 
-    public SampleSearch(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DebugData debugData) {
-        super(ai, wi, si, moduleManager, debugData);
+    public SampleSearch(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+        super(ai, wi, si, moduleManager, developData);
         this.unexploredBuildings = new HashSet<>();
         this.hasTask = false;
         this.isBroadcast = false;

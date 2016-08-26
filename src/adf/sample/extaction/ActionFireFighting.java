@@ -3,7 +3,7 @@ package adf.sample.extaction;
 
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.fire.ActionExtinguish;
-import adf.agent.debug.DebugData;
+import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -24,8 +24,8 @@ public class ActionFireFighting extends ExtAction {
     private int maxExtinguishPower;
     private EntityID[] targets;
 
-    public ActionFireFighting(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DebugData debugData) {
-        super(agentInfo, worldInfo, scenarioInfo, moduleManager, debugData);
+    public ActionFireFighting(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
+        super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
         this.targets = null;
         this.maxExtinguishDistance = scenarioInfo.getFireExtinguishMaxDistance();
         this.maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();

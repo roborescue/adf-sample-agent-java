@@ -1,6 +1,6 @@
 package adf.sample.module.algorithm;
 
-import adf.agent.debug.DebugData;
+import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -42,7 +42,7 @@ public class SampleKMeans extends StaticClustering {
 
     private Map<EntityID, Set<EntityID>> shortestPathGraph;
 
-    public SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DebugData debugData) {
+    public SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         this(ai, wi, si, moduleManager, 10, true, wi.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -53,11 +53,11 @@ public class SampleKMeans extends StaticClustering {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         ),
-        debugData);
+        developData);
     }
 
-    protected SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, int size, boolean assignAgentsFlag, Collection<StandardEntity> entities, DebugData debugData) {
-        super(ai, wi, si, moduleManager, debugData);
+    protected SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, int size, boolean assignAgentsFlag, Collection<StandardEntity> entities, DevelopData developData) {
+        super(ai, wi, si, moduleManager, developData);
         this.clusterSize = size;
         this.assignAgentsFlag = assignAgentsFlag;
         this.entities = entities;

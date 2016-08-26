@@ -1,6 +1,6 @@
 package adf.sample.module.algorithm;
 
-import adf.agent.debug.DebugData;
+import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -22,8 +22,8 @@ public class SamplePathPlanning extends PathPlanning {
     private Collection<EntityID> targets;
     private List<EntityID> result;
 
-    public SamplePathPlanning(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DebugData debugData) {
-        super(ai, wi, si, moduleManager, debugData);
+    public SamplePathPlanning(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+        super(ai, wi, si, moduleManager, developData);
         this.init();
     }
 

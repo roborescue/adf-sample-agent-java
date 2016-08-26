@@ -1,7 +1,7 @@
 package adf.sample.module.complex;
 
 import adf.agent.communication.MessageManager;
-import adf.agent.debug.DebugData;
+import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
@@ -26,8 +26,8 @@ public class SampleVictimSelector extends HumanSelector {
 
     private EntityID result;
 
-    public SampleVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DebugData debugData) {
-        super(ai, wi, si, moduleManager, debugData);
+    public SampleVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+        super(ai, wi, si, moduleManager, developData);
     }
 
     @Override
