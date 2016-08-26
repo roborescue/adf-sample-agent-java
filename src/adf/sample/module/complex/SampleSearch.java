@@ -3,6 +3,7 @@ package adf.sample.module.complex;
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.MessageUtil;
 import adf.agent.communication.standard.bundle.information.*;
+import adf.agent.communication.standard.bundle.topdown.*;
 import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -17,10 +18,7 @@ import adf.sample.SampleModuleKey;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static rescuecore2.standard.entities.StandardEntityURN.*;
 
@@ -29,13 +27,25 @@ public class SampleSearch extends Search {
     private Collection<EntityID> unexploredBuildings;
     private EntityID result;
 
+    private boolean hasTask;
+    private boolean isBroadcast;
+    private boolean isCommand;
+    private boolean isScout;
+    private Collection<EntityID> scoutEntities;
+
     public SampleSearch(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DebugData debugData) {
         super(ai, wi, si, moduleManager, debugData);
         this.unexploredBuildings = new HashSet<>();
+        this.hasTask = false;
+        this.isBroadcast = false;
+        this.isCommand = false;
+        this.isScout = false;
+        this.scoutEntities = new HashSet<>();
     }
 
     @Override
     public Search updateInfo(MessageManager messageManager) {
+        this.checkTask(messageManager);
         this.initUnexploredBuildings();
         this.reflectMessage(messageManager);
         this.sendMessage(messageManager);
@@ -95,6 +105,183 @@ public class SampleSearch extends Search {
         for(StandardEntity entity : entities) {
             if(entities instanceof Building) {
                 this.unexploredBuildings.add(entity.getID());
+            }
+        }
+    }
+
+    private void checkTask(MessageManager messageManager) {
+        if(this.hasTask) {
+            if(this.isScout) {
+                this.scoutEntities.removeAll(this.worldInfo.getChanged().getChangedEntities());
+                if (this.scoutEntities.isEmpty()) {
+                    this.hasTask = false;
+                    this.isBroadcast = false;
+                    this.isCommand = false;
+                    this.isScout = false;
+                    messageManager.addMessage(new MessageReport(true, true));
+                }
+            } else { //action move
+                EntityID removeID = null;
+                for(EntityID entityID : this.scoutEntities) {
+                    if(entityID.getValue() == this.agentInfo.getPosition().getValue()) {
+                        removeID = entityID;
+                        break;
+                    }
+                }
+                if(removeID != null) {
+                    this.scoutEntities.remove(removeID);
+                }
+                if (this.scoutEntities.isEmpty()) {
+                    this.hasTask = false;
+                    this.isBroadcast = false;
+                    this.isCommand = false;
+                    this.isScout = false;
+                    messageManager.addMessage(new MessageReport(true, true));
+                }
+            }
+        }
+        if(this.hasTask) {
+            return;
+        }
+        List<StandardEntity> agents = new ArrayList<>(this.worldInfo.getEntitiesOfType(
+                StandardEntityURN.AMBULANCE_TEAM,
+                StandardEntityURN.FIRE_BRIGADE,
+                StandardEntityURN.POLICE_OFFICE
+        ));
+
+        StandardEntityURN agentURN = this.agentInfo.me().getStandardURN();
+        if(agentURN == StandardEntityURN.AMBULANCE_TEAM) {
+            this.checkCommandAmbulance(messageManager, agents);
+        } else if(agentURN == StandardEntityURN.FIRE_BRIGADE) {
+            this.checkCommandFire(messageManager, agents);
+        } else if(agentURN == StandardEntityURN.POLICE_FORCE) {
+            this.checkCommandPolice(messageManager, agents);
+        }
+
+        this.checkCommandScout(messageManager, agents);
+    }
+
+    private void checkCommandAmbulance(MessageManager messageManager, List<StandardEntity> agents) {
+        EntityID agentID = this.agentInfo.getID();
+        Collection<EntityID> controlEntityIDs = this.worldInfo.getEntityIDsOfType(StandardEntityURN.AMBULANCE_CENTRE);
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandAmbulance.class)) {
+            CommandAmbulance command = (CommandAmbulance)message;
+            if(agentID.getValue() == command.getToID().getValue()) {
+                if(command.getAction() == CommandAmbulance.ACTION_MOVE) {
+                    this.hasTask = true;
+                    this.isBroadcast = false;
+                    this.isCommand = controlEntityIDs.contains(command.getSenderID());
+                    this.isScout = false;
+                    this.scoutEntities.add(command.getTargetID());
+                    return;
+                }
+            }
+            if(command.isBroadcast()) {
+                if(command.getAction() == CommandAmbulance.ACTION_MOVE) {
+                    agents.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
+                    StandardEntity nearAgent = agents.get(0);
+                    if(nearAgent.getID().getValue() == this.agentInfo.getID().getValue()) {
+                        this.hasTask = true;
+                        this.isBroadcast = true;
+                        this.isCommand = false;
+                        this.isScout = false;
+                        this.scoutEntities.add(command.getTargetID());
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkCommandFire(MessageManager messageManager, List<StandardEntity> agents) {
+        EntityID agentID = this.agentInfo.getID();
+        Collection<EntityID> controlEntityIDs = this.worldInfo.getEntityIDsOfType(StandardEntityURN.FIRE_STATION);
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
+            CommandFire command = (CommandFire) message;
+            if(agentID.getValue() == command.getToID().getValue()) {
+                if(command.getAction() == CommandFire.ACTION_MOVE) {
+                    this.hasTask = true;
+                    this.isBroadcast = false;
+                    this.isCommand = controlEntityIDs.contains(command.getSenderID());
+                    this.isScout = false;
+                    this.scoutEntities.add(command.getTargetID());
+                    return;
+                }
+            }
+            if(command.isBroadcast()) {
+                if(command.getAction() == CommandFire.ACTION_MOVE) {
+                    agents.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
+                    StandardEntity nearAgent = agents.get(0);
+                    if(nearAgent.getID().getValue() == this.agentInfo.getID().getValue()) {
+                        this.hasTask = true;
+                        this.isBroadcast = true;
+                        this.isCommand = false;
+                        this.isScout = false;
+                        this.scoutEntities.add(command.getTargetID());
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkCommandPolice(MessageManager messageManager, List<StandardEntity> agents) {
+        EntityID agentID = this.agentInfo.getID();
+        Collection<EntityID> controlEntityIDs = this.worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_OFFICE);
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
+            CommandPolice command = (CommandPolice) message;
+            if(agentID.getValue() == command.getToID().getValue()) {
+                if(command.getAction() == CommandPolice.ACTION_MOVE) {
+                    this.hasTask = true;
+                    this.isBroadcast = false;
+                    this.isCommand = controlEntityIDs.contains(command.getSenderID());
+                    this.isScout = false;
+                    this.scoutEntities.add(command.getTargetID());
+                    return;
+                }
+            }
+            if(command.isBroadcast()) {
+                if(command.getAction() == CommandPolice.ACTION_MOVE) {
+                    agents.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
+                    StandardEntity nearAgent = agents.get(0);
+                    if(nearAgent.getID().getValue() == this.agentInfo.getID().getValue()) {
+                        this.hasTask = true;
+                        this.isBroadcast = true;
+                        this.isCommand = false;
+                        this.isScout = false;
+                        this.scoutEntities.add(command.getTargetID());
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkCommandScout(MessageManager messageManager, List<StandardEntity> agents) {
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
+            CommandScout command = (CommandScout)message;
+            if(command.isToIDDefined() && command.getToID().getValue() == this.agentInfo.getID().getValue()) {
+                this.hasTask = true;
+                this.isBroadcast = false;
+                this.isCommand = false;
+                this.isScout = true;
+                this.scoutEntities.addAll(this.worldInfo.getObjectIDsInRange(command.getTargetID(), command.getRange()));
+                return;
+            }
+            if(command.isBroadcast()) {
+                if(this.hasTask) {
+                    continue;
+                }
+                agents.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
+                StandardEntity nearAgent = agents.get(0);
+                if(nearAgent.getID().getValue() == this.agentInfo.getID().getValue()) {
+                    this.hasTask = true;
+                    this.isBroadcast = true;
+                    this.isCommand = false;
+                    this.isScout = true;
+                    this.scoutEntities.addAll(this.worldInfo.getObjectIDsInRange(command.getTargetID(), command.getRange()));
+                    return;
+                }
             }
         }
     }
@@ -194,6 +381,15 @@ public class SampleSearch extends Search {
             pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
         }
         if(pathPlanning != null) {
+            if(this.hasTask) {
+                List<EntityID> path = pathPlanning.setFrom(this.agentInfo.getPosition())
+                        .setDestination(this.scoutEntities)
+                        .calc().getResult();
+                if (path != null) {
+                    this.result = path.get(path.size() - 1);
+                }
+                return this;
+            }
             List<EntityID> path = pathPlanning.setFrom(this.agentInfo.getPosition())
                     .setDestination(this.unexploredBuildings)
                     .calc()
@@ -228,5 +424,21 @@ public class SampleSearch extends Search {
         super.preparate();
         this.worldInfo.requestRollback();
         return this;
+    }
+
+    private class DistanceSorter implements Comparator<StandardEntity> {
+        private StandardEntity reference;
+        private WorldInfo worldInfo;
+
+        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+            this.reference = reference;
+            this.worldInfo = wi;
+        }
+
+        public int compare(StandardEntity a, StandardEntity b) {
+            int d1 = this.worldInfo.getDistance(this.reference, a);
+            int d2 = this.worldInfo.getDistance(this.reference, b);
+            return d1 - d2;
+        }
     }
 }

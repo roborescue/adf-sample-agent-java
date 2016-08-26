@@ -45,7 +45,7 @@ public class ActionFireFighting extends ExtAction {
         }
 
         FireBrigade fireBrigade = (FireBrigade)this.agentInfo.me();
-        if(StandardEntityURN.REFUGE == this.worldInfo.getEntity(fireBrigade.getPosition()).getStandardURN()) {
+        if(StandardEntityURN.REFUGE == this.worldInfo.getPosition(fireBrigade).getStandardURN()) {
             PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
             pathPlanning.setFrom(fireBrigade.getPosition());
             pathPlanning.setDestination(this.targets);
@@ -60,7 +60,7 @@ public class ActionFireFighting extends ExtAction {
         List<StandardEntity> neighbourBuilding = new ArrayList<>();
         for(EntityID target : this.targets) {
             StandardEntity entity = this.worldInfo.getEntity(target);
-            if (this.worldInfo.getDistance(fireBrigade, entity) <= this.maxExtinguishDistance) {
+            if (this.worldInfo.getDistance(fireBrigade, entity) < this.maxExtinguishDistance) {
                 neighbourBuilding.add(entity);
             }
         }

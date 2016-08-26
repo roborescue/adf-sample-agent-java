@@ -1,21 +1,23 @@
 package adf.sample.module.complex;
 
 
+import adf.agent.communication.MessageManager;
 import adf.agent.debug.DebugData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.sample.SampleModuleKey;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.BuildingSelector;
+import adf.sample.SampleModuleKey;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
@@ -23,22 +25,40 @@ public class SampleBuildingSelector extends BuildingSelector {
 
     private EntityID result;
 
-    private int clusterIndex;
-
     public SampleBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DebugData debugData) {
         super(ai, wi, si, moduleManager, debugData);
-        this.clusterIndex = -1;
+    }
+
+    @Override
+    public BuildingSelector updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
+        return this;
     }
 
     @Override
     public BuildingSelector calc() {
-        Clustering clustering = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING);
-        if(this.clusterIndex == -1) {
-            this.clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
+        Clustering clustering = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
+        if(clustering == null) {
+            this.result = this.calcTargetInWorld();
+            return this;
         }
+        this.result = this.calcTargetInCluster(clustering);
+        if(this.result == null) {
+            this.result = this.calcTargetInWorld();
+        }
+        return this;
+    }
+
+    private EntityID calcTargetInCluster(Clustering clustering) {
+        int clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
+        Collection<StandardEntity> elements = clustering.getClusterEntities(clusterIndex);
+        if(elements == null || elements.isEmpty()) {
+            return null;
+        }
+
         List<Building> buildingList = new ArrayList<>();
-        for (StandardEntity next : clustering.getClusterEntities(this.clusterIndex)) {
-            if (next.getStandardURN().equals(StandardEntityURN.BUILDING)) {
+        for (StandardEntity next : elements) {
+            if (next instanceof Building) {
                 Building b = (Building)next;
                 if (b.isOnFire()) {
                     buildingList.add(b);
@@ -46,22 +66,34 @@ public class SampleBuildingSelector extends BuildingSelector {
             }
         }
         // Sort by distance
-        buildingList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
-        this.result = buildingList.isEmpty() ? this.failedClusteringCalc() : buildingList.get(0).getID();
-        return this;
+        if(buildingList.size() > 0) {
+            buildingList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
+            return buildingList.get(0).getID();
+        }
+        return null;
     }
 
-    private EntityID failedClusteringCalc() {
+    private EntityID calcTargetInWorld() {
         List<Building> buildingList = new ArrayList<>();
-        for (StandardEntity next : this.worldInfo.getEntitiesOfType(StandardEntityURN.BUILDING)) {
+        Collection<StandardEntity> entities = this.worldInfo.getEntitiesOfType(
+                StandardEntityURN.BUILDING,
+                StandardEntityURN.GAS_STATION,
+                StandardEntityURN.AMBULANCE_CENTRE,
+                StandardEntityURN.FIRE_STATION,
+                StandardEntityURN.POLICE_OFFICE
+        );
+        for (StandardEntity next : entities) {
             Building b = (Building)next;
             if (b.isOnFire()) {
                 buildingList.add(b);
             }
         }
         // Sort by distance
-        buildingList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
-        return buildingList.isEmpty() ? null : buildingList.get(0).getID();
+        if(buildingList.size() > 0) {
+            buildingList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.getPositionArea()));
+            return buildingList.get(0).getID();
+        }
+        return null;
     }
 
     @Override
