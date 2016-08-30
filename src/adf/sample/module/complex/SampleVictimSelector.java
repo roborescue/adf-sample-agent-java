@@ -1,13 +1,11 @@
 package adf.sample.module.complex;
 
-import adf.agent.communication.MessageManager;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.communication.CommunicationMessage;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.HumanSelector;
 import adf.sample.SampleModuleKey;
@@ -28,16 +26,6 @@ public class SampleVictimSelector extends HumanSelector {
 
     public SampleVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
-    }
-
-    @Override
-    public HumanSelector updateInfo(MessageManager messageManager) {
-        super.updateInfo(messageManager);
-        for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
-            Class<? extends CommunicationMessage> messageClass = message.getClass();
-
-        }
-        return this;
     }
 
     @Override
@@ -158,3 +146,4 @@ public class SampleVictimSelector extends HumanSelector {
         }
     }
 }
+

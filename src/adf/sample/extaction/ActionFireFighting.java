@@ -1,8 +1,11 @@
 package adf.sample.extaction;
 
 
+import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
+import adf.agent.action.common.ActionRest;
 import adf.agent.action.fire.ActionExtinguish;
+import adf.agent.action.fire.ActionRefill;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -11,6 +14,8 @@ import adf.agent.module.ModuleManager;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import adf.sample.SampleModuleKey;
+import com.google.common.collect.Lists;
+import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.FireBrigade;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
@@ -19,40 +24,63 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.*;
 
 public class ActionFireFighting extends ExtAction {
-
     private int maxExtinguishDistance;
     private int maxExtinguishPower;
-    private EntityID[] targets;
+    private Collection<EntityID> targets;
+
 
     public ActionFireFighting(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
         this.targets = null;
         this.maxExtinguishDistance = scenarioInfo.getFireExtinguishMaxDistance();
         this.maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
+
     }
 
     @Override
     public ExtAction setTarget(EntityID... targets) {
-        this.targets = targets;
+        this.targets = null;
+        if(targets != null && targets.length > 0) {
+            this.targets = Lists.newArrayList(targets);
+        }
         return this;
     }
 
     @Override
     public ExtAction calc() {
         this.result = null;
-        if(this.targets == null || this.targets.length == 0) {
+        if(this.targets == null || this.targets.isEmpty()) {
             return this;
         }
 
         FireBrigade fireBrigade = (FireBrigade)this.agentInfo.me();
+        PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+        if(pathPlanning == null) {
+            return this;
+        }
+
+        boolean isRefill = false;
+        for(EntityID id : this.targets) {
+            StandardEntityURN urn = this.worldInfo.getEntity(id).getStandardURN();
+            if(urn == StandardEntityURN.REFUGE || urn == StandardEntityURN.HYDRANT) {
+                isRefill = true;
+                break;
+            }
+        }
+        if(isRefill) {
+            if(this.targets.contains(fireBrigade.getPosition())) {
+                this.result = new ActionRefill();
+                return this;
+            }
+            this.result = this.getMoveAction(pathPlanning, fireBrigade.getPosition(), this.targets);
+            if(this.result != null) {
+                return this;
+            }
+        }
+
         if(StandardEntityURN.REFUGE == this.worldInfo.getPosition(fireBrigade).getStandardURN()) {
-            PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
-            pathPlanning.setFrom(fireBrigade.getPosition());
-            pathPlanning.setDestination(this.targets);
-            pathPlanning.calc();
-            List<EntityID> path = pathPlanning.getResult();
-            if(path != null && !path.isEmpty()) {
-                this.result = new ActionMove(path);
+            this.result = this.getMoveAction(pathPlanning, fireBrigade.getPosition(), this.targets);
+            if(this.result != null) {
                 return this;
             }
         }
@@ -71,16 +99,27 @@ public class ActionFireFighting extends ExtAction {
             }
             this.result = new ActionExtinguish(neighbourBuilding.get(0).getID(), this.maxExtinguishPower);
         } else {
-            PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
-            pathPlanning.setFrom(fireBrigade.getPosition());
-            pathPlanning.setDestination(this.targets);
-            pathPlanning.calc();
-            List<EntityID> path = pathPlanning.getResult();
-            if (path != null && path.size() > 0) {
-                this.result = new ActionMove(path);
-            }
+            this.result = this.getMoveAction(pathPlanning, fireBrigade.getPosition(), this.targets);
         }
         return this;
+    }
+
+    private Action getMoveAction(PathPlanning pathPlanning, EntityID from, Collection<EntityID> targets) {
+        pathPlanning.setFrom(from);
+        pathPlanning.setDestination(targets);
+        pathPlanning.calc();
+        List<EntityID> path = pathPlanning.getResult();
+        if(path != null && !path.isEmpty()) {
+            StandardEntity entity = this.worldInfo.getEntity(path.get(path.size() - 1));
+            StandardEntityURN urn = entity.getStandardURN();
+            if(urn != StandardEntityURN.REFUGE && urn != StandardEntityURN.HYDRANT) {
+                if(entity instanceof Building) {
+                    path.remove(path.size() - 1);
+                }
+            }
+            return new ActionMove(path);
+        }
+        return null;
     }
 
     private class DistanceSorter implements Comparator<StandardEntity> {

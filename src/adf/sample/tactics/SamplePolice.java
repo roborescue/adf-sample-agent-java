@@ -35,6 +35,9 @@ public class SamplePolice extends TacticsPolice {
     private Search search;
     private Clustering clustering;
 
+    private RoadSelector taskRoadSelector;
+    private Search taskSearch;
+
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         worldInfo.indexClass(
@@ -60,6 +63,10 @@ public class SamplePolice extends TacticsPolice {
         this.search.precompute(precomputeData);
         this.roadSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_ROAD_SELECTOR, "adf.sample.module.complex.SampleRoadSelector");
         this.roadSelector.precompute(precomputeData);
+        this.taskSearch = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_TASK_SEARCH, "adf.sample.module.complex.topdown.SampleTaskSearch");
+        this.taskSearch.precompute(precomputeData);
+        this.taskRoadSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_TASK_ROAD_SELECTOR, "adf.sample.module.complex.topdown.SampleTaskRoadSelector");
+        this.taskRoadSelector.precompute(precomputeData);
     }
 
     @Override
@@ -72,6 +79,10 @@ public class SamplePolice extends TacticsPolice {
         this.search.resume(precomputeData);
         this.roadSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_ROAD_SELECTOR, "adf.sample.module.complex.SampleRoadSelector");
         this.roadSelector.resume(precomputeData);
+        this.taskSearch = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_TASK_SEARCH, "adf.sample.module.complex.topdown.SampleTaskSearch");
+        this.taskSearch.resume(precomputeData);
+        this.taskRoadSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_TASK_ROAD_SELECTOR, "adf.sample.module.complex.topdown.SampleTaskRoadSelector");
+        this.taskRoadSelector.resume(precomputeData);
     }
 
     @Override
@@ -84,6 +95,10 @@ public class SamplePolice extends TacticsPolice {
         this.search.preparate();
         this.roadSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_ROAD_SELECTOR, "adf.sample.module.complex.SampleRoadSelector");
         this.roadSelector.preparate();
+        this.taskSearch = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_TASK_SEARCH, "adf.sample.module.complex.topdown.SampleTaskSearch");
+        this.taskSearch.preparate();
+        this.taskRoadSelector = moduleManager.getModule(SampleModuleKey.POLICE_MODULE_TASK_ROAD_SELECTOR, "adf.sample.module.complex.topdown.SampleTaskRoadSelector");
+        this.taskRoadSelector.preparate();
     }
 
     @Override
@@ -92,39 +107,60 @@ public class SamplePolice extends TacticsPolice {
         this.clustering.updateInfo(messageManager);
         this.roadSelector.updateInfo(messageManager);
         this.search.updateInfo(messageManager);
+        this.taskRoadSelector.updateInfo(messageManager);
+        this.taskSearch.updateInfo(messageManager);
 
         PoliceForce me = (PoliceForce) agentInfo.me();
-        Road targetRoad = this.roadSelector.calc().getTargetEntity();
-        if(targetRoad != null) {
+        EntityID target = this.taskSearch.calc().getTarget();
+        if(target != null) {
             Action action = moduleManager
-                    .getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR)
-                    .setTarget(targetRoad.getID())
+                    .getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH)
+                    .setTarget(target)
                     .calc().getAction();
             if(action != null) {
                 CommunicationMessage message = this.getActionMessage(worldInfo, me, action);
-                if(message != null) { messageManager.addMessage(message); }
+                if(message != null) {
+                    messageManager.addMessage(message);
+                }
                 return action;
             }
         }
-
-        // Nothing to do
-        Action action = moduleManager
-                .getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH)
-                .setTarget(this.search.calc().getTarget())
-                .calc().getAction();
-        if(action != null) {
-            CommunicationMessage message = this.getActionMessage(worldInfo, me, action);
-            if(message != null) { messageManager.addMessage(message); }
-            return action;
+        target = this.taskRoadSelector.calc().getTarget();
+        if (target == null) {
+            target = this.roadSelector.calc().getTarget();
+        }
+        if(target != null) {
+            Action action = moduleManager
+                    .getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR)
+                    .setTarget(target)
+                    .calc().getAction();
+            if(action != null) {
+                CommunicationMessage message = this.getActionMessage(worldInfo, me, action);
+                if(message != null) {
+                    messageManager.addMessage(message);
+                }
+                return action;
+            }
+        }
+        target = this.search.calc().getTarget();
+        if(target != null) {
+            Action action = moduleManager
+                    .getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH)
+                    .setTarget(target)
+                    .calc().getAction();
+            if(action != null) {
+                CommunicationMessage message = this.getActionMessage(worldInfo, me, action);
+                if(message != null) {
+                    messageManager.addMessage(message);
+                }
+                return action;
+            }
         }
 
         //check buriedness
         if(me.getBuriedness() > 0) {
             messageManager.addMessage(
-                    new MessagePoliceForce(
-                            true, me,
-                            MessagePoliceForce.ACTION_REST,
-                            me.getPosition())
+                    new MessagePoliceForce(true, me, MessagePoliceForce.ACTION_REST, me.getPosition())
             );
         }
         return new ActionRest();
@@ -160,9 +196,10 @@ public class SamplePolice extends TacticsPolice {
             actionIndex = MessagePoliceForce.ACTION_REST;
             target = policeForce.getPosition();
         }
-        return actionIndex != -1 ?
-                new MessagePoliceForce(true, policeForce, actionIndex, target) :
-                null;
+        if(actionIndex != -1) {
+            return new MessagePoliceForce(true, policeForce, actionIndex, target);
+        }
+        return null;
     }
 
     private boolean intersect(double agentX, double agentY, double pointX, double pointY, Blockade blockade) {

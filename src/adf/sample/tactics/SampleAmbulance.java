@@ -22,7 +22,6 @@ import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsAmbulance;
 import adf.sample.SampleModuleKey;
 import rescuecore2.standard.entities.AmbulanceTeam;
-import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
@@ -34,6 +33,9 @@ public class SampleAmbulance extends TacticsAmbulance {
     private HumanSelector humanSelector;
     private Search search;
     private Clustering clustering;
+
+    private HumanSelector taskHumanSelector;
+    private Search taskSearch;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -66,6 +68,10 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.search.precompute(precomputeData);
         this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR, "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.precompute(precomputeData);
+        this.taskHumanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_HUMAN_SELECTOR, "adf.sample.module.complex.topdown.SampleTaskVictimSelector");
+        this.taskHumanSelector.precompute(precomputeData);
+        this.taskSearch = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_SEARCH, "adf.sample.module.complex.topdown.SampleTaskSearch");
+        this.taskSearch.precompute(precomputeData);
     }
 
     @Override
@@ -78,6 +84,10 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.search.resume(precomputeData);
         this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR, "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.resume(precomputeData);
+        this.taskHumanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_HUMAN_SELECTOR, "adf.sample.module.complex.topdown.SampleTaskVictimSelector");
+        this.taskHumanSelector.resume(precomputeData);
+        this.taskSearch = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_SEARCH, "adf.sample.module.complex.topdown.SampleTaskSearch");
+        this.taskSearch.resume(precomputeData);
     }
 
     @Override
@@ -90,6 +100,10 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.search.preparate();
         this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR, "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.preparate();
+        this.taskHumanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_HUMAN_SELECTOR, "adf.sample.module.complex.topdown.SampleTaskVictimSelector");
+        this.taskHumanSelector.preparate();
+        this.taskSearch = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_SEARCH, "adf.sample.module.complex.topdown.SampleTaskSearch");
+        this.taskSearch.preparate();
     }
 
     @Override
@@ -100,40 +114,56 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.search.updateInfo(messageManager);
 
         AmbulanceTeam me = (AmbulanceTeam)agentInfo.me();
-        Human targetHuman = agentInfo.someoneOnBoard();
-        if(targetHuman == null) {
-            targetHuman = this.humanSelector.calc().getTargetEntity();
-        }
-        if(targetHuman != null) {
+        EntityID target = this.taskSearch.calc().getTarget();
+        if(target != null) {
             Action action = moduleManager
-                    .getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT)
-                    .setTarget(targetHuman.getID())
+                    .getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH)
+                    .setTarget(target)
                     .calc().getAction();
             if(action != null) {
                 CommunicationMessage message = this.getActionMessage(me, action);
-                if(message != null) { messageManager.addMessage(message); }
+                if(message != null) {
+                    messageManager.addMessage(message);
+                }
                 return action;
             }
         }
-
-        // Nothing to do
-        Action action = moduleManager
-                .getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH)
-                .setTarget(this.search.calc().getTarget())
-                .calc().getAction();
-        if(action != null) {
-            CommunicationMessage message = this.getActionMessage(me, action);
-            if(message != null) { messageManager.addMessage(message); }
-            return action;
+        target = this.taskHumanSelector.calc().getTarget();
+        if(target == null) {
+            target = this.humanSelector.calc().getTarget();
+        }
+        if(target != null) {
+            Action action = moduleManager
+                    .getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT)
+                    .setTarget(target)
+                    .calc().getAction();
+            if(action != null) {
+                CommunicationMessage message = this.getActionMessage(me, action);
+                if(message != null) {
+                    messageManager.addMessage(message);
+                }
+                return action;
+            }
+        }
+        target = this.search.calc().getTarget();
+        if(target != null) {
+            Action action = moduleManager
+                    .getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH)
+                    .setTarget(target)
+                    .calc().getAction();
+            if(action != null) {
+                CommunicationMessage message = this.getActionMessage(me, action);
+                if(message != null) {
+                    messageManager.addMessage(message);
+                }
+                return action;
+            }
         }
 
         //check buriedness
         if(me.getBuriedness() > 0) {
             messageManager.addMessage(
-                    new MessageAmbulanceTeam(
-                            true, me,
-                            MessageAmbulanceTeam.ACTION_REST,
-                            me.getPosition())
+                    new MessageAmbulanceTeam(true, me, MessageAmbulanceTeam.ACTION_REST, me.getPosition())
             );
         }
         return new ActionRest();
@@ -160,8 +190,9 @@ public class SampleAmbulance extends TacticsAmbulance {
             actionIndex = MessageAmbulanceTeam.ACTION_REST;
             target = ambulance.getPosition();
         }
-        return actionIndex != -1 ?
-                new MessageAmbulanceTeam(true, ambulance, actionIndex, target) :
-                null;
+        if(actionIndex != -1) {
+            return new MessageAmbulanceTeam(true, ambulance, actionIndex, target);
+        }
+        return null;
     }
 }

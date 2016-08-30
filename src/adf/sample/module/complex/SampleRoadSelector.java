@@ -11,38 +11,40 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.complex.RoadSelector;
-import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.StandardEntity;
-import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 
-public class SampleRoadSelector  extends RoadSelector {
+import static rescuecore2.standard.entities.StandardEntityURN.HYDRANT;
+import static rescuecore2.standard.entities.StandardEntityURN.ROAD;
 
-    private Set<Road> impassableArea;
+public class SampleRoadSelector extends RoadSelector {
+
+    private Collection<EntityID> impassableArea;
 
     private EntityID result;
 
     public SampleRoadSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         this.result = null;
-        this.impassableArea = new HashSet<>();
     }
 
     @Override
     public RoadSelector calc() {
         this.result = null;
-        Area area = this.agentInfo.getPositionArea();
-        if(this.impassableArea.contains(area)){
-            this.result = area.getID();
+        EntityID positionID = this.agentInfo.getPosition();
+        if(this.impassableArea.contains(positionID)){
+            this.result = positionID;
             return this;
         }
-        Object[] roadArray = this.impassableArea.toArray();
-        List<Road> impassableList = new ArrayList<>();
-        for(Object obj : roadArray) {
-            impassableList.add((Road)obj);
+        List<StandardEntity> impassableList = new ArrayList<>();
+        for(EntityID id : this.impassableArea) {
+            impassableList.add(this.worldInfo.getEntity(id));
         }
         impassableList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
         this.result = impassableList.get(0).getID();
@@ -63,18 +65,14 @@ public class SampleRoadSelector  extends RoadSelector {
     @Override
     public RoadSelector resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
-        for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.ROAD, StandardEntityURN.HYDRANT)) {
-            this.impassableArea.add((Road)entity);
-        }
+        this.impassableArea = this.worldInfo.getEntityIDsOfType(ROAD, HYDRANT);
         return this;
     }
 
     @Override
     public RoadSelector preparate() {
         super.preparate();
-        for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.ROAD, StandardEntityURN.HYDRANT)) {
-            this.impassableArea.add((Road)entity);
-        }
+        this.impassableArea = this.worldInfo.getEntityIDsOfType(ROAD, HYDRANT);
         return this;
     }
 
@@ -85,8 +83,8 @@ public class SampleRoadSelector  extends RoadSelector {
             StandardEntity entity = worldInfo.getEntity(id);
             if(entity instanceof Road) {
                 Road road = (Road)entity;
-                if(road.isBlockadesDefined() && road.getBlockades().isEmpty()) {
-                    this.impassableArea.remove(road);
+                if(!road.isBlockadesDefined() || road.getBlockades().isEmpty()) {
+                    this.impassableArea.remove(id);
                     messageManager.addMessage(new MessageRoad(true, road, null, true));
                 }
             }
@@ -95,7 +93,7 @@ public class SampleRoadSelector  extends RoadSelector {
             if(message.getClass() == MessageRoad.class) {
                 MessageRoad messageRoad = (MessageRoad)message;
                 if(messageRoad.isPassable()) {
-                    this.impassableArea.remove(this.worldInfo.getEntity(messageRoad.getRoadID()));
+                    this.impassableArea.remove(messageRoad.getRoadID());
                 }
             }
         }

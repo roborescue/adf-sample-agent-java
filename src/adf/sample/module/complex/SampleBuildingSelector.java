@@ -9,9 +9,11 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
+import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
 import adf.sample.SampleModuleKey;
 import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.FireBrigade;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -22,11 +24,18 @@ import java.util.Comparator;
 import java.util.List;
 
 public class SampleBuildingSelector extends BuildingSelector {
-
+    private int thresholdCompleted;
+    private int thresholdRefill;
     private EntityID result;
 
     public SampleBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
+        int maxWater = scenarioInfo.getFireTankMaximum();
+        int maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
+        //use DevelopData
+        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("fire.threshold.refill", 10);
+        this.thresholdRefill = maxExtinguishPower;
+        this.result = null;
     }
 
     @Override
@@ -37,7 +46,48 @@ public class SampleBuildingSelector extends BuildingSelector {
 
     @Override
     public BuildingSelector calc() {
-        Clustering clustering = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
+        this.result = null;
+        FireBrigade fireBrigade = (FireBrigade)this.agentInfo.me();
+        int water = fireBrigade.getWater();
+        StandardEntityURN positionURN = this.worldInfo.getPosition(fireBrigade).getStandardURN();
+        PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+
+        if(positionURN.equals(StandardEntityURN.REFUGE) && water < this.thresholdCompleted) {
+            this.result = fireBrigade.getPosition();
+            return this;
+        }
+        if(positionURN.equals(StandardEntityURN.HYDRANT) && water < this.thresholdCompleted) {
+            pathPlanning.setFrom(fireBrigade.getPosition());
+            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+            pathPlanning.calc();
+            List<EntityID> path = pathPlanning.getResult();
+            if(path != null && !path.isEmpty()) {
+                this.result = path.get(path.size() - 1);
+            } else {
+                this.result = fireBrigade.getPosition();
+            }
+            return this;
+        }
+        if (water <= this.thresholdRefill) {
+            pathPlanning.setFrom(fireBrigade.getPosition());
+            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+            pathPlanning.calc();
+            List<EntityID> path = pathPlanning.getResult();
+            if(path != null && !path.isEmpty()) {
+                this.result = path.get(path.size() - 1);
+                return this;
+            }
+            pathPlanning.setFrom(fireBrigade.getPosition());
+            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
+            pathPlanning.calc();
+            path = pathPlanning.getResult();
+            if(path != null && !path.isEmpty()) {
+                this.result = path.get(path.size() - 1);
+                return this;
+            }
+        }
+
+        Clustering clustering = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING);
         if(clustering == null) {
             this.result = this.calcTargetInWorld();
             return this;
@@ -48,6 +98,8 @@ public class SampleBuildingSelector extends BuildingSelector {
         }
         return this;
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private EntityID calcTargetInCluster(Clustering clustering) {
         int clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
@@ -96,6 +148,8 @@ public class SampleBuildingSelector extends BuildingSelector {
         return null;
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     @Override
     public EntityID getTarget() {
         return this.result;
@@ -118,6 +172,8 @@ public class SampleBuildingSelector extends BuildingSelector {
         super.preparate();
         return this;
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private class DistanceSorter implements Comparator<StandardEntity> {
         private StandardEntity reference;

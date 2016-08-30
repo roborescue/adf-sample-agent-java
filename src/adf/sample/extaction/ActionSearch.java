@@ -1,6 +1,7 @@
 package adf.sample.extaction;
 
 import adf.agent.action.common.ActionMove;
+import adf.agent.action.common.ActionRest;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -58,9 +59,22 @@ public class ActionSearch extends ExtAction {
             pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
         }
         if(pathPlanning != null) {
-            List<EntityID> path = pathPlanning.setFrom(agent.getPosition()).setDestination(this.searchTargets).calc().getResult();
-            if (path != null && path.size() > 0) {
-                this.result = new ActionMove(path);
+            List<EntityID> path = pathPlanning
+                    .setFrom(agent.getPosition())
+                    .setDestination(this.searchTargets)
+                    .calc().getResult();
+            if (path != null) {
+                boolean isRest = true;
+                for(EntityID id : path) {
+                    if(!this.searchTargets.contains(id)) {
+                        isRest = false;
+                    }
+                }
+                if(isRest) {
+                    this.result = new ActionRest();
+                } else {
+                    this.result = new ActionMove(path);
+                }
             }
         }
         return this;
