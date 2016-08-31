@@ -38,7 +38,7 @@ public class SampleTaskVictimSelector  extends HumanSelector {
     @Override
     public HumanSelector updateInfo(MessageManager messageManager) {
         if(this.task != null && this.isCompleted()) {
-            messageManager.addMessage(new MessageReport(true, true,false, this.senderID));
+            messageManager.addMessage(new MessageReport(true, true, false, this.senderID));
             this.action = -1;
             this.task = null;
             this.senderID = null;
@@ -72,10 +72,12 @@ public class SampleTaskVictimSelector  extends HumanSelector {
                 this.action = CommandAmbulance.ACTION_LOAD;
                 this.task = command.getTargetID();
                 this.senderID = command.getSenderID();
+                return this;
             } else if(command.getAction() == CommandAmbulance.ACTION_UNLOAD) {
                 this.action = CommandAmbulance.ACTION_UNLOAD;
                 this.task = command.getTargetID();
                 this.senderID = command.getSenderID();
+                return this;
             } else {
                 this.action = -1;
                 this.task = null;
@@ -83,6 +85,21 @@ public class SampleTaskVictimSelector  extends HumanSelector {
             }
         }
 
+        Human transportHuman =  this.agentInfo.someoneOnBoard();
+        if(transportHuman != null) {
+            if(this.task != null) {
+                if (this.action != CommandAmbulance.ACTION_UNLOAD) {
+                    messageManager.addMessage(new MessageReport(true, false, false, this.senderID));
+                    this.action =  CommandAmbulance.ACTION_UNLOAD;
+                    this.task = transportHuman.getID();
+                    this.senderID = null;
+                }
+            } else {
+                this.action =  CommandAmbulance.ACTION_UNLOAD;
+                this.task = transportHuman.getID();
+                this.senderID = null;
+            }
+        }
         return this;
     }
 

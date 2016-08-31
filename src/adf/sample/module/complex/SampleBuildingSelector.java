@@ -1,7 +1,6 @@
 package adf.sample.module.complex;
 
 
-import adf.agent.communication.MessageManager;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -32,16 +31,9 @@ public class SampleBuildingSelector extends BuildingSelector {
         super(ai, wi, si, moduleManager, developData);
         int maxWater = scenarioInfo.getFireTankMaximum();
         int maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
-        //use DevelopData
-        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("fire.threshold.refill", 10);
-        this.thresholdRefill = maxExtinguishPower;
+        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("fire.threshold.completed", 10);
+        this.thresholdRefill = maxExtinguishPower * developData.getInteger("fire.threshold.refill", 1);
         this.result = null;
-    }
-
-    @Override
-    public BuildingSelector updateInfo(MessageManager messageManager) {
-        super.updateInfo(messageManager);
-        return this;
     }
 
     @Override
@@ -52,6 +44,7 @@ public class SampleBuildingSelector extends BuildingSelector {
         StandardEntityURN positionURN = this.worldInfo.getPosition(fireBrigade).getStandardURN();
         PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
 
+        // refill
         if(positionURN.equals(StandardEntityURN.REFUGE) && water < this.thresholdCompleted) {
             this.result = fireBrigade.getPosition();
             return this;
@@ -59,8 +52,7 @@ public class SampleBuildingSelector extends BuildingSelector {
         if(positionURN.equals(StandardEntityURN.HYDRANT) && water < this.thresholdCompleted) {
             pathPlanning.setFrom(fireBrigade.getPosition());
             pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            pathPlanning.calc();
-            List<EntityID> path = pathPlanning.getResult();
+            List<EntityID> path = pathPlanning.calc().getResult();
             if(path != null && !path.isEmpty()) {
                 this.result = path.get(path.size() - 1);
             } else {
@@ -86,7 +78,7 @@ public class SampleBuildingSelector extends BuildingSelector {
                 return this;
             }
         }
-
+        // target building
         Clustering clustering = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING);
         if(clustering == null) {
             this.result = this.calcTargetInWorld();

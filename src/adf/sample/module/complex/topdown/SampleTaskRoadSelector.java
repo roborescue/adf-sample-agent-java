@@ -13,11 +13,14 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.complex.RoadSelector;
 import rescuecore2.standard.entities.Area;
+import rescuecore2.standard.entities.Blockade;
 import rescuecore2.standard.entities.Road;
+import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.Collection;
 
+import static rescuecore2.standard.entities.StandardEntityURN.BLOCKADE;
 import static rescuecore2.standard.entities.StandardEntityURN.POLICE_OFFICE;
 
 public class SampleTaskRoadSelector extends RoadSelector {
@@ -68,9 +71,19 @@ public class SampleTaskRoadSelector extends RoadSelector {
                 continue;
             }
             if(command.getAction() == CommandPolice.ACTION_CLEAR) {
-                this.task = command.getTargetID();
-                this.senderID = command.getSenderID();
-                return this;
+                StandardEntity target = this.worldInfo.getEntity(command.getTargetID());
+                if(target.getStandardURN() == BLOCKADE) {
+                    Blockade blockade = (Blockade)target;
+                    if(blockade.isPositionDefined()) {
+                        this.task = blockade.getPosition();
+                        this.senderID = command.getSenderID();
+                        return this;
+                    }
+                } else {
+                    this.task = target.getID();
+                    this.senderID = command.getSenderID();
+                    return this;
+                }
             } else {
                 this.task = null;
                 this.senderID = null;

@@ -61,13 +61,7 @@ public class SampleSearch extends Search {
     public Search updateInfo(MessageManager messageManager) {
         this.reflectMessage(messageManager);
         this.sendMessage(messageManager);
-        this.updateTask();
-        return this;
-    }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private void updateTask() {
         if(this.unexploredBuildingIDs.isEmpty()) {
             this.reset();
         }
@@ -78,7 +72,10 @@ public class SampleSearch extends Search {
             this.reset();
             this.unexploredBuildingIDs.removeAll(worldInfo.getChanged().getChangedEntities());
         }
+        return this;
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private void reset() {
         this.unexploredBuildingIDs.clear();

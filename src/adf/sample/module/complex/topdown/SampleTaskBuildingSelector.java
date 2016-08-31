@@ -24,49 +24,41 @@ import java.util.Collection;
 import static rescuecore2.standard.entities.StandardEntityURN.*;
 
 public class SampleTaskBuildingSelector extends BuildingSelector {
-    private int refillCompleted;
-
+    private int thresholdCompleted;
+    private int thresholdRefill;
     private EntityID task;
     private EntityID senderID;
 
-
     public SampleTaskBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
-        int maxWater = this.scenarioInfo.getFireTankMaximum();
-        //use DevelopData
-        this.refillCompleted = (maxWater / 10) * developData.getInteger("fire.threshold.refill", 10);
+        int maxWater = scenarioInfo.getFireTankMaximum();
+        int maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
+        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("fire.threshold.completed", 10);
+        this.thresholdRefill = maxExtinguishPower * developData.getInteger("fire.threshold.refill", 1);
         this.task = null;
         this.senderID = null;
     }
 
     @Override
-    public BuildingSelector calc() {
-        return this;
-    }
-
-    @Override
     public BuildingSelector updateInfo(MessageManager messageManager) {
-        this.updateTask(messageManager);
-        return this;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private void updateTask(MessageManager messageManager) {
         FireBrigade agent = (FireBrigade) this.agentInfo.me();
         if(this.task != null) {
             StandardEntity entity = this.worldInfo.getEntity(this.task);
             StandardEntityURN urn = entity.getStandardURN();
             if(urn == REFUGE || urn == HYDRANT) {
-                if(agent.getWater() >= this.refillCompleted) {
-                    messageManager.addMessage(new MessageReport(true, true, false, this.senderID));
+                if(agent.getWater() >= this.thresholdCompleted) {
+                    if(this.senderID != null) {
+                        messageManager.addMessage(new MessageReport(true, true, false, this.senderID));
+                    }
                     this.task = null;
                     this.senderID = null;
                 }
             } else if(entity instanceof Building) {
                 Building building = (Building)entity;
                 if(!building.isOnFire()) {
-                    messageManager.addMessage(new MessageReport(true, true, false, this.senderID));
+                    if(this.senderID != null) {
+                        messageManager.addMessage(new MessageReport(true, true, false, this.senderID));
+                    }
                     this.task = null;
                     this.senderID = null;
                 }
@@ -98,19 +90,36 @@ public class SampleTaskBuildingSelector extends BuildingSelector {
             if(command.getAction() == CommandFire.ACTION_EXTINGUISH) {
                 this.task = command.getTargetID();
                 this.senderID = command.getSenderID();
-                return;
+                return this;
             } else if(command.getAction() == CommandFire.ACTION_REFILL) {
                 this.task = command.getTargetID();
                 this.senderID = command.getSenderID();
-                return;
+                return this;
             } else {
                 this.task = null;
                 this.senderID = null;
             }
         }
+        if(agent.getWater() < this.thresholdRefill) {
+            StandardEntity entity = this.worldInfo.getEntity(this.task);
+            StandardEntityURN urn = entity.getStandardURN();
+            if(urn != REFUGE && urn != HYDRANT) {
+                if(this.senderID != null) {
+                    messageManager.addMessage(new MessageReport(true, false, false, this.senderID));
+                }
+                this.task = null;
+                this.senderID = null;
+            }
+        }
+        return this;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @Override
+    public BuildingSelector calc() {
+        return this;
+    }
 
     @Override
     public EntityID getTarget() {
@@ -134,6 +143,4 @@ public class SampleTaskBuildingSelector extends BuildingSelector {
         super.preparate();
         return this;
     }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

@@ -1,6 +1,5 @@
 package adf.sample.module.complex;
 
-
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.information.MessageRoad;
 import adf.agent.develop.DevelopData;
@@ -89,12 +88,10 @@ public class SampleRoadSelector extends RoadSelector {
                 }
             }
         }
-        for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
-            if(message.getClass() == MessageRoad.class) {
-                MessageRoad messageRoad = (MessageRoad)message;
-                if(messageRoad.isPassable()) {
-                    this.impassableArea.remove(messageRoad.getRoadID());
-                }
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageRoad.class)) {
+            MessageRoad messageRoad = (MessageRoad)message;
+            if(messageRoad.isPassable()) {
+                this.impassableArea.remove(messageRoad.getRoadID());
             }
         }
         return this;

@@ -1,5 +1,6 @@
 package adf.sample.module.complex;
 
+import adf.agent.communication.standard.bundle.topdown.CommandAmbulance;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -30,6 +31,12 @@ public class SampleVictimSelector extends HumanSelector {
 
     @Override
     public HumanSelector calc() {
+        Human transportHuman =  this.agentInfo.someoneOnBoard();
+        if(transportHuman != null) {
+            this.result = transportHuman.getID();
+            return this;
+        }
+
         Clustering clustering = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
         if(clustering == null) {
             this.result = this.calcTargetInWorld();
