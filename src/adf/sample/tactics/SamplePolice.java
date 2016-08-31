@@ -50,7 +50,7 @@ public class SamplePolice extends TacticsPolice {
         this.clearDistance = scenarioInfo.getClearRepairDistance();
         //init ExtAction
         moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_EXT_CLEAR, "adf.sample.extaction.ActionExtClear");
-        moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch");
+        moduleManager.getExtAction(SampleModuleKey.POLICE_ACTION_SEARCH, "adf.sample.extaction.ActionExtMove");
     }
 
     @Override

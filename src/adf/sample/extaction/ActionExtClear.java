@@ -49,6 +49,9 @@ public class ActionExtClear extends ExtAction {
             } else if(entity.getStandardURN().equals(StandardEntityURN.BLOCKADE)) {
                 this.target = ((Blockade)entity).getPosition();
                 return this;
+            } else if(entity instanceof Building) {
+                this.target = entityID;
+                return this;
             }
         }
         return this;
@@ -62,7 +65,25 @@ public class ActionExtClear extends ExtAction {
         }
         PoliceForce policeForce = (PoliceForce)this.agentInfo.me();
         EntityID agentPosition = policeForce.getPosition();
-        Road targetRoad = (Road)this.worldInfo.getEntity(this.target);
+        StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
+
+        if(!(targetEntity instanceof Road)) {
+            if(targetEntity.getStandardURN() == StandardEntityURN.BLOCKADE) {
+                targetEntity = this.worldInfo.getEntity(((Blockade)targetEntity).getPosition());
+            } else {
+                PathPlanning pp = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
+                pp.setFrom(agentPosition);
+                pp.setDestination(this.target);
+                List<EntityID> path = pp.calc().getResult();
+                if (path != null && path.size() > 0) {
+                    this.result = new ActionMove(path);
+                }
+                return this;
+            }
+
+        }
+
+        Road targetRoad = (Road)targetEntity;
         if(this.target.getValue() == agentPosition.getValue()) {
             this.result = this.calcTargetPosition(policeForce, targetRoad);
             if(this.result != null) return this;

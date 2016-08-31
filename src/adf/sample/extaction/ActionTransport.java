@@ -17,12 +17,13 @@ import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
 
+import static rescuecore2.standard.entities.StandardEntityURN.BLOCKADE;
 import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
 public class ActionTransport extends ExtAction {
 
-    private Human target;
+    private EntityID target;
 
     public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
@@ -31,11 +32,12 @@ public class ActionTransport extends ExtAction {
 
     @Override
     public ExtAction setTarget(EntityID... targets) {
+        this.target = null;
         if(targets != null) {
-            for(EntityID target : targets) {
-                StandardEntity entity = this.worldInfo.getEntity(target);
-                if (entity instanceof Human) {
-                    this.target = (Human) entity;
+            for(EntityID id : targets) {
+                StandardEntity entity = this.worldInfo.getEntity(id);
+                if(entity instanceof Human || entity instanceof Area) {
+                    this.target = id;
                     return this;
                 }
             }
@@ -49,14 +51,49 @@ public class ActionTransport extends ExtAction {
         if(this.target == null) {
             return this;
         }
+
         AmbulanceTeam ambulanceTeam = (AmbulanceTeam) this.agentInfo.me();
-        StandardEntityURN positionURN = this.worldInfo.getPosition(ambulanceTeam).getStandardURN();
-        if(this.target.getPosition().equals(ambulanceTeam.getID())) {
-            if (positionURN.equals(REFUGE)) {
+        EntityID ambulancePosition = ambulanceTeam.getPosition();
+        StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
+        Human transportHuman = this.agentInfo.someoneOnBoard();
+
+        PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+
+        if(!(targetEntity instanceof Human)) {
+            if(transportHuman != null) {
+                if(ambulancePosition.getValue() == this.target.getValue()) {
+                    this.result = new ActionUnload();
+                } else {
+                    pathPlanning.setFrom(ambulancePosition);
+                    pathPlanning.setDestination(this.target);
+                    List<EntityID> path = pathPlanning.calc().getResult();
+                    if (path != null && path.size() > 0) {
+                        this.result = new ActionMove(path);
+                    }
+                }
+            } else {
+                if (targetEntity.getStandardURN() == BLOCKADE) {
+                    targetEntity = this.worldInfo.getEntity(((Blockade) targetEntity).getPosition());
+                }
+                pathPlanning.setFrom(ambulancePosition);
+                pathPlanning.setDestination(targetEntity.getID());
+                List<EntityID> path = pathPlanning.calc().getResult();
+                if (path != null && path.size() > 0) {
+                    this.result = new ActionMove(path);
+                }
+            }
+            return this;
+        }
+
+        if(transportHuman != null) {
+            if(targetEntity.getID().getValue() != transportHuman.getID().getValue()) {
+                this.result = new ActionUnload();
+                return this;
+            }
+            if(this.worldInfo.getEntity(ambulancePosition).getStandardURN() == REFUGE) {
                 this.result = new ActionUnload();
             } else {
-                PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
-                pathPlanning.setFrom(ambulanceTeam.getPosition());
+                pathPlanning.setFrom(ambulancePosition);
                 pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(REFUGE));
                 List<EntityID> path = pathPlanning.calc().getResult();
                 if (path != null && path.size() > 0) {
@@ -66,18 +103,23 @@ public class ActionTransport extends ExtAction {
             return this;
         }
 
-        if(this.target.isHPDefined() && this.target.getHP() == 0) {
+        Human targetHuman = (Human)targetEntity;
+        if(targetHuman.isHPDefined() && targetHuman.getHP() == 0) {
             return this;
         }
-        if (this.target.getPosition().equals(ambulanceTeam.getPosition())) {
-            if (this.target.getBuriedness() > 0) {
-                this.result = new ActionRescue(this.target.getID());
-            } else if (this.target.getStandardURN().equals(CIVILIAN) && !(this.worldInfo.getPosition(this.target).getStandardURN().equals(REFUGE))) {
-                this.result = new ActionLoad(this.target.getID());
+        if(this.worldInfo.getPosition(targetHuman).getStandardURN() == REFUGE) {
+            return this;
+        }
+
+        if(ambulancePosition.getValue() == targetHuman.getPosition().getValue()) {
+            if(targetHuman.isBuriednessDefined() && targetHuman.getBuriedness() > 0) {
+                this.result = new ActionRescue(targetHuman);
+            } else if(targetHuman.getStandardURN() == CIVILIAN) {
+                this.result = new ActionLoad(targetHuman.getID());
             }
         } else {
-            PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
-            pathPlanning.setFrom(ambulanceTeam.getPosition()).setDestination(this.target.getPosition());
+            pathPlanning.setFrom(ambulancePosition);
+            pathPlanning.setDestination(targetHuman.getPosition());
             List<EntityID> path = pathPlanning.calc().getResult();
             if (path != null && path.size() > 0) {
                 this.result = new ActionMove(path);
@@ -85,5 +127,4 @@ public class ActionTransport extends ExtAction {
         }
         return this;
     }
-
 }

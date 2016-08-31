@@ -23,11 +23,11 @@ public class SampleModuleKey {
     public static final String POLICE_MODULE_TASK_ROAD_SELECTOR ="TacticsPolice.TaskRoadSelector";
 
     public static final String AMBULANCE_ACTION_TRANSPORT = "TacticsAmbulance.ActionTransport";
-    public static final String AMBULANCE_ACTION_SEARCH = "TacticsAmbulance.ActionSearch";
+    public static final String AMBULANCE_ACTION_SEARCH = "TacticsAmbulance.ActionExtMove";
 
     public static final String FIRE_ACTION_FIREFIGHTING = "TacticsFire.ActionFireFighting";
-    public static final String FIRE_ACTION_SEARCH = "TacticsFire.ActionSearch";
+    public static final String FIRE_ACTION_SEARCH = "TacticsFire.ActionExtMove";
 
     public static final String POLICE_ACTION_EXT_CLEAR = "TacticsPolice.ActionExtClear";
-    public static final String POLICE_ACTION_SEARCH = "TacticsPolice.ActionSearch";
+    public static final String POLICE_ACTION_SEARCH = "TacticsPolice.ActionExtMove";
 }

@@ -55,7 +55,7 @@ public class SampleAmbulance extends TacticsAmbulance {
         );
         //init ExtAction
         moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT, "adf.sample.extaction.ActionTransport");
-        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH, "adf.sample.extaction.ActionSearch");
+        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH, "adf.sample.extaction.ActionExtMove");
     }
 
     @Override
