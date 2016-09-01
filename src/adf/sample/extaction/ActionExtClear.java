@@ -336,7 +336,7 @@ public class ActionExtClear extends ExtAction {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private boolean equalsPoint(double p1X, double p1Y, double p2X, double p2Y) {
-        return this.equalsPoint(p1X, p1Y, p2X, p2Y, 1.0D);
+        return this.equalsPoint(p1X, p1Y, p2X, p2Y, 1000.0D);
     }
 
     private boolean equalsPoint(double p1X, double p1Y, double p2X, double p2Y, double range) {
