@@ -41,6 +41,7 @@ public class SampleTaskBuildingSelector extends BuildingSelector {
 
     @Override
     public BuildingSelector updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
         FireBrigade agent = (FireBrigade) this.agentInfo.me();
         if(this.task != null) {
             StandardEntity entity = this.worldInfo.getEntity(this.task);

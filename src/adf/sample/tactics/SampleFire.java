@@ -103,10 +103,12 @@ public class SampleFire extends TacticsFire {
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
+        this.search.updateInfo(messageManager);
+        this.taskSearch.updateInfo(messageManager);
         this.pathPlanning.updateInfo(messageManager);
         this.clustering.updateInfo(messageManager);
         this.buildingSelector.updateInfo(messageManager);
-        this.search.updateInfo(messageManager);
+        this.taskBuildingSelector.updateInfo(messageManager);
 
         FireBrigade me = (FireBrigade) agentInfo.me();
         EntityID target = this.taskSearch.calc().getTarget();

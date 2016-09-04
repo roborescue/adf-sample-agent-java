@@ -1,6 +1,5 @@
 package adf.sample.module.complex;
 
-import adf.agent.communication.standard.bundle.topdown.CommandAmbulance;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;

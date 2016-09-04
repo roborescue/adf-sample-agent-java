@@ -38,12 +38,16 @@ public class SampleKMeans extends StaticClustering {
 
     private boolean assignAgentsFlag;
 
-    private int repeat = 10;
+    private int repeat;
 
     private Map<EntityID, Set<EntityID>> shortestPathGraph;
 
-    public SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
-        this(ai, wi, si, moduleManager, 10, true, wi.getEntitiesOfType(
+    protected SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+        super(ai, wi, si, moduleManager, developData);
+        this.repeat = developData.getInteger("sample.module.SampleKMeans.repeat", 7);
+        this.clusterSize = developData.getInteger("sample.module.SampleKMeans.clusterSize", 10);
+        this.assignAgentsFlag = developData.getBoolean("sample.module.SampleKMeans.assignAgentsFlag", true);
+        this.entities = wi.getEntitiesOfType(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
                 StandardEntityURN.BUILDING,
@@ -52,15 +56,7 @@ public class SampleKMeans extends StaticClustering {
                 StandardEntityURN.AMBULANCE_CENTRE,
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
-        ),
-        developData);
-    }
-
-    protected SampleKMeans(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, int size, boolean assignAgentsFlag, Collection<StandardEntity> entities, DevelopData developData) {
-        super(ai, wi, si, moduleManager, developData);
-        this.clusterSize = size;
-        this.assignAgentsFlag = assignAgentsFlag;
-        this.entities = entities;
+        );
     }
 
     @Override
@@ -69,7 +65,6 @@ public class SampleKMeans extends StaticClustering {
         if(this.getCountPrecompute() >= 2) {
             return this;
         }
-        this.repeat = 7;
         this.calc();
         precomputeData.setEntityIDList(KEY_ALL_ELEMENTS, (List<EntityID>) this.convertToID(this.entities));
         precomputeData.setInteger(KEY_CLUSTER_SIZE, this.clusterSize);

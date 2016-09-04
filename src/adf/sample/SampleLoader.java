@@ -7,6 +7,8 @@ import adf.component.control.ControlPolice;
 import adf.component.tactics.TacticsAmbulance;
 import adf.component.tactics.TacticsFire;
 import adf.component.tactics.TacticsPolice;
+import adf.sample.control.SampleControlAmbulance;
+import adf.sample.control.SampleControlFire;
 import adf.sample.control.SampleControlPolice;
 import adf.sample.tactics.SampleAmbulance;
 import adf.sample.tactics.SampleFire;
@@ -35,12 +37,12 @@ public class SampleLoader extends AbstractLoader {
 
     @Override
     public ControlAmbulance getControlAmbulance() {
-        return null;
+        return new SampleControlAmbulance();
     }
 
     @Override
     public ControlFire getControlFire() {
-        return null;
+        return new SampleControlFire();
     }
 
     @Override

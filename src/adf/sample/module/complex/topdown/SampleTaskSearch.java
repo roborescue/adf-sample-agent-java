@@ -15,8 +15,6 @@ import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.Search;
 import adf.sample.SampleModuleKey;
 import com.google.common.collect.Lists;
-import rescuecore2.misc.geometry.GeometryTools2D;
-import rescuecore2.misc.geometry.Line2D;
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Vector2D;
 import rescuecore2.standard.entities.*;
@@ -70,10 +68,11 @@ public class SampleTaskSearch extends Search {
 
     @Override
     public Search updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
         this.reflectMessage(messageManager);
         this.sendMessage(messageManager);
         this.updateTask(messageManager);
-        this.sendClearInfo(messageManager);
+        this.sendClearRequest(messageManager);
         return this;
     }
 
@@ -112,81 +111,30 @@ public class SampleTaskSearch extends Search {
         }
     }
 
-    private void sendClearInfo(MessageManager messageManager) {
+    private void sendClearRequest(MessageManager messageManager) {
         StandardEntity entity = this.agentInfo.me();
-        if(entity instanceof Human && entity.getStandardURN() != POLICE_FORCE) {
-            Human currentAgent = (Human)entity;
-            StandardEntity position = this.worldInfo.getPosition(currentAgent);
-            if(position instanceof Road) {
-                for(EntityID blockadeID : ((Road)position).getBlockades()) {
-                    if(this.isInside(
-                            currentAgent.getX(),
-                            currentAgent.getY(),
-                            ((Blockade)this.worldInfo.getEntity(blockadeID)).getApexes()
-                    )) {
-                        messageManager.addMessage(new CommandPolice(
-                                true,
-                                null,
-                                position.getID(),
-                                CommandPolice.ACTION_CLEAR
-                        ));
-                        return;
-                    }
-                }
-            }
-            if(this.task != null) {
-                if(this.task.getTargetIDs().contains(position.getID())) {
+        if(!(entity instanceof Human)) {
+            return;
+        }
+        if(entity.getStandardURN() == POLICE_FORCE) {
+            return;
+        }
+        Human currentAgent = (Human)entity;
+        StandardEntity position = this.worldInfo.getPosition(currentAgent);
+        if(position instanceof Road) {
+            for (EntityID blockadeID : ((Road) position).getBlockades()) {
+                if (this.isInside(
+                        currentAgent.getX(),
+                        currentAgent.getY(),
+                        ((Blockade) this.worldInfo.getEntity(blockadeID)).getApexes()
+                )) {
+                    messageManager.addMessage(new CommandPolice(
+                            true,
+                            null,
+                            position.getID(),
+                            CommandPolice.ACTION_CLEAR
+                    ));
                     return;
-                }
-                Collection<EntityID> targets = new HashSet<>();
-                PathPlanning pathPlanning = null;
-                if(currentAgent.getStandardURN() == StandardEntityURN.AMBULANCE_TEAM) {
-                    pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
-                } else if(currentAgent.getStandardURN() == StandardEntityURN.FIRE_BRIGADE) {
-                    pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
-                }
-                for(EntityID id : this.task.getTargetIDs()) {
-                    StandardEntity targetEntity = this.worldInfo.getEntity(id);
-                    if (targetEntity instanceof Area) {
-                        targets.add(id);
-                    } else if (targetEntity instanceof Human) {
-                        targets.add(((Human) targetEntity).getPosition());
-                    } else if (targetEntity.getStandardURN() == BLOCKADE) {
-                        targets.add(((Blockade) targetEntity).getPosition());
-                    }
-                }
-
-                if(pathPlanning != null && targets.size() > 0) {
-                    pathPlanning.setFrom(currentAgent.getPosition());
-                    pathPlanning.setDestination(targets);
-                    List<EntityID> path = pathPlanning.calc().getResult();
-                    if(path != null && path.size() > 0) {
-                        int index = path.indexOf(position.getID());
-                        if(index != -1 && index != (path.size() -1)) {
-                            StandardEntity next = this.worldInfo.getEntity(path.get(index + 1));
-                            if (next instanceof Road) {
-                                Edge edge = ((Road)next).getEdgeTo(position.getID());
-                                if(edge == null) {
-                                    return;
-                                }
-                                double edgeX = (edge.getStartX() + edge.getEndX()) / 2;
-                                double edgeY = (edge.getStartY() + edge.getEndY()) / 2;
-                                for(EntityID blockadeID : ((Road)next).getBlockades()) {
-                                    if(this.intersect(currentAgent.getX(), currentAgent.getY(), edgeX, edgeY,
-                                            (Blockade) this.worldInfo.getEntity(blockadeID)
-                                    )) {
-                                        messageManager.addMessage(new CommandPolice(
-                                                true,
-                                                null,
-                                                position.getID(),
-                                                CommandPolice.ACTION_CLEAR
-                                        ));
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -420,14 +368,6 @@ public class SampleTaskSearch extends Search {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private boolean equalsPoint(double p1X, double p1Y, double p2X, double p2Y) {
-        return this.equalsPoint(p1X, p1Y, p2X, p2Y, 1000.0D);
-    }
-
-    private boolean equalsPoint(double p1X, double p1Y, double p2X, double p2Y, double range) {
-        return (p2X - range < p1X && p1X < p2X + range) && (p2Y - range < p1Y && p1Y < p2Y + range);
-    }
-
     private boolean isInside(double pX, double pY, int[] apex) {
         Point2D p = new Point2D(pX, pY);
         Vector2D v1 = (new Point2D(apex[apex.length - 2], apex[apex.length - 1])).minus(p);
@@ -452,29 +392,6 @@ public class SampleTaskSearch extends Search {
             return -1 * angle;
         }
         return 0.0D;
-    }
-
-    private boolean intersect(double agentX, double agentY, double pointX, double pointY, Blockade blockade) {
-        List<Line2D> lines = GeometryTools2D.pointsToLines(GeometryTools2D.vertexArrayToPoints(blockade.getApexes()), true);
-        for(Line2D line : lines) {
-            Point2D start = line.getOrigin();
-            Point2D end = line.getEndPoint();
-            double startX = start.getX();
-            double startY = start.getY();
-            double endX = end.getX();
-            double endY = end.getY();
-            if(java.awt.geom.Line2D.linesIntersect(
-                    agentX, agentY, pointX, pointY,
-                    startX, startY, endX, endY
-            )) {
-                double midX = (startX + endX) / 2;
-                double midY = (startY + endY) / 2;
-                if(!equalsPoint(pointX, pointY, midX, midY) && !equalsPoint(agentX, agentY, midX, midY)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

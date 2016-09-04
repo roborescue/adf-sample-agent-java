@@ -103,12 +103,13 @@ public class SamplePolice extends TacticsPolice {
 
     @Override
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
+        this.search.updateInfo(messageManager);
+        this.taskSearch.updateInfo(messageManager);
         this.pathPlanning.updateInfo(messageManager);
         this.clustering.updateInfo(messageManager);
         this.roadSelector.updateInfo(messageManager);
-        this.search.updateInfo(messageManager);
         this.taskRoadSelector.updateInfo(messageManager);
-        this.taskSearch.updateInfo(messageManager);
+
 
         PoliceForce me = (PoliceForce) agentInfo.me();
         EntityID target = this.taskSearch.calc().getTarget();

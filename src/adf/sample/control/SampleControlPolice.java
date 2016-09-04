@@ -28,9 +28,11 @@ public class SampleControlPolice extends ControlPolice {
 
     private Map<EntityID, Task> agentTaskMap;
     private Set<EntityID> request;
+    private int resetTime;
 
     @Override
-    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData) {
+    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
+        this.resetTime = developData.getInteger("sample.control.SampleControlPolice.resetTime", 5);
         this.agentTaskMap = new HashMap<>();
         this.request = new HashSet<>();
         for(StandardEntity entity : worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE)) {
@@ -39,9 +41,9 @@ public class SampleControlPolice extends ControlPolice {
     }
 
     @Override
-    public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData) {
+    public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         this.collectTask(worldInfo, messageManager);
-        this.updateAgentTaskInfo(agentInfo, worldInfo, messageManager);
+        this.updateAgentTaskInfo(agentInfo, messageManager);
         this.sendCommand(worldInfo, messageManager);
     }
 
@@ -69,6 +71,7 @@ public class SampleControlPolice extends ControlPolice {
                         entity.getID(),
                         CommandPolice.ACTION_CLEAR
                 ));
+                agents.remove(0);
             } else if(entity.getStandardURN() == StandardEntityURN.BLOCKADE) {
                 entity = worldInfo.getEntity(((Blockade)entity).getPosition());
                 agents.sort(new DistanceSorter(worldInfo, entity));
@@ -78,13 +81,14 @@ public class SampleControlPolice extends ControlPolice {
                         entity.getID(),
                         CommandPolice.ACTION_CLEAR
                 ));
+                agents.remove(0);
             }
         }
 
     }
 
-    private void updateAgentTaskInfo(AgentInfo agentInfo, WorldInfo worldInfo, MessageManager messageManager) {
-        Collection<EntityID> policeIDs = worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_FORCE);
+    private void updateAgentTaskInfo(AgentInfo agentInfo, MessageManager messageManager) {
+        int currentTime = agentInfo.getTime();
         for (CommunicationMessage message : messageManager.getReceivedMessageList(MessagePoliceForce.class)) {
             MessagePoliceForce mpf = (MessagePoliceForce) message;
             if (mpf.getSenderID().getValue() == mpf.getAgentID().getValue()) {
@@ -99,15 +103,15 @@ public class SampleControlPolice extends ControlPolice {
                 }
             }
         }
-        /*for (CommunicationMessage message : messageManager.getReceivedMessageList(MessageReport.class)) {
-            MessageReport mr = (MessageReport) message;
-            if (policeIDs.contains(mr.getSenderID())) {
+        for(EntityID id : this.agentTaskMap.keySet()) {
+            Task task = this.agentTaskMap.get(id);
+            if(task.getTime() + this.resetTime <= currentTime) {
+                this.agentTaskMap.put(id, new Task(currentTime, ACTION_UNKNOWN, null));
             }
-        }*/
+        }
     }
 
     private void collectTask(WorldInfo worldInfo, MessageManager messageManager) {
-        Collection<EntityID> policeIDs = worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_FORCE);
         Collection<EntityID> commanders = worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_OFFICE);
         for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
             Class<? extends CommunicationMessage> messageClass = message.getClass();
@@ -120,7 +124,9 @@ public class SampleControlPolice extends ControlPolice {
                 }
             } else if(messageClass == MessageRoad.class) {
                 MessageRoad mr = (MessageRoad)message;
-                if(!mr.isPassable()) {
+                if (mr.isPassable()) {
+                    this.request.remove(mr.getRoadID());
+                } else {
                     if(mr.isBlockadeDefined()) {
                         this.request.add(mr.getRoadID());
                     }
@@ -130,12 +136,12 @@ public class SampleControlPolice extends ControlPolice {
     }
 
     @Override
-    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeInfo, DevelopData debugData) {
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeInfo, DevelopData developData) {
 
     }
 
     @Override
-    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData debugData) {
+    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
 
     }
 
@@ -150,7 +156,7 @@ public class SampleControlPolice extends ControlPolice {
             this.target = target;
         }
 
-        int getStartTime() {
+        int getTime() {
             return this.time;
         }
 

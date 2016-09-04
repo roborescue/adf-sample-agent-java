@@ -2,6 +2,7 @@ package adf.sample.module.complex.topdown;
 
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.topdown.CommandAmbulance;
+import adf.agent.communication.standard.bundle.topdown.CommandFire;
 import adf.agent.communication.standard.bundle.topdown.CommandScout;
 import adf.agent.communication.standard.bundle.topdown.MessageReport;
 import adf.agent.develop.DevelopData;
@@ -12,15 +13,13 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.complex.HumanSelector;
-import rescuecore2.standard.entities.Area;
-import rescuecore2.standard.entities.Human;
-import rescuecore2.standard.entities.StandardEntity;
-import rescuecore2.standard.entities.StandardEntityURN;
+import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.Collection;
 
 import static rescuecore2.standard.entities.StandardEntityURN.AMBULANCE_CENTRE;
+import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
 public class SampleTaskVictimSelector  extends HumanSelector {
 
@@ -37,6 +36,25 @@ public class SampleTaskVictimSelector  extends HumanSelector {
 
     @Override
     public HumanSelector updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
+        Area position = this.agentInfo.getPositionArea();
+        if(position instanceof Building && position.getStandardURN() != REFUGE) {
+            Building building = (Building)position;
+            if(building.isOnFire()) {
+                for(StandardEntity entity : this.worldInfo.getBuriedHumans(building)) {
+                    Human human = (Human)entity;
+                    if(human.isBuriednessDefined() && human.getBuriedness() > 0) {
+                        messageManager.addMessage(new CommandFire(
+                                true,
+                                null,
+                                building.getID(),
+                                CommandFire.ACTION_EXTINGUISH
+                        ));
+                        break;
+                    }
+                }
+            }
+        }
         if(this.task != null && this.isCompleted()) {
             messageManager.addMessage(new MessageReport(true, true, false, this.senderID));
             this.action = -1;

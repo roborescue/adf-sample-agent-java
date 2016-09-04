@@ -1,0 +1,187 @@
+package adf.sample.control;
+
+import adf.agent.communication.MessageManager;
+import adf.agent.communication.standard.bundle.MessageUtil;
+import adf.agent.communication.standard.bundle.information.MessageFireBrigade;
+import adf.agent.communication.standard.bundle.topdown.CommandFire;
+import adf.agent.develop.DevelopData;
+import adf.agent.info.AgentInfo;
+import adf.agent.info.ScenarioInfo;
+import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.communication.CommunicationMessage;
+import adf.component.control.ControlFire;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.FireBrigade;
+import rescuecore2.standard.entities.StandardEntity;
+import rescuecore2.standard.entities.StandardEntityURN;
+import rescuecore2.worldmodel.EntityID;
+
+import java.util.*;
+
+public class SampleControlFire extends ControlFire {
+    private static final int ACTION_UNKNOWN = -1;
+    private static final int ACTION_REST = CommandFire.ACTION_REST;
+    private static final int ACTION_MOVE = CommandFire.ACTION_MOVE;
+    private static final int ACTION_EXTINGUISH = CommandFire.ACTION_EXTINGUISH;
+    private static final int ACTION_REFILL = CommandFire.ACTION_REFILL;
+
+    private int thresholdCompleted;
+
+    private List<Request> extinguishBuildingIDs;
+    private Map<EntityID, Task> taskMap;
+    private int resetTime;
+
+    @Override
+    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
+        this.extinguishBuildingIDs = new ArrayList<>();
+        this.taskMap = new HashMap<>();
+        this.resetTime = developData.getInteger("sample.control.SampleControlFire.resetTime", 5);
+        int maxWater = scenarioInfo.getFireTankMaximum();
+        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("sample.control.SampleControlFire.refill", 7);
+    }
+
+    @Override
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeInfo, DevelopData developData) {
+
+    }
+
+    @Override
+    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData debugData) {
+
+    }
+
+    @Override
+    public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
+        int currentTime = agentInfo.getTime();
+        Collection<EntityID> commanders = worldInfo.getEntityIDsOfType(StandardEntityURN.FIRE_STATION);
+        // task check
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageFireBrigade.class)) {
+            MessageFireBrigade mfb = (MessageFireBrigade)message;
+            if(mfb.getSenderID().getValue() == mfb.getAgentID().getValue()) {
+                MessageUtil.reflectMessage(worldInfo, mfb);
+                this.taskMap.put(mfb.getAgentID(), new Task(currentTime, mfb.getAction(), mfb.getTargetID()));
+            }
+        }
+        for(EntityID id : this.taskMap.keySet()) {
+            Task task = this.taskMap.get(id);
+            if(task.getTime() + this.resetTime <= currentTime) {
+                taskMap.put(id, new Task(currentTime, ACTION_UNKNOWN, null));
+            }
+        }
+        // request check
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
+            CommandFire command = (CommandFire)message;
+            if(commanders.contains(command.getSenderID())) {
+                continue;
+            }
+            if(command.getAction() == CommandFire.ACTION_EXTINGUISH) {
+                this.extinguishBuildingIDs.add(new Request(currentTime, command.getTargetID()));
+            }
+        }
+        List<Request> requestList = new ArrayList<>();
+        for(Request request : this.extinguishBuildingIDs) {
+            if(request.getTime() + this.resetTime > currentTime) {
+                requestList.add(request);
+            }
+        }
+        this.extinguishBuildingIDs.clear();
+        this.extinguishBuildingIDs.addAll(requestList);
+        // send Command
+        List<StandardEntity> commandAgents = new ArrayList<>();
+        for(EntityID id : this.taskMap.keySet()) {
+            Task task = this.taskMap.get(id);
+            FireBrigade fire = (FireBrigade)worldInfo.getEntity(id);
+            if(task.getAction() == ACTION_REST) {
+                if(fire.getWater() >= this.thresholdCompleted) {
+                    commandAgents.add(fire);
+                }
+            } else if(task.getAction() == ACTION_MOVE) {
+                StandardEntity entity = worldInfo.getEntity(task.getTarget());
+                if(entity.getStandardURN() == StandardEntityURN.ROAD) {
+                    commandAgents.add(fire);
+                }
+            } else if(task.getAction() == ACTION_REFILL) {
+                if(fire.getWater() >= this.thresholdCompleted) {
+                    commandAgents.add(fire);
+                }
+            }
+        }
+        while (this.extinguishBuildingIDs.size() > 0 && commandAgents.size() > 0) {
+            StandardEntity entity = worldInfo.getEntity(this.extinguishBuildingIDs.get(0).getTarget());
+            if(entity instanceof Building) {
+                commandAgents.sort(new DistanceSorter(worldInfo, entity));
+                messageManager.addMessage(new CommandFire(
+                        true,
+                        commandAgents.get(0).getID(),
+                        entity.getID(),
+                        ACTION_EXTINGUISH
+                ));
+                commandAgents.remove(0);
+            }
+            this.extinguishBuildingIDs.remove(0);
+        }
+
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private class Task {
+        private int time;
+        private int action;
+        private EntityID target;
+
+        Task(int time, int action, EntityID target) {
+            this.time = time;
+            this.action = action;
+            this.target = target;
+        }
+
+        int getTime() {
+            return this.time;
+        }
+
+        int getAction() {
+            return this.action;
+        }
+
+        EntityID getTarget() {
+            return this.target;
+        }
+    }
+
+    private class Request {
+        private EntityID target;
+        private int time;
+
+        Request(int time, EntityID target) {
+            this.target = target;
+            this.time = time;
+        }
+
+        int getTime() {
+            return this.time;
+        }
+
+        EntityID getTarget() {
+            return this.target;
+        }
+    }
+
+    private class DistanceSorter implements Comparator<StandardEntity> {
+        private StandardEntity reference;
+        private WorldInfo worldInfo;
+
+        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+            this.reference = reference;
+            this.worldInfo = wi;
+        }
+
+        public int compare(StandardEntity a, StandardEntity b) {
+            int d1 = this.worldInfo.getDistance(this.reference, a);
+            int d2 = this.worldInfo.getDistance(this.reference, b);
+            return d1 - d2;
+        }
+    }
+}

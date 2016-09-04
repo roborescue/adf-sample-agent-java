@@ -126,17 +126,32 @@ public class ActionExtClear extends ExtAction {
                 Vector2D vector = this.scaleClear(this.getVector(agentX, agentY, midX, midY));
                 double clearX = agentX + vector.getY();
                 double clearY = agentY + vector.getY();
+                Action action = null;
                 for(Blockade blockade : blockades) {
                     if(this.intersect(agentX, agentY, clearX, clearY, blockade)) {
-                        checkEdges.removeAll(removeEdges);
-                        this.edgeCache.put(targetRoad.getID(), checkEdges);
-                        return new ActionClear((int)clearX, (int)clearY, blockade);
+                        if(action == null) {
+                            action = new ActionClear((int) clearX, (int) clearY, blockade);
+                        } else {
+                            if(action instanceof ActionClear) {
+                                EntityID another = ((ActionClear)action).getTarget();
+                                if(this.intersect(blockade, (Blockade)this.worldInfo.getEntity(another))) {
+                                    return new ActionClear(another);
+                                }
+                            } else {
+                                action = new ActionClear((int) clearX, (int) clearY, blockade);
+                            }
+                        }
                     }
                     if(this.intersect(agentX, agentY, midX, midY, blockade)) {
-                        checkEdges.removeAll(removeEdges);
-                        this.edgeCache.put(targetRoad.getID(), checkEdges);
-                        return new ActionMove(Lists.newArrayList(targetRoad.getID()), (int)midX, (int)midY);
+                        if(action == null) {
+                            action = new ActionMove(Lists.newArrayList(targetRoad.getID()), (int) midX, (int) midY);
+                        }
                     }
+                }
+                if(action != null) {
+                    checkEdges.removeAll(removeEdges);
+                    this.edgeCache.put(targetRoad.getID(), checkEdges);
+                    return action;
                 }
                 removeEdges.add(edge);
             }
@@ -223,10 +238,30 @@ public class ActionExtClear extends ExtAction {
                     Vector2D vector = this.scaleClear(this.getVector(agentX, agentY, midX, midY));
                     double clearX = agentX + vector.getY();
                     double clearY = agentY + vector.getY();
+                    Action action = null;
                     for (Blockade blockade : this.worldInfo.getBlockades(positionRoad)) {
-                        if (this.intersect(agentX, agentY, clearX, clearY, blockade)) {
-                            return new ActionClear((int) clearX, (int) clearY, blockade);
+                        if(this.intersect(agentX, agentY, clearX, clearY, blockade)) {
+                            if(action == null) {
+                                action = new ActionClear((int) clearX, (int) clearY, blockade);
+                            } else {
+                                if(action instanceof ActionClear) {
+                                    EntityID another = ((ActionClear)action).getTarget();
+                                    if(this.intersect(blockade, (Blockade)this.worldInfo.getEntity(another))) {
+                                        return new ActionClear(another);
+                                    }
+                                } else {
+                                    action = new ActionClear((int) clearX, (int) clearY, blockade);
+                                }
+                            }
                         }
+                        if(this.intersect(agentX, agentY, midX, midY, blockade)) {
+                            if(action == null) {
+                                action = new ActionMove(Lists.newArrayList(targetRoad.getID()), (int) midX, (int) midY);
+                            }
+                        }
+                    }
+                    if(action != null) {
+                        return action;
                     }
                     for (Blockade blockade : this.worldInfo.getBlockades(targetRoad)) {
                         if (this.intersect(agentX, agentY, clearX, clearY, blockade)) {
@@ -372,6 +407,38 @@ public class ActionExtClear extends ExtAction {
                 if(!equalsPoint(pointX, pointY, midX, midY) && !equalsPoint(agentX, agentY, midX, midY)) {
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    private boolean intersect(Blockade blockade, Blockade another) {
+        int[] apexes0 = blockade.getApexes();
+        int[] apexes1 = blockade.getApexes();
+        for(int i = 0; i < (apexes0.length - 2); i += 2) {
+            for(int j = 0; j < (apexes1.length - 2); j += 2) {
+                if(java.awt.geom.Line2D.linesIntersect(
+                        apexes0[i], apexes0[i + 1], apexes0[i + 2], apexes0[i + 3],
+                        apexes1[j], apexes1[j + 1], apexes1[j + 2], apexes1[j + 3]
+                )) {
+                    return true;
+                }
+            }
+        }
+        for(int i = 0; i < (apexes0.length - 2); i += 2) {
+            if(java.awt.geom.Line2D.linesIntersect(
+                    apexes0[i], apexes0[i + 1], apexes0[i + 2], apexes0[i + 3],
+                    apexes1[apexes1.length - 2], apexes1[apexes1.length - 1], apexes1[0], apexes1[1]
+            )) {
+                return true;
+            }
+        }
+        for(int j = 0; j < (apexes1.length - 2); j += 2) {
+            if(java.awt.geom.Line2D.linesIntersect(
+                    apexes0[apexes0.length - 2], apexes0[apexes0.length - 1], apexes0[0], apexes0[1],
+                    apexes1[j], apexes1[j + 1], apexes1[j + 2], apexes1[j + 3]
+            )) {
+                return true;
             }
         }
         return false;
