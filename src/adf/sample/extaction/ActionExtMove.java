@@ -7,7 +7,6 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
-import adf.sample.SampleModuleKey;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.*;
@@ -62,11 +61,11 @@ public class ActionExtMove extends ExtAction {
         Human agent = (Human)this.agentInfo.me();
         PathPlanning pathPlanning = null;
         if(agent.getStandardURN() == StandardEntityURN.AMBULANCE_TEAM) {
-            pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+            pathPlanning = this.moduleManager.getModule("TacticsAmbulance.PathPlanning");
         } else if(agent.getStandardURN() == StandardEntityURN.FIRE_BRIGADE) {
-            pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+            pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
         } else if(agent.getStandardURN() == StandardEntityURN.POLICE_FORCE) {
-            pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
+            pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
         }
         if(pathPlanning != null) {
             List<EntityID> path = pathPlanning

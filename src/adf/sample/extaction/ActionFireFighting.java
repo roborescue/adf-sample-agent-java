@@ -12,7 +12,6 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
-import adf.sample.SampleModuleKey;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
@@ -67,7 +66,7 @@ public class ActionFireFighting extends ExtAction {
         }
 
         FireBrigade fireBrigade = (FireBrigade)this.agentInfo.me();
-        PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
 
         if(this.isRefill) {
             if(this.targets.contains(fireBrigade.getPosition())) {

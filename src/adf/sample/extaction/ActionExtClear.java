@@ -10,7 +10,6 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
-import adf.sample.SampleModuleKey;
 import com.google.common.collect.Lists;
 import rescuecore2.misc.geometry.GeometryTools2D;
 import rescuecore2.misc.geometry.Line2D;
@@ -71,7 +70,7 @@ public class ActionExtClear extends ExtAction {
             if(targetEntity.getStandardURN() == StandardEntityURN.BLOCKADE) {
                 targetEntity = this.worldInfo.getEntity(((Blockade)targetEntity).getPosition());
             } else {
-                PathPlanning pp = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
+                PathPlanning pp = this.moduleManager.getModule("TacticsPolice.PathPlanning");
                 pp.setFrom(agentPosition);
                 pp.setDestination(this.target);
                 List<EntityID> path = pp.calc().getResult();
@@ -279,7 +278,7 @@ public class ActionExtClear extends ExtAction {
         double agentX = policeForce.getX();
         double agentY = policeForce.getY();
         if(!targetRoad.isBlockadesDefined()) {
-            PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
+            PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
             pathPlanning.setFrom(policeForce.getPosition()).setDestination(targetRoad.getID());
             List<EntityID> path = pathPlanning.calc().getResult();
             if (path != null && path.size() > 0) {

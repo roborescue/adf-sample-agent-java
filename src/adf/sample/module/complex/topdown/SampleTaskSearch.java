@@ -13,7 +13,6 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.Search;
-import adf.sample.SampleModuleKey;
 import com.google.common.collect.Lists;
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Vector2D;
@@ -47,11 +46,11 @@ public class SampleTaskSearch extends Search {
 
         PathPlanning pathPlanning = null;
         if(this.agentInfo.me().getStandardURN() == AMBULANCE_TEAM) {
-            pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+            pathPlanning = this.moduleManager.getModule("TacticsAmbulance.PathPlanning");
         } else if(this.agentInfo.me().getStandardURN() == FIRE_BRIGADE) {
-            pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+            pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
         } else if(this.agentInfo.me().getStandardURN() == POLICE_FORCE) {
-            pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
+            pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
         }
         if(pathPlanning == null) {
             return this;

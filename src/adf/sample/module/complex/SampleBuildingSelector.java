@@ -10,7 +10,6 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
-import adf.sample.SampleModuleKey;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.FireBrigade;
 import rescuecore2.standard.entities.StandardEntity;
@@ -42,7 +41,7 @@ public class SampleBuildingSelector extends BuildingSelector {
         FireBrigade fireBrigade = (FireBrigade)this.agentInfo.me();
         int water = fireBrigade.getWater();
         StandardEntityURN positionURN = this.worldInfo.getPosition(fireBrigade).getStandardURN();
-        PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
 
         // refill
         if(positionURN.equals(StandardEntityURN.REFUGE) && water < this.thresholdCompleted) {
@@ -79,7 +78,7 @@ public class SampleBuildingSelector extends BuildingSelector {
             }
         }
         // target building
-        Clustering clustering = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING);
+        Clustering clustering = this.moduleManager.getModule("TacticsFire.PathPlanning");
         if(clustering == null) {
             this.result = this.calcTargetInWorld();
             return this;

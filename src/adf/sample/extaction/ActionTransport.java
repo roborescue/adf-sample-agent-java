@@ -9,7 +9,6 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
-import adf.sample.SampleModuleKey;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.*;
@@ -57,7 +56,7 @@ public class ActionTransport extends ExtAction {
         StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
         Human transportHuman = this.agentInfo.someoneOnBoard();
 
-        PathPlanning pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsAmbulance.PathPlanning");
 
         if(!(targetEntity instanceof Human)) {
             if(transportHuman != null) {

@@ -8,7 +8,6 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.HumanSelector;
-import adf.sample.SampleModuleKey;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.worldmodel.EntityID;
@@ -36,7 +35,7 @@ public class SampleVictimSelector extends HumanSelector {
             return this;
         }
 
-        Clustering clustering = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
+        Clustering clustering = this.moduleManager.getModule("TacticsAmbulance.Clustering");
         if(clustering == null) {
             this.result = this.calcTargetInWorld();
             return this;

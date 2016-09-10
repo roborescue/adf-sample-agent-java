@@ -13,7 +13,6 @@ import adf.component.communication.CommunicationMessage;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.Search;
-import adf.sample.SampleModuleKey;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
@@ -38,11 +37,11 @@ public class SampleSearch extends Search {
 
         PathPlanning pathPlanning = null;
         if(this.agentInfo.me().getStandardURN() == AMBULANCE_TEAM) {
-            pathPlanning = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING);
+            pathPlanning = this.moduleManager.getModule("TacticsAmbulance.PathPlanning");
         } else if(this.agentInfo.me().getStandardURN() == FIRE_BRIGADE) {
-            pathPlanning = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_PATH_PLANNING);
+            pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
         } else if(this.agentInfo.me().getStandardURN() == POLICE_FORCE) {
-            pathPlanning = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_PATH_PLANNING);
+            pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
         }
         if(pathPlanning == null) {
             return this;
@@ -82,11 +81,11 @@ public class SampleSearch extends Search {
         StandardEntityURN agentURN = agentInfo.me().getStandardURN();
         Clustering clustering = null;
         if (agentURN == AMBULANCE_TEAM) {
-            clustering = this.moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING);
+            clustering = this.moduleManager.getModule("TacticsAmbulance.Clustering");
         } else if (agentURN == FIRE_BRIGADE) {
-            clustering = this.moduleManager.getModule(SampleModuleKey.FIRE_MODULE_CLUSTERING);
+            clustering = this.moduleManager.getModule("TacticsFire.Clustering");
         } else if (agentURN == POLICE_FORCE) {
-            clustering = this.moduleManager.getModule(SampleModuleKey.POLICE_MODULE_CLUSTERING);
+            clustering = this.moduleManager.getModule("TacticsPolice.Clustering");
         }
 
         boolean useClustering = true;

@@ -20,7 +20,6 @@ import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.HumanSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsAmbulance;
-import adf.sample.SampleModuleKey;
 import rescuecore2.standard.entities.AmbulanceTeam;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -54,55 +53,55 @@ public class SampleAmbulance extends TacticsAmbulance {
                 StandardEntityURN.POLICE_OFFICE
         );
         //init ExtAction
-        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT, "adf.sample.extaction.ActionTransport");
-        moduleManager.getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH, "adf.sample.extaction.ActionExtMove");
+        moduleManager.getExtAction("TacticsAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
+        moduleManager.getExtAction("TacticsAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
-        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
+        this.pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
+        this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.precompute(precomputeData);
-        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
+        this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
         this.search.precompute(precomputeData);
-        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR, "adf.sample.module.complex.SampleVictimSelector");
+        this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.precompute(precomputeData);
-        this.taskHumanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_HUMAN_SELECTOR, "adf.sample.module.complex.topdown.SampleTaskVictimSelector");
+        this.taskHumanSelector = moduleManager.getModule("TacticsAmbulance.TaskHumanSelector", "adf.sample.module.complex.topdown.SampleTaskVictimSelector");
         this.taskHumanSelector.precompute(precomputeData);
-        this.taskSearch = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_SEARCH, "adf.sample.module.complex.topdown.SampleTaskSearch");
+        this.taskSearch = moduleManager.getModule("TacticsAmbulance.TaskSearch", "adf.sample.module.complex.topdown.SampleTaskSearch");
         this.taskSearch.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
-        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
+        this.pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.resume(precomputeData);
-        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
+        this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.resume(precomputeData);
-        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
+        this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
         this.search.resume(precomputeData);
-        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR, "adf.sample.module.complex.SampleVictimSelector");
+        this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.resume(precomputeData);
-        this.taskHumanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_HUMAN_SELECTOR, "adf.sample.module.complex.topdown.SampleTaskVictimSelector");
+        this.taskHumanSelector = moduleManager.getModule("TacticsAmbulance.TaskHumanSelector", "adf.sample.module.complex.topdown.SampleTaskVictimSelector");
         this.taskHumanSelector.resume(precomputeData);
-        this.taskSearch = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_SEARCH, "adf.sample.module.complex.topdown.SampleTaskSearch");
+        this.taskSearch = moduleManager.getModule("TacticsAmbulance.TaskSearch", "adf.sample.module.complex.topdown.SampleTaskSearch");
         this.taskSearch.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
-        this.pathPlanning = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_PATH_PLANNING, "adf.sample.module.algorithm.SamplePathPlanning");
+        this.pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.preparate();
-        this.clustering = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_CLUSTERING, "adf.sample.module.algorithm.SampleKMeans");
+        this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.preparate();
-        this.search = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_SEARCH, "adf.sample.module.complex.SampleSearch");
+        this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
         this.search.preparate();
-        this.humanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_HUMAN_SELECTOR, "adf.sample.module.complex.SampleVictimSelector");
+        this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.preparate();
-        this.taskHumanSelector = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_HUMAN_SELECTOR, "adf.sample.module.complex.topdown.SampleTaskVictimSelector");
+        this.taskHumanSelector = moduleManager.getModule("TacticsAmbulance.TaskHumanSelector", "adf.sample.module.complex.topdown.SampleTaskVictimSelector");
         this.taskHumanSelector.preparate();
-        this.taskSearch = moduleManager.getModule(SampleModuleKey.AMBULANCE_MODULE_TASK_SEARCH, "adf.sample.module.complex.topdown.SampleTaskSearch");
+        this.taskSearch = moduleManager.getModule("TacticsAmbulance.TaskSearch", "adf.sample.module.complex.topdown.SampleTaskSearch");
         this.taskSearch.preparate();
     }
 
@@ -119,7 +118,7 @@ public class SampleAmbulance extends TacticsAmbulance {
         EntityID target = this.taskSearch.calc().getTarget();
         if(target != null) {
             Action action = moduleManager
-                    .getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH)
+                    .getExtAction("TacticsAmbulance.ActionExtMove")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
@@ -136,7 +135,7 @@ public class SampleAmbulance extends TacticsAmbulance {
         }
         if(target != null) {
             Action action = moduleManager
-                    .getExtAction(SampleModuleKey.AMBULANCE_ACTION_TRANSPORT)
+                    .getExtAction("TacticsAmbulance.ActionTransport")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
@@ -150,7 +149,7 @@ public class SampleAmbulance extends TacticsAmbulance {
         target = this.search.calc().getTarget();
         if(target != null) {
             Action action = moduleManager
-                    .getExtAction(SampleModuleKey.AMBULANCE_ACTION_SEARCH)
+                    .getExtAction("TacticsAmbulance.ActionExtMove")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
