@@ -78,6 +78,7 @@ public class ActionExtMove extends ExtAction {
                     for(EntityID id : path) {
                         if(this.worldInfo.getEntity(id).getStandardURN() != StandardEntityURN.REFUGE) {
                             canRest = false;
+                            break;
                         }
                     }
                     if(canRest) {
