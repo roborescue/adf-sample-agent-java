@@ -19,6 +19,7 @@ import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ActionExtClear extends ExtAction {
     private int clearDistance;
@@ -82,6 +83,12 @@ public class ActionExtClear extends ExtAction {
 
         }
 
+        StandardEntity policePosition = this.worldInfo.getPosition(policeForce);
+        if(policePosition instanceof Road) {
+            this.result = this.getRescueAction(policeForce, (Road)policePosition);
+            if (this.result != null) return this;
+        }
+
         Road targetRoad = (Road)targetEntity;
         if(this.target.getValue() == agentPosition.getValue()) {
             this.result = this.calcTargetPosition(policeForce, targetRoad);
@@ -94,6 +101,49 @@ public class ActionExtClear extends ExtAction {
             if(this.result != null) return this;
         }
         return this;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private Action getRescueAction(PoliceForce police, Road road) {
+        if(!road.isBlockadesDefined()) {
+            return null;
+        }
+        Collection<Blockade> blockades = this.worldInfo.getBlockades(road)
+                .stream()
+                .filter(Blockade::isApexesDefined)
+                .collect(Collectors.toSet());
+
+        Collection<StandardEntity> agents = this.worldInfo.getEntitiesOfType(
+                StandardEntityURN.AMBULANCE_TEAM,
+                StandardEntityURN.FIRE_BRIGADE
+        );
+
+        double policeX = police.getX();
+        double policeY = police.getY();
+        double minDistance = Double.MAX_VALUE;
+        Action action = null;
+        for(StandardEntity entity : agents) {
+            Human human = (Human)entity;
+            if(human.getPosition().getValue() == road.getID().getValue()) {
+                double humanX = human.getX();
+                double humanY = human.getY();
+                for(Blockade blockade : blockades) {
+                    if(this.isInside(humanX, humanY, blockade.getApexes())) {
+                        double distance = this.getDistance(policeX, policeY, humanX, humanY);
+                        if(distance < this.clearDistance) {
+                            Vector2D vector = this.scaleClear(this.getVector(policeX, policeY, humanX, humanY));
+                            return new ActionClear((int) (humanX + vector.getX()), (int) (humanY + vector.getY()), blockade);
+                        }
+                        if(distance < minDistance) {
+                            minDistance = distance;
+                            action = new ActionMove(Lists.newArrayList(road.getID()), (int) humanX, (int) humanY);
+                        }
+                    }
+                }
+            }
+        }
+        return action;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -413,7 +463,7 @@ public class ActionExtClear extends ExtAction {
 
     private boolean intersect(Blockade blockade, Blockade another) {
         int[] apexes0 = blockade.getApexes();
-        int[] apexes1 = blockade.getApexes();
+        int[] apexes1 = another.getApexes();
         for(int i = 0; i < (apexes0.length - 2); i += 2) {
             for(int j = 0; j < (apexes1.length - 2); j += 2) {
                 if(java.awt.geom.Line2D.linesIntersect(
