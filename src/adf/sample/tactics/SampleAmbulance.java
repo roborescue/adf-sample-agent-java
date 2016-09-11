@@ -120,12 +120,20 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.clustering.updateInfo(messageManager);
         this.humanSelector.updateInfo(messageManager);
 
+        AmbulanceTeam agent = (AmbulanceTeam)agentInfo.me();
+
         this.updateTask(agentInfo, worldInfo, messageManager, true);
         if(this.task != ACTION_UNKNOWN) {
-            return this.getTaskAction(agentInfo, worldInfo, moduleManager);
+            Action action = this.getTaskAction(agentInfo, worldInfo, moduleManager);
+            if(action != null) {
+                CommunicationMessage message = this.getActionMessage(agent, action);
+                if(message != null) {
+                    messageManager.addMessage(message);
+                }
+            }
+            return action;
         }
 
-        AmbulanceTeam agent = (AmbulanceTeam)agentInfo.me();
         EntityID target = this.humanSelector.calc().getTarget();
         if(target != null) {
             Action action = moduleManager

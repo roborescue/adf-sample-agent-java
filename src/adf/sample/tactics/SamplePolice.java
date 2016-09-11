@@ -111,12 +111,21 @@ public class SamplePolice extends TacticsPolice {
         this.clustering.updateInfo(messageManager);
         this.roadSelector.updateInfo(messageManager);
 
-        this.updateTask(agentInfo, worldInfo, messageManager, true);
-        if(this.task != ACTION_UNKNOWN) {
-            return this.getTaskAction(agentInfo, worldInfo, moduleManager);
-        }
 
         PoliceForce agent = (PoliceForce) agentInfo.me();
+
+        this.updateTask(agentInfo, worldInfo, messageManager, true);
+        if(this.task != ACTION_UNKNOWN) {
+            Action action = this.getTaskAction(agentInfo, worldInfo, moduleManager);
+            if(action != null) {
+                CommunicationMessage message = this.getActionMessage(worldInfo, agent, action);
+                if(message != null) {
+                    messageManager.addMessage(message);
+                }
+            }
+            return action;
+        }
+
         EntityID target = this.roadSelector.calc().getTarget();
         if(target != null) {
             Action action = moduleManager
@@ -333,7 +342,7 @@ public class SamplePolice extends TacticsPolice {
             if (agentInfo.getPosition().getValue() == this.target.getValue()) {
                 return new ActionRest();
             } else {
-                PathPlanning pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning");
+                PathPlanning pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning");
                 pathPlanning.setFrom(agentInfo.getPosition());
                 pathPlanning.setDestination(this.target);
                 List<EntityID> path = pathPlanning.calc().getResult();
@@ -350,7 +359,7 @@ public class SamplePolice extends TacticsPolice {
             if (agentInfo.getPosition().getValue() == this.target.getValue()) {
                 return new ActionRest();
             } else {
-                PathPlanning pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning");
+                PathPlanning pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning");
                 pathPlanning.setFrom(agentInfo.getPosition());
                 pathPlanning.setDestination(this.target);
                 List<EntityID> path = pathPlanning.calc().getResult();
@@ -366,7 +375,7 @@ public class SamplePolice extends TacticsPolice {
         if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
             return null;
         }
-        PathPlanning pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning");
+        PathPlanning pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning");
         pathPlanning.setFrom(agentInfo.getPosition());
         pathPlanning.setDestination(this.scoutTargets);
         List<EntityID> path = pathPlanning.calc().getResult();
