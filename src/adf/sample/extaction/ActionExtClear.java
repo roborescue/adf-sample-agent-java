@@ -66,39 +66,70 @@ public class ActionExtClear extends ExtAction {
         PoliceForce policeForce = (PoliceForce)this.agentInfo.me();
         EntityID agentPosition = policeForce.getPosition();
         StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
-
-        if(!(targetEntity instanceof Road)) {
+        if(targetEntity.getStandardURN() == StandardEntityURN.BLOCKADE) {
+            targetEntity = this.worldInfo.getEntity(((Blockade)targetEntity).getPosition());
+        }
+        /*if(!(targetEntity instanceof Road)) {
             if(targetEntity.getStandardURN() == StandardEntityURN.BLOCKADE) {
                 targetEntity = this.worldInfo.getEntity(((Blockade)targetEntity).getPosition());
             } else {
-                PathPlanning pp = this.moduleManager.getModule("TacticsPolice.PathPlanning");
-                pp.setFrom(agentPosition);
-                pp.setDestination(this.target);
-                List<EntityID> path = pp.calc().getResult();
+                PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
+                pathPlanning.setFrom(agentPosition);
+                pathPlanning.setDestination(this.target);
+                List<EntityID> path = pathPlanning.calc().getResult();
                 if (path != null && path.size() > 0) {
                     this.result = new ActionMove(path);
                 }
                 return this;
             }
+        }*/
+        if(targetEntity instanceof Road) {
+            StandardEntity positionEntity = this.worldInfo.getEntity(agentPosition);
+            if (positionEntity instanceof Road) {
+                this.result = this.getRescueAction(policeForce, (Road) positionEntity);
+                if (this.result != null) return this;
+            }
 
+            Road targetRoad = (Road) targetEntity;
+            if (targetRoad.getID().getValue() == agentPosition.getValue()) {
+                this.result = this.calcTargetPosition(policeForce, targetRoad);
+                if (this.result != null) return this;
+            } else if (targetRoad.getEdgeTo(agentPosition) != null) {
+                this.result = this.calcNeighbourPosition(policeForce, targetRoad);
+                if (this.result != null) return this;
+            } else {
+                PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
+                pathPlanning.setFrom(agentPosition);
+                pathPlanning.setDestination(targetRoad.getID());
+                List<EntityID> path = pathPlanning.calc().getResult();
+                if (path != null) {
+                    int index = path.indexOf(agentPosition);
+                    StandardEntity entity = this.worldInfo.getEntity(path.get(index + 1));
+                    if(entity instanceof Road) {
+                        Road road = (Road)entity;
+                        if(road.isBlockadesDefined() && road.getBlockades().size() > 0) {
+                            this.result = this.calcNeighbourPosition(policeForce, road);
+                            if (this.result != null) return this;
+                        }
+                    }
+                }
+                this.result = this.calcOtherPosition(policeForce, targetRoad);
+                if (this.result != null) return this;
+            }
         }
-
-        StandardEntity policePosition = this.worldInfo.getPosition(policeForce);
-        if(policePosition instanceof Road) {
-            this.result = this.getRescueAction(policeForce, (Road)policePosition);
-            if (this.result != null) return this;
-        }
-
-        Road targetRoad = (Road)targetEntity;
-        if(this.target.getValue() == agentPosition.getValue()) {
-            this.result = this.calcTargetPosition(policeForce, targetRoad);
-            if(this.result != null) return this;
-        } else if(targetRoad.getEdgeTo(agentPosition) != null) {
-            this.result = this.calcNeighbourPosition(policeForce, targetRoad);
-            if(this.result != null) return this;
-        } else {
-            this.result = this.calcOtherPosition(policeForce, targetRoad);
-            if(this.result != null) return this;
+        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
+        pathPlanning.setFrom(agentPosition);
+        pathPlanning.setDestination(this.target);
+        List<EntityID> path = pathPlanning.calc().getResult();
+        if (path != null) {
+            int index = path.indexOf(agentPosition);
+            StandardEntity entity = this.worldInfo.getEntity(path.get(index + 1));
+            if(entity instanceof Road) {
+                Road road = (Road)entity;
+                if(road.isBlockadesDefined() && road.getBlockades().size() > 0) {
+                    this.result = this.calcNeighbourPosition(policeForce, road);
+                }
+            }
         }
         return this;
     }
@@ -122,28 +153,48 @@ public class ActionExtClear extends ExtAction {
         double policeX = police.getX();
         double policeY = police.getY();
         double minDistance = Double.MAX_VALUE;
-        Action action = null;
+        Action moveAction = null;
         for(StandardEntity entity : agents) {
             Human human = (Human)entity;
-            if(human.getPosition().getValue() == road.getID().getValue()) {
-                double humanX = human.getX();
-                double humanY = human.getY();
-                for(Blockade blockade : blockades) {
-                    if(this.isInside(humanX, humanY, blockade.getApexes())) {
-                        double distance = this.getDistance(policeX, policeY, humanX, humanY);
-                        if(distance < this.clearDistance) {
-                            Vector2D vector = this.scaleClear(this.getVector(policeX, policeY, humanX, humanY));
-                            return new ActionClear((int) (humanX + vector.getX()), (int) (humanY + vector.getY()), blockade);
+            if(!human.isPositionDefined() ||  human.getPosition().getValue() != road.getID().getValue()) {
+                continue;
+            }
+            double humanX = human.getX();
+            double humanY = human.getY();
+            for(Blockade blockade : blockades) {
+                if(!this.isInside(humanX, humanY, blockade.getApexes())) {
+                    continue;
+                }
+                double distance = this.getDistance(policeX, policeY, humanX, humanY);
+                if(this.intersect(policeX, policeY, humanX, humanY, road)) {
+                    Set<Point2D> points = this.movePointCache.get(road.getID());
+                    if(points == null) {
+                        points = this.createMovePoints(road);
+                        this.movePointCache.put(road.getID(), points);
+                    }
+                    Action action = this.calcIntersectEdgeAction(policeX, policeY, humanX, humanY, road, points, blockades);
+                    if(action != null) {
+                        if(action.getClass() == ActionClear.class) {
+                            return action;
                         }
                         if(distance < minDistance) {
                             minDistance = distance;
-                            action = new ActionMove(Lists.newArrayList(road.getID()), (int) humanX, (int) humanY);
+                            moveAction = new ActionMove(Lists.newArrayList(road.getID()), (int) humanX, (int) humanY);
                         }
+                    }
+                } else if(this.intersect(policeX, policeY, humanX, humanY, blockade)) {
+                    Vector2D vector = this.scaleClear(this.getVector(policeX, policeY, humanX, humanY));
+                    if(this.intersect(policeX, policeY, (policeX + vector.getX()), (policeY + vector.getY()), blockade)) {
+                        return new ActionClear((int) (policeX + vector.getX()), (int) (policeY + vector.getY()), blockade);
+                    }
+                    if(distance < minDistance) {
+                        minDistance = distance;
+                        moveAction = new ActionMove(Lists.newArrayList(road.getID()), (int) humanX, (int) humanY);
                     }
                 }
             }
         }
-        return action;
+        return moveAction;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -375,6 +426,10 @@ public class ActionExtClear extends ExtAction {
     private Action calcIntersectEdgeAction(double agentX, double agentY, Edge edge, Road road, Set<Point2D> movePoints, Collection<Blockade> blockades) {
         double midX = (edge.getStartX() + edge.getEndX()) / 2;
         double midY = (edge.getStartY() + edge.getEndY()) / 2;
+        return this.calcIntersectEdgeAction(agentX, agentY, midX, midY, road, movePoints, blockades);
+    }
+
+    private Action calcIntersectEdgeAction(double agentX, double agentY, double pointX, double pointY, Road road, Set<Point2D> movePoints, Collection<Blockade> blockades) {
         Point2D bestPoint = null;
         Point2D subPoint = null;
         double bastDistance  = Double.MAX_VALUE;
@@ -382,9 +437,9 @@ public class ActionExtClear extends ExtAction {
         double agentMaxDistance = Double.MIN_VALUE;
         for(Point2D p : movePoints) {
             if(!this.intersect(agentX, agentY, p.getX(), p.getY(), road)) {
-                double distance = this.getDistance(midX, midY, p.getX(), p.getY());
+                double distance = this.getDistance(pointX, pointY, p.getX(), p.getY());
                 if(distance < bastDistance) {
-                    if(!this.intersect(midX, midY, p.getX(), p.getY(), road)) {
+                    if(!this.intersect(pointX, pointY, p.getX(), p.getY(), road)) {
                         bestPoint = p;
                         bastDistance = distance;
                     }
