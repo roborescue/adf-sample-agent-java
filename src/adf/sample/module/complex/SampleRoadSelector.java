@@ -9,14 +9,13 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
+import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.RoadSelector;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 
 import static rescuecore2.standard.entities.StandardEntityURN.HYDRANT;
@@ -41,12 +40,13 @@ public class SampleRoadSelector extends RoadSelector {
             this.result = positionID;
             return this;
         }
-        List<StandardEntity> impassableList = new ArrayList<>();
-        for(EntityID id : this.impassableArea) {
-            impassableList.add(this.worldInfo.getEntity(id));
+        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.RoadSelector");
+        pathPlanning.setFrom(positionID);
+        pathPlanning.setDestination(this.impassableArea);
+        List<EntityID> path = pathPlanning.calc().getResult();
+        if(path != null && path.size() > 0) {
+            this.result = path.get(path.size() - 1);
         }
-        impassableList.sort(new DistanceSorter(this.worldInfo, this.agentInfo.me()));
-        this.result = impassableList.get(0).getID();
         return this;
     }
 
@@ -78,38 +78,23 @@ public class SampleRoadSelector extends RoadSelector {
     @Override
     public RoadSelector updateInfo(MessageManager messageManager) {
         super.updateInfo(messageManager);
-        for(EntityID id : worldInfo.getChanged().getChangedEntities()) {
-            StandardEntity entity = worldInfo.getEntity(id);
-            if(entity instanceof Road) {
-                Road road = (Road)entity;
-                if(!road.isBlockadesDefined() || road.getBlockades().isEmpty()) {
-                    this.impassableArea.remove(id);
-                    messageManager.addMessage(new MessageRoad(true, road, null, true));
-                }
-            }
-        }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageRoad.class)) {
             MessageRoad messageRoad = (MessageRoad)message;
             if(messageRoad.isPassable()) {
                 this.impassableArea.remove(messageRoad.getRoadID());
             }
         }
+        for(EntityID id : worldInfo.getChanged().getChangedEntities()) {
+            StandardEntity entity = worldInfo.getEntity(id);
+            if(entity instanceof Road) {
+                Road road = (Road)entity;
+                if(!road.isBlockadesDefined() || road.getBlockades().isEmpty()) {
+                    if(this.impassableArea.remove(id)) {
+                        messageManager.addMessage(new MessageRoad(true, road, null, true));
+                    }
+                }
+            }
+        }
         return this;
-    }
-
-    private class DistanceSorter implements Comparator<StandardEntity> {
-        private StandardEntity reference;
-        private WorldInfo worldInfo;
-
-        DistanceSorter(WorldInfo wi, StandardEntity reference) {
-            this.reference = reference;
-            this.worldInfo = wi;
-        }
-
-        public int compare(StandardEntity a, StandardEntity b) {
-            int d1 = this.worldInfo.getDistance(this.reference, a);
-            int d2 = this.worldInfo.getDistance(this.reference, b);
-            return d1 - d2;
-        }
     }
 }

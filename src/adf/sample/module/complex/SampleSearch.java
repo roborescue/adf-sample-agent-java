@@ -64,12 +64,11 @@ public class SampleSearch extends Search {
         if(this.unexploredBuildingIDs.isEmpty()) {
             this.reset();
         }
-
-        this.unexploredBuildingIDs.removeAll(worldInfo.getChanged().getChangedEntities());
+        this.unexploredBuildingIDs.removeAll(this.worldInfo.getChanged().getChangedEntities());
 
         if(this.unexploredBuildingIDs.isEmpty()) {
             this.reset();
-            this.unexploredBuildingIDs.removeAll(worldInfo.getChanged().getChangedEntities());
+            this.unexploredBuildingIDs.removeAll(this.worldInfo.getChanged().getChangedEntities());
         }
         return this;
     }
@@ -78,7 +77,7 @@ public class SampleSearch extends Search {
 
     private void reset() {
         this.unexploredBuildingIDs.clear();
-        StandardEntityURN agentURN = agentInfo.me().getStandardURN();
+        StandardEntityURN agentURN = this.agentInfo.me().getStandardURN();
         Clustering clustering = null;
         if (agentURN == AMBULANCE_TEAM) {
             clustering = this.moduleManager.getModule("TacticsAmbulance.Clustering");

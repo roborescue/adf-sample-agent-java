@@ -57,7 +57,6 @@ public class SampleAmbulance extends TacticsAmbulance {
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
-        this.task = ACTION_UNKNOWN;
         worldInfo.indexClass(
                 StandardEntityURN.CIVILIAN,
                 StandardEntityURN.FIRE_BRIGADE,
@@ -72,7 +71,9 @@ public class SampleAmbulance extends TacticsAmbulance {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
-        //init ExtAction
+        // init value
+        this.task = ACTION_UNKNOWN;
+        // init ExtAction
         moduleManager.getExtAction("TacticsAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
         moduleManager.getExtAction("TacticsAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
     }
@@ -83,10 +84,10 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.pathPlanning.precompute(precomputeData);
         this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.precompute(precomputeData);
-        this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
-        this.search.precompute(precomputeData);
         this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.precompute(precomputeData);
+        this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
+        this.search.precompute(precomputeData);
     }
 
     @Override
@@ -95,10 +96,10 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.pathPlanning.resume(precomputeData);
         this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.resume(precomputeData);
-        this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
-        this.search.resume(precomputeData);
         this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.resume(precomputeData);
+        this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
+        this.search.resume(precomputeData);
     }
 
     @Override
@@ -107,10 +108,10 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.pathPlanning.preparate();
         this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.preparate();
-        this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
-        this.search.preparate();
         this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
         this.humanSelector.preparate();
+        this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
+        this.search.preparate();
     }
 
     @Override
@@ -121,10 +122,10 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.humanSelector.updateInfo(messageManager);
 
         AmbulanceTeam agent = (AmbulanceTeam)agentInfo.me();
-
+        // task
         this.updateTask(agentInfo, worldInfo, messageManager, true);
         if(this.task != ACTION_UNKNOWN) {
-            Action action = this.getTaskAction(agentInfo, worldInfo, moduleManager);
+            Action action = this.getTaskAction(agentInfo, worldInfo);
             if(action != null) {
                 CommunicationMessage message = this.getActionMessage(agent, action);
                 if(message != null) {
@@ -133,7 +134,7 @@ public class SampleAmbulance extends TacticsAmbulance {
             }
             return action;
         }
-
+        // autonomous
         EntityID target = this.humanSelector.calc().getTarget();
         if(target != null) {
             Action action = moduleManager
@@ -163,12 +164,9 @@ public class SampleAmbulance extends TacticsAmbulance {
             }
         }
 
-        //check buriedness
-        if(agent.getBuriedness() > 0) {
-            messageManager.addMessage(
-                    new MessageAmbulanceTeam(true, agent, MessageAmbulanceTeam.ACTION_REST, agent.getPosition())
-            );
-        }
+        messageManager.addMessage(
+                new MessageAmbulanceTeam(true, agent, MessageAmbulanceTeam.ACTION_REST, agent.getPosition())
+        );
         return new ActionRest();
     }
 
@@ -300,7 +298,7 @@ public class SampleAmbulance extends TacticsAmbulance {
                 if(worldInfo.getEntity(position).getStandardURN() == REFUGE) {
                     return true;
                 }
-                if (worldInfo.getEntityIDsOfType(AMBULANCE_TEAM).contains(position)) {
+                if(worldInfo.getEntityIDsOfType(AMBULANCE_TEAM).contains(position)) {
                     return true;
                 }
             }
@@ -328,49 +326,55 @@ public class SampleAmbulance extends TacticsAmbulance {
         return (this.scoutTargets == null || this.scoutTargets.isEmpty());
     }
 
-    private Action getTaskAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
+    private Action getTaskAction(AgentInfo agentInfo, WorldInfo worldInfo) {
         if(this.task == ACTION_REST) {
-            return this.getRestAction(agentInfo, worldInfo, moduleManager);
+            return this.getRestAction(agentInfo, worldInfo);
         } else if(this.task == ACTION_MOVE) {
-            return this.getMoveAction(agentInfo, worldInfo, moduleManager);
+            return this.getMoveAction(agentInfo, worldInfo);
         } else if(this.task == ACTION_RESCUE) {
-            return this.getRescueTask(agentInfo, worldInfo, moduleManager);
+            return this.getRescueAction(agentInfo, worldInfo);
         } else if(this.task == ACTION_LOAD) {
-            return this.getLoadTask(agentInfo, worldInfo, moduleManager);
+            return this.getLoadAction(agentInfo, worldInfo);
         } else if(this.task == ACTION_UNLOAD) {
-            return this.getUnloadTask(agentInfo, worldInfo, moduleManager);
+            return this.getUnloadAction(agentInfo, worldInfo);
         } else if(this.task == ACTION_SCOUT) {
-            return this.getScoutAction(agentInfo, moduleManager);
+            return this.getScoutAction(agentInfo);
         }
         return null;
     }
 
-    private Action getRestAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
+    private Action getRestAction(AgentInfo agentInfo, WorldInfo worldInfo) {
+        EntityID position = agentInfo.getPosition();
         if(worldInfo.getEntity(this.target) instanceof Area) {
-            if (agentInfo.getPosition().getValue() == this.target.getValue()) {
+            if (position.getValue() == this.target.getValue()) {
                 return new ActionRest();
             } else {
-                PathPlanning pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning");
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(this.target);
-                List<EntityID> path = pathPlanning.calc().getResult();
+                this.pathPlanning.setFrom(position);
+                this.pathPlanning.setDestination(this.target);
+                List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
                     return new ActionMove(path);
                 }
             }
+        }
+        this.pathPlanning.setFrom(position);
+        this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(REFUGE));
+        List<EntityID> path = this.pathPlanning.calc().getResult();
+        if(path != null) {
+            return new ActionMove(path);
         }
         return new ActionRest();
     }
 
-    private Action getMoveAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
+    private Action getMoveAction(AgentInfo agentInfo, WorldInfo worldInfo) {
         if(worldInfo.getEntity(this.target) instanceof Area) {
-            if (agentInfo.getPosition().getValue() == this.target.getValue()) {
+            EntityID position = agentInfo.getPosition();
+            if (position.getValue() == this.target.getValue()) {
                 return new ActionRest();
             } else {
-                PathPlanning pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning");
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(this.target);
-                List<EntityID> path = pathPlanning.calc().getResult();
+                this.pathPlanning.setFrom(position);
+                this.pathPlanning.setDestination(this.target);
+                List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
                     return new ActionMove(path);
                 }
@@ -379,15 +383,27 @@ public class SampleAmbulance extends TacticsAmbulance {
         return null;
     }
 
-    private Action getRescueTask(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
+    private Action getScoutAction(AgentInfo agentInfo) {
+        if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
+            return null;
+        }
+        this.pathPlanning.setFrom(agentInfo.getPosition());
+        this.pathPlanning.setDestination(this.scoutTargets);
+        List<EntityID> path = this.pathPlanning.calc().getResult();
+        if(path != null) {
+            return new ActionMove(path);
+        }
+        return null;
+    }
+
+    private Action getRescueAction(AgentInfo agentInfo, WorldInfo worldInfo) {
         StandardEntity entity = worldInfo.getEntity(this.target);
         if(entity instanceof Human) {
             Human human = (Human) entity;
             if(agentInfo.getPosition().getValue() != human.getPosition().getValue()) {
-                PathPlanning pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning");
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(human.getPosition());
-                List<EntityID> path = pathPlanning.calc().getResult();
+                this.pathPlanning.setFrom(agentInfo.getPosition());
+                this.pathPlanning.setDestination(human.getPosition());
+                List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
                     return new ActionMove(path);
                 }
@@ -400,15 +416,14 @@ public class SampleAmbulance extends TacticsAmbulance {
         return null;
     }
 
-    private Action getLoadTask(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
+    private Action getLoadAction(AgentInfo agentInfo, WorldInfo worldInfo) {
         StandardEntity entity = worldInfo.getEntity(this.target);
         if(entity instanceof Human) {
             Human human = (Human) entity;
             if(agentInfo.getPosition().getValue() != human.getPosition().getValue()) {
-                PathPlanning pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning");
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(human.getPosition());
-                List<EntityID> path = pathPlanning.calc().getResult();
+                this.pathPlanning.setFrom(agentInfo.getPosition());
+                this.pathPlanning.setDestination(human.getPosition());
+                List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
                     return new ActionMove(path);
                 }
@@ -424,36 +439,20 @@ public class SampleAmbulance extends TacticsAmbulance {
         return null;
     }
 
-    private Action getUnloadTask(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
-        if(agentInfo.someoneOnBoard() == null) {
-            return null;
-        }
-        if(worldInfo.getEntity(this.target) instanceof Area) {
-            if(agentInfo.getPosition().getValue() != this.target.getValue()) {
-                PathPlanning pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning");
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(this.target);
-                List<EntityID> path = pathPlanning.calc().getResult();
-                if(path != null) {
-                    return new ActionMove(path);
+    private Action getUnloadAction(AgentInfo agentInfo, WorldInfo worldInfo) {
+        if(agentInfo.someoneOnBoard() != null) {
+            if (worldInfo.getEntity(this.target) instanceof Area) {
+                if (agentInfo.getPosition().getValue() != this.target.getValue()) {
+                    this.pathPlanning.setFrom(agentInfo.getPosition());
+                    this.pathPlanning.setDestination(this.target);
+                    List<EntityID> path = this.pathPlanning.calc().getResult();
+                    if (path != null) {
+                        return new ActionMove(path);
+                    }
+                } else {
+                    return new ActionUnload();
                 }
-            } else {
-                return new ActionUnload();
             }
-        }
-        return null;
-    }
-
-    private Action getScoutAction(AgentInfo agentInfo, ModuleManager moduleManager) {
-        if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
-            return null;
-        }
-        PathPlanning pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning");
-        pathPlanning.setFrom(agentInfo.getPosition());
-        pathPlanning.setDestination(this.scoutTargets);
-        List<EntityID> path = pathPlanning.calc().getResult();
-        if(path != null) {
-            return new ActionMove(path);
         }
         return null;
     }

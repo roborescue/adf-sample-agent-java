@@ -317,12 +317,12 @@ public class SampleKMeans extends StaticClustering {
         }
         this.clusterEntitiesList.sort(comparing(List::size, reverseOrder()));
         if (this.assignAgentsFlag) {
-            List<StandardEntity> firebrigadeList = new ArrayList<>(this.worldInfo.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE));
-            List<StandardEntity> policeforceList = new ArrayList<>(this.worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE));
-            List<StandardEntity> ambulanceteamList = new ArrayList<>(this.worldInfo.getEntitiesOfType(StandardEntityURN.AMBULANCE_TEAM));
-            this.assignAgents(this.worldInfo, firebrigadeList);
-            this.assignAgents(this.worldInfo, policeforceList);
-            this.assignAgents(this.worldInfo, ambulanceteamList);
+            List<StandardEntity> fireBrigadeList = new ArrayList<>(this.worldInfo.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE));
+            List<StandardEntity> policeForceList = new ArrayList<>(this.worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE));
+            List<StandardEntity> ambulanceTeamList = new ArrayList<>(this.worldInfo.getEntitiesOfType(StandardEntityURN.AMBULANCE_TEAM));
+            this.assignAgents(this.worldInfo, fireBrigadeList);
+            this.assignAgents(this.worldInfo, policeForceList);
+            this.assignAgents(this.worldInfo, ambulanceTeamList);
         }
 
         this.centerIDs = new ArrayList<>();

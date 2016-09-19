@@ -57,6 +57,9 @@ public class SampleVictimSelector extends HumanSelector {
         List<Human> targets = new ArrayList<>();
         for (StandardEntity next : this.worldInfo.getEntitiesOfType(AMBULANCE_TEAM, FIRE_BRIGADE, POLICE_FORCE)) {
             Human h = (Human) next;
+            if(this.agentInfo.getID().getValue() == h.getID().getValue()) {
+                continue;
+            }
             if(elements.contains(this.worldInfo.getPosition(h)) || elements.contains(h)) {
                 if (h.isHPDefined() && h.isBuriednessDefined() && h.getHP() > 0 && h.getBuriedness() > 0) {
                     targets.add(h);

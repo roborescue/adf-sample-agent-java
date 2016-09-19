@@ -21,9 +21,6 @@ import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.RoadSelector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsPolice;
-import rescuecore2.misc.geometry.GeometryTools2D;
-import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
@@ -54,7 +51,6 @@ public class SamplePolice extends TacticsPolice {
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
-        this.task = ACTION_UNKNOWN;
         worldInfo.indexClass(
                 StandardEntityURN.ROAD,
                 StandardEntityURN.HYDRANT,
@@ -62,7 +58,9 @@ public class SamplePolice extends TacticsPolice {
                 StandardEntityURN.REFUGE,
                 StandardEntityURN.BLOCKADE
         );
+        // init value
         this.clearDistance = scenarioInfo.getClearRepairDistance();
+        this.task = ACTION_UNKNOWN;
         //init ExtAction
         moduleManager.getExtAction("TacticsPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
         moduleManager.getExtAction("TacticsPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
@@ -111,9 +109,8 @@ public class SamplePolice extends TacticsPolice {
         this.clustering.updateInfo(messageManager);
         this.roadSelector.updateInfo(messageManager);
 
-
         PoliceForce agent = (PoliceForce) agentInfo.me();
-
+        // task
         this.updateTask(agentInfo, worldInfo, messageManager, true);
         if(this.task != ACTION_UNKNOWN) {
             Action action = this.getTaskAction(agentInfo, worldInfo, moduleManager);
@@ -125,7 +122,7 @@ public class SamplePolice extends TacticsPolice {
             }
             return action;
         }
-
+        // autonomous
         EntityID target = this.roadSelector.calc().getTarget();
         if(target != null) {
             Action action = moduleManager
@@ -155,12 +152,9 @@ public class SamplePolice extends TacticsPolice {
             }
         }
 
-        //check buriedness
-        if(agent.getBuriedness() > 0) {
-            messageManager.addMessage(
-                    new MessagePoliceForce(true, agent, MessagePoliceForce.ACTION_REST, agent.getPosition())
-            );
-        }
+        messageManager.addMessage(
+                new MessagePoliceForce(true, agent, MessagePoliceForce.ACTION_REST, agent.getPosition())
+        );
         return new ActionRest();
     }
 
@@ -179,14 +173,8 @@ public class SamplePolice extends TacticsPolice {
             if(target == null) {
                 for(StandardEntity entity : worldInfo.getObjectsInRange(ac.getPosX(), ac.getPosY(), this.clearDistance)) {
                     if(entity.getStandardURN() == StandardEntityURN.BLOCKADE) {
-                        if(this.intersect(
-                                policeForce.getX(), policeForce.getY(),
-                                ac.getPosX(), ac.getPosY(),
-                                (Blockade)entity
-                        )) {
-                            target = entity.getID();
-                            break;
-                        }
+                        target = entity.getID();
+                        break;
                     }
                 }
             }
@@ -198,37 +186,6 @@ public class SamplePolice extends TacticsPolice {
             return new MessagePoliceForce(true, policeForce, actionIndex, target);
         }
         return null;
-    }
-
-    private boolean intersect(double agentX, double agentY, double pointX, double pointY, Blockade blockade) {
-        List<Line2D> lines = GeometryTools2D.pointsToLines(GeometryTools2D.vertexArrayToPoints(blockade.getApexes()), true);
-        for(Line2D line : lines) {
-            Point2D start = line.getOrigin();
-            Point2D end = line.getEndPoint();
-            double startX = start.getX();
-            double startY = start.getY();
-            double endX = end.getX();
-            double endY = end.getY();
-            if(java.awt.geom.Line2D.linesIntersect(
-                    agentX, agentY, pointX, pointY,
-                    startX, startY, endX, endY
-            )) {
-                double midX = (startX + endX) / 2;
-                double midY = (startY + endY) / 2;
-                if(!equalsPoint(pointX, pointY, midX, midY) && !equalsPoint(agentX, agentY, midX, midY)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean equalsPoint(double p1X, double p1Y, double p2X, double p2Y) {
-        return this.equalsPoint(p1X, p1Y, p2X, p2Y, 1.0D);
-    }
-
-    private boolean equalsPoint(double p1X, double p1Y, double p2X, double p2Y, double range) {
-        return (p2X - range < p1X && p1X < p2X + range) && (p2Y - range < p1Y && p1Y < p2Y + range);
     }
 
     private void updateTask(AgentInfo agentInfo, WorldInfo worldInfo, MessageManager messageManager, boolean sendReport) {
@@ -326,43 +283,49 @@ public class SamplePolice extends TacticsPolice {
 
     private Action getTaskAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
         if(this.task == ACTION_REST) {
-            return this.getRestAction(agentInfo, worldInfo, moduleManager);
+            return this.getRestAction(agentInfo, worldInfo);
         } else if(this.task == ACTION_MOVE) {
-            return this.getMoveAction(agentInfo, worldInfo, moduleManager);
+            return this.getMoveAction(agentInfo, worldInfo);
         } else if(this.task == ACTION_CLEAR) {
             return this.getClearTask(moduleManager);
         } else if(this.task == ACTION_SCOUT) {
-            return this.getScoutAction(agentInfo, moduleManager);
+            return this.getScoutAction(agentInfo);
         }
         return null;
     }
 
-    private Action getRestAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
+    private Action getRestAction(AgentInfo agentInfo, WorldInfo worldInfo) {
+        EntityID position = agentInfo.getPosition();
         if(worldInfo.getEntity(this.target) instanceof Area) {
-            if (agentInfo.getPosition().getValue() == this.target.getValue()) {
+            if (position.getValue() == this.target.getValue()) {
                 return new ActionRest();
             } else {
-                PathPlanning pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning");
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(this.target);
-                List<EntityID> path = pathPlanning.calc().getResult();
+                this.pathPlanning.setFrom(position);
+                this.pathPlanning.setDestination(this.target);
+                List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
                     return new ActionMove(path);
                 }
             }
+        }
+        this.pathPlanning.setFrom(position);
+        this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(REFUGE));
+        List<EntityID> path = this.pathPlanning.calc().getResult();
+        if(path != null) {
+            return new ActionMove(path);
         }
         return new ActionRest();
     }
 
-    private Action getMoveAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
+    private Action getMoveAction(AgentInfo agentInfo, WorldInfo worldInfo) {
         if(worldInfo.getEntity(this.target) instanceof Area) {
-            if (agentInfo.getPosition().getValue() == this.target.getValue()) {
+            EntityID position = agentInfo.getPosition();
+            if (position.getValue() == this.target.getValue()) {
                 return new ActionRest();
             } else {
-                PathPlanning pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning");
-                pathPlanning.setFrom(agentInfo.getPosition());
-                pathPlanning.setDestination(this.target);
-                List<EntityID> path = pathPlanning.calc().getResult();
+                this.pathPlanning.setFrom(position);
+                this.pathPlanning.setDestination(this.target);
+                List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
                     return new ActionMove(path);
                 }
@@ -371,14 +334,13 @@ public class SamplePolice extends TacticsPolice {
         return null;
     }
 
-    private Action getScoutAction(AgentInfo agentInfo, ModuleManager moduleManager) {
+    private Action getScoutAction(AgentInfo agentInfo) {
         if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
             return null;
         }
-        PathPlanning pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning");
-        pathPlanning.setFrom(agentInfo.getPosition());
-        pathPlanning.setDestination(this.scoutTargets);
-        List<EntityID> path = pathPlanning.calc().getResult();
+        this.pathPlanning.setFrom(agentInfo.getPosition());
+        this.pathPlanning.setDestination(this.scoutTargets);
+        List<EntityID> path = this.pathPlanning.calc().getResult();
         if(path != null) {
             return new ActionMove(path);
         }
