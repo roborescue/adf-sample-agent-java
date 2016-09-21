@@ -175,7 +175,9 @@ public class SampleFire extends TacticsFire {
         if (actionClass == ActionMove.class) {
             List<EntityID> path = ((ActionMove) action).getPath();
             actionIndex = MessageFireBrigade.ACTION_MOVE;
-            target = path.get(path.size() - 1);
+            if(path.size() > 0) {
+                target = path.get(path.size() - 1);
+            }
         } else if(actionClass == ActionExtinguish.class) {
             actionIndex = MessageFireBrigade.ACTION_EXTINGUISH;
             target = ((ActionExtinguish)action).getTarget();

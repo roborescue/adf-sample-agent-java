@@ -165,7 +165,9 @@ public class SamplePolice extends TacticsPolice {
         if(actionClass == ActionMove.class) {
             List<EntityID> path = ((ActionMove)action).getPath();
             actionIndex = MessagePoliceForce.ACTION_MOVE;
-            target = path.get(path.size() - 1);
+            if(path.size() > 0) {
+                target = path.get(path.size() - 1);
+            }
         } else if(actionClass == ActionClear.class) {
             actionIndex = MessagePoliceForce.ACTION_CLEAR;
             ActionClear ac = (ActionClear)action;
