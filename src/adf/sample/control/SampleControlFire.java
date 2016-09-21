@@ -40,6 +40,9 @@ public class SampleControlFire extends ControlFire {
         this.resetTime = developData.getInteger("sample.control.SampleControlFire.resetTime", 5);
         int maxWater = scenarioInfo.getFireTankMaximum();
         this.thresholdCompleted = (maxWater / 10) * developData.getInteger("sample.control.SampleControlFire.refill", 7);
+        for(EntityID id : worldInfo.getEntityIDsOfType(StandardEntityURN.FIRE_BRIGADE)) {
+            taskMap.put(id, new Task(0, ACTION_UNKNOWN, null));
+        }
     }
 
     @Override
@@ -55,7 +58,6 @@ public class SampleControlFire extends ControlFire {
     @Override
     public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         int currentTime = agentInfo.getTime();
-        Collection<EntityID> commanders = worldInfo.getEntityIDsOfType(StandardEntityURN.FIRE_STATION);
         // task check
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageFireBrigade.class)) {
             MessageFireBrigade mfb = (MessageFireBrigade)message;
@@ -73,9 +75,6 @@ public class SampleControlFire extends ControlFire {
         // request check
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
             CommandFire command = (CommandFire)message;
-            if(commanders.contains(command.getSenderID())) {
-                continue;
-            }
             if(command.getAction() == CommandFire.ACTION_EXTINGUISH) {
                 this.extinguishBuildingIDs.add(new Request(currentTime, command.getTargetID()));
             }
