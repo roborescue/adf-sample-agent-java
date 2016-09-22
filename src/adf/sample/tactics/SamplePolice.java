@@ -71,6 +71,7 @@ public class SamplePolice extends TacticsPolice {
                 this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
                 this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
+                break;
             case PRECOMPUTED:
                 this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
@@ -119,43 +120,31 @@ public class SamplePolice extends TacticsPolice {
 
         PoliceForce agent = (PoliceForce) agentInfo.me();
         // command
-        this.updateTask(agentInfo, worldInfo, messageManager, true);
-        if(this.commandType != ACTION_UNKNOWN) {
-            Action action = this.getTaskAction(agentInfo, worldInfo, moduleManager);
-            if(action != null) {
-                CommunicationMessage message = this.getActionMessage(worldInfo, agent, action);
-                if(message != null) {
-                    messageManager.addMessage(message);
-                }
-            }
+        Action action = this.getCommandAction(agentInfo, worldInfo, moduleManager, messageManager);
+        if(action != null) {
+            this.sendActionMessage(worldInfo, messageManager, agent, action);
             return action;
         }
         // autonomous
         EntityID target = this.roadSelector.calc().getTarget();
         if(target != null) {
-            Action action = moduleManager
+            action = moduleManager
                     .getExtAction("TacticsPolice.ActionExtClear")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
-                CommunicationMessage message = this.getActionMessage(worldInfo, agent, action);
-                if(message != null) {
-                    messageManager.addMessage(message);
-                }
+                this.sendActionMessage(worldInfo, messageManager, agent, action);
                 return action;
             }
         }
         target = this.search.calc().getTarget();
         if(target != null) {
-            Action action = moduleManager
+            action = moduleManager
                     .getExtAction("TacticsPolice.ActionExtMove")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
-                CommunicationMessage message = this.getActionMessage(worldInfo, agent, action);
-                if(message != null) {
-                    messageManager.addMessage(message);
-                }
+                this.sendActionMessage(worldInfo, messageManager, agent, action);
                 return action;
             }
         }
@@ -166,40 +155,8 @@ public class SamplePolice extends TacticsPolice {
         return new ActionRest();
     }
 
-    private CommunicationMessage getActionMessage(WorldInfo worldInfo, PoliceForce policeForce, Action action) {
-        Class<? extends Action> actionClass = action.getClass();
-        int actionIndex = -1;
-        EntityID target = null;
-        if(actionClass == ActionMove.class) {
-            List<EntityID> path = ((ActionMove)action).getPath();
-            actionIndex = MessagePoliceForce.ACTION_MOVE;
-            if(path.size() > 0) {
-                target = path.get(path.size() - 1);
-            }
-        } else if(actionClass == ActionClear.class) {
-            actionIndex = MessagePoliceForce.ACTION_CLEAR;
-            ActionClear ac = (ActionClear)action;
-            target = ac.getTarget();
-            if(target == null) {
-                for(StandardEntity entity : worldInfo.getObjectsInRange(ac.getPosX(), ac.getPosY(), this.clearDistance)) {
-                    if(entity.getStandardURN() == StandardEntityURN.BLOCKADE) {
-                        target = entity.getID();
-                        break;
-                    }
-                }
-            }
-        } else if(actionClass == ActionRest.class) {
-            actionIndex = MessagePoliceForce.ACTION_REST;
-            target = policeForce.getPosition();
-        }
-        if(actionIndex != -1) {
-            return new MessagePoliceForce(true, policeForce, actionIndex, target);
-        }
-        return null;
-    }
-
-    private void updateTask(AgentInfo agentInfo, WorldInfo worldInfo, MessageManager messageManager, boolean sendReport) {
-        if(this.checkTask(agentInfo, worldInfo) && sendReport) {
+    private Action getCommandAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager, MessageManager messageManager) {
+        if(this.isCommandCompleted(agentInfo, worldInfo)) {
             if(this.commandType != ACTION_UNKNOWN) {
                 messageManager.addMessage(new MessageReport(true, true, false, this.commanderID));
             }
@@ -233,134 +190,95 @@ public class SamplePolice extends TacticsPolice {
                 break;
             }
         }
-    }
-
-    private boolean checkTask(AgentInfo agentInfo, WorldInfo worldInfo) {
         if(this.commandType == ACTION_REST) {
-            return this.checkRestTask(agentInfo, worldInfo);
+            EntityID position = agentInfo.getPosition();
+            if (position.getValue() != this.target.getValue()) {
+                List<EntityID> path = this.pathPlanning.getResult(position, this.target);
+                if(path != null) {
+                    return new ActionMove(path);
+                }
+            }
+            return new ActionRest();
         } else if(this.commandType == ACTION_MOVE) {
-            return this.checkMoveTask(agentInfo, worldInfo);
+            return moduleManager.getExtAction("TacticsAmbulance.ActionExtMove")
+                    .setTarget(this.target)
+                    .calc().getAction();
         } else if(this.commandType == ACTION_CLEAR) {
-            return this.checkClearTask(agentInfo, worldInfo);
+            return moduleManager
+                    .getExtAction("TacticsPolice.ActionExtClear")
+                    .setTarget(this.target)
+                    .calc().getAction();
         } else if(this.commandType == ACTION_SCOUT) {
-            return this.checkScoutTask(worldInfo);
-        }
-        return true;
-    }
-
-    private boolean checkRestTask(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
-            AmbulanceTeam agent = (AmbulanceTeam) agentInfo.me();
-            if (agent.getPosition().getValue() == this.target.getValue()) {
-                return (agent.getDamage() == 0);
+            if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
+                return null;
+            }
+            this.pathPlanning.setFrom(agentInfo.getPosition());
+            this.pathPlanning.setDestination(this.scoutTargets);
+            List<EntityID> path = this.pathPlanning.calc().getResult();
+            if(path != null) {
+                return new ActionMove(path);
             }
         }
-        return false;
+        return null;
     }
 
-    private boolean checkMoveTask(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(this.target == null) {
-            return true;
-        }
-        if(!(worldInfo.getEntity(this.target) instanceof Area)) {
-            return true;
-        }
-        return (agentInfo.getPosition().getValue() == this.target.getValue());
-    }
-
-    private boolean checkScoutTask(WorldInfo worldInfo) {
-        this.scoutTargets.removeAll(worldInfo.getChanged().getChangedEntities());
-        return (this.scoutTargets == null || this.scoutTargets.isEmpty());
-    }
-
-    private boolean checkClearTask(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(this.target == null) {
-            return true;
-        }
-        StandardEntity entity = worldInfo.getEntity(this.target);
-        if(entity instanceof Road) {
-            Road road = (Road)entity;
-            if(road.isBlockadesDefined()) {
-                return road.getBlockades().isEmpty();
-            } else {
+    private boolean isCommandCompleted(AgentInfo agentInfo, WorldInfo worldInfo) {
+        if(this.commandType == ACTION_REST) {
+            if(worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
+                AmbulanceTeam agent = (AmbulanceTeam) agentInfo.me();
+                if (agent.getPosition().getValue() == this.target.getValue()) {
+                    return (agent.getDamage() == 0);
+                }
+            }
+            return false;
+        } else if(this.commandType == ACTION_MOVE) {
+            return (agentInfo.getPosition().getValue() == this.target.getValue());
+        } else if(this.commandType == ACTION_CLEAR) {
+            StandardEntity entity = worldInfo.getEntity(this.target);
+            if(entity instanceof Road) {
+                Road road = (Road)entity;
+                if(road.isBlockadesDefined()) {
+                    return road.getBlockades().isEmpty();
+                }
                 if(agentInfo.getPosition().getValue() != this.target.getValue()) {
                     return false;
                 }
             }
+        } else if(this.commandType == ACTION_SCOUT) {
+            this.scoutTargets.removeAll(worldInfo.getChanged().getChangedEntities());
+            return (this.scoutTargets == null || this.scoutTargets.isEmpty());
         }
         return true;
     }
 
-    private Action getTaskAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
-        if(this.commandType == ACTION_REST) {
-            return this.getRestAction(agentInfo, worldInfo);
-        } else if(this.commandType == ACTION_MOVE) {
-            return this.getMoveAction(agentInfo, worldInfo);
-        } else if(this.commandType == ACTION_CLEAR) {
-            return this.getClearTask(moduleManager);
-        } else if(this.commandType == ACTION_SCOUT) {
-            return this.getScoutAction(agentInfo);
-        }
-        return null;
-    }
-
-    private Action getRestAction(AgentInfo agentInfo, WorldInfo worldInfo) {
-        EntityID position = agentInfo.getPosition();
-        if(worldInfo.getEntity(this.target) instanceof Area) {
-            if (position.getValue() == this.target.getValue()) {
-                return new ActionRest();
-            } else {
-                this.pathPlanning.setFrom(position);
-                this.pathPlanning.setDestination(this.target);
-                List<EntityID> path = this.pathPlanning.calc().getResult();
-                if(path != null) {
-                    return new ActionMove(path);
+    private void sendActionMessage(WorldInfo worldInfo, MessageManager messageManager, PoliceForce policeForce, Action action) {
+        Class<? extends Action> actionClass = action.getClass();
+        int actionIndex = -1;
+        EntityID target = null;
+        if(actionClass == ActionMove.class) {
+            List<EntityID> path = ((ActionMove)action).getPath();
+            actionIndex = MessagePoliceForce.ACTION_MOVE;
+            if(path.size() > 0) {
+                target = path.get(path.size() - 1);
+            }
+        } else if(actionClass == ActionClear.class) {
+            actionIndex = MessagePoliceForce.ACTION_CLEAR;
+            ActionClear ac = (ActionClear)action;
+            target = ac.getTarget();
+            if(target == null) {
+                for(StandardEntity entity : worldInfo.getObjectsInRange(ac.getPosX(), ac.getPosY(), this.clearDistance)) {
+                    if(entity.getStandardURN() == StandardEntityURN.BLOCKADE) {
+                        target = entity.getID();
+                        break;
+                    }
                 }
             }
+        } else if(actionClass == ActionRest.class) {
+            actionIndex = MessagePoliceForce.ACTION_REST;
+            target = policeForce.getPosition();
         }
-        this.pathPlanning.setFrom(position);
-        this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(REFUGE));
-        List<EntityID> path = this.pathPlanning.calc().getResult();
-        if(path != null) {
-            return new ActionMove(path);
+        if(actionIndex != -1) {
+            messageManager.addMessage(new MessagePoliceForce(true, policeForce, actionIndex, target));
         }
-        return new ActionRest();
-    }
-
-    private Action getMoveAction(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(worldInfo.getEntity(this.target) instanceof Area) {
-            EntityID position = agentInfo.getPosition();
-            if (position.getValue() == this.target.getValue()) {
-                return new ActionRest();
-            } else {
-                this.pathPlanning.setFrom(position);
-                this.pathPlanning.setDestination(this.target);
-                List<EntityID> path = this.pathPlanning.calc().getResult();
-                if(path != null) {
-                    return new ActionMove(path);
-                }
-            }
-        }
-        return null;
-    }
-
-    private Action getScoutAction(AgentInfo agentInfo) {
-        if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
-            return null;
-        }
-        this.pathPlanning.setFrom(agentInfo.getPosition());
-        this.pathPlanning.setDestination(this.scoutTargets);
-        List<EntityID> path = this.pathPlanning.calc().getResult();
-        if(path != null) {
-            return new ActionMove(path);
-        }
-        return null;
-    }
-
-    private Action getClearTask(ModuleManager moduleManager) {
-        return moduleManager
-                .getExtAction("TacticsPolice.ActionExtClear")
-                .setTarget(this.target)
-                .calc().getAction();
     }
 }

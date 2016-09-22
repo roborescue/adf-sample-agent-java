@@ -44,7 +44,7 @@ public class SampleFire extends TacticsFire {
     private int maxExtinguishDistance;
     private int maxExtinguishPower;
 
-    private int task;
+    private int commandType;
     private EntityID target;
     private Collection<EntityID> scoutTargets;
     private EntityID commanderID;
@@ -70,45 +70,54 @@ public class SampleFire extends TacticsFire {
         this.maxWater = scenarioInfo.getFireTankMaximum();
         this.maxExtinguishDistance = scenarioInfo.getFireExtinguishMaxDistance();
         this.maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
-        this.task = ACTION_UNKNOWN;
+        this.commandType = ACTION_UNKNOWN;
         //init ExtAction
         moduleManager.getExtAction("TacticsFire.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
         moduleManager.getExtAction("TacticsFire.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+        // init Algorithm Module
+        switch  (scenarioInfo.getMode()) {
+            case PRECOMPUTATION_PHASE:
+                this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
+                this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                break;
+            case PRECOMPUTED:
+                this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
+                this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                break;
+            case NON_PRECOMPUTE:
+                this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
+                this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                break;
+        }
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
-        this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.precompute(precomputeData);
-        this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
         this.search.precompute(precomputeData);
-        this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
         this.buildingSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
-        this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.resume(precomputeData);
-        this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.resume(precomputeData);
-        this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
         this.search.resume(precomputeData);
-        this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
         this.buildingSelector.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
-        this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.preparate();
-        this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.preparate();
-        this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
         this.search.preparate();
-        this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
         this.buildingSelector.preparate();
     }
 
@@ -120,44 +129,32 @@ public class SampleFire extends TacticsFire {
         this.buildingSelector.updateInfo(messageManager);
 
         FireBrigade agent = (FireBrigade) agentInfo.me();
-        // task
-        this.updateTask(agentInfo, worldInfo, messageManager, true);
-        if(this.task != ACTION_UNKNOWN) {
-            Action action = this.getTaskAction(agentInfo, worldInfo);
-            if(action != null) {
-                CommunicationMessage message = this.getActionMessage(agent, action);
-                if(message != null) {
-                    messageManager.addMessage(message);
-                }
-            }
+        // command
+        Action action = this.getCommandAction(agentInfo, worldInfo, messageManager);
+        if(action != null) {
+            this.sendActionMessage(messageManager, agent, action);
             return action;
         }
         // autonomous
         EntityID target = this.buildingSelector.calc().getTarget();
         if(target != null) {
-            Action action = moduleManager
+            action = moduleManager
                     .getExtAction("TacticsFire.ActionFireFighting")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
-                CommunicationMessage message = this.getActionMessage(agent, action);
-                if(message != null) {
-                    messageManager.addMessage(message);
-                }
+                this.sendActionMessage(messageManager, agent, action);
                 return action;
             }
         }
         target = this.search.calc().getTarget();
         if(target != null) {
-            Action action = moduleManager
+            action = moduleManager
                     .getExtAction("TacticsFire.ActionExtMove")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
-                CommunicationMessage message = this.getActionMessage(agent, action);
-                if(message != null) {
-                    messageManager.addMessage(message);
-                }
+                this.sendActionMessage(messageManager, agent, action);
                 return action;
             }
         }
@@ -168,41 +165,12 @@ public class SampleFire extends TacticsFire {
         return new ActionRest();
     }
 
-    private CommunicationMessage getActionMessage(FireBrigade fireBrigade, Action action) {
-        Class<? extends Action> actionClass = action.getClass();
-        int actionIndex = -1;
-        EntityID target = null;
-        if (actionClass == ActionMove.class) {
-            List<EntityID> path = ((ActionMove) action).getPath();
-            actionIndex = MessageFireBrigade.ACTION_MOVE;
-            if(path.size() > 0) {
-                target = path.get(path.size() - 1);
-            }
-        } else if(actionClass == ActionExtinguish.class) {
-            actionIndex = MessageFireBrigade.ACTION_EXTINGUISH;
-            target = ((ActionExtinguish)action).getTarget();
-        } else if(actionClass == ActionRefill.class) {
-            actionIndex = MessageFireBrigade.ACTION_REFILL;
-            target = fireBrigade.getPosition();
-        } else if(actionClass == ActionRest.class) {
-            actionIndex = MessageFireBrigade.ACTION_REST;
-            target = fireBrigade.getPosition();
-        }
-        if(actionIndex != -1) {
-            return new MessageFireBrigade(true, fireBrigade, actionIndex, target);
-        }
-        return null;
-    }
-
-    private void updateTask(AgentInfo agentInfo, WorldInfo worldInfo, MessageManager messageManager, boolean sendReport) {
-        if(this.checkTask(agentInfo, worldInfo) && sendReport) {
-            if(this.task != ACTION_UNKNOWN) {
+    private Action getCommandAction(AgentInfo agentInfo, WorldInfo worldInfo, MessageManager messageManager) {
+        if(this.isCommandComplete(agentInfo, worldInfo)) {
+            if(this.commandType != ACTION_UNKNOWN) {
                 messageManager.addMessage(new MessageReport(true, true, false, this.commanderID));
             }
-            this.task = ACTION_UNKNOWN;
-            this.target = null;
-            this.scoutTargets = null;
-            this.commanderID = null;
+            this.commandType = ACTION_UNKNOWN;
         }
         EntityID agentID = agentInfo.getID();
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
@@ -210,7 +178,7 @@ public class SampleFire extends TacticsFire {
             if(command.getToID().getValue() != agentID.getValue()) {
                 continue;
             }
-            this.task = ACTION_SCOUT;
+            this.commandType = ACTION_SCOUT;
             this.commanderID = command.getSenderID();
             this.scoutTargets = new HashSet<>();
             for(StandardEntity e : worldInfo.getObjectsInRange(command.getTargetID(), command.getRange())) {
@@ -223,82 +191,62 @@ public class SampleFire extends TacticsFire {
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
             CommandFire command = (CommandFire) message;
             if(command.getToID().getValue() == agentID.getValue()) {
-                this.task = command.getAction();
+                this.commandType = command.getAction();
                 this.target = command.getTargetID();
                 this.commanderID = command.getSenderID();
                 break;
             }
         }
-    }
-
-    private boolean checkTask(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(this.task == ACTION_REST) {
-            return this.checkRestTask(agentInfo, worldInfo);
-        } else if(this.task == ACTION_MOVE) {
-            return this.checkMoveTask(agentInfo, worldInfo);
-        } else if(this.task == ACTION_EXTINGUISH) {
-            return this.checkExtinguishTask(worldInfo);
-        } else if(this.task == ACTION_REFILL) {
-            return this.checkRefillTask(agentInfo);
-        } else if(this.task == ACTION_SCOUT) {
-            return this.checkScoutTask(worldInfo);
-        }
-        return true;
-    }
-
-    private boolean checkRestTask(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
-            AmbulanceTeam agent = (AmbulanceTeam) agentInfo.me();
-            if (agent.getPosition().getValue() == this.target.getValue()) {
-                return (agent.getDamage() == 0);
+        if(this.commandType == ACTION_REST) {
+            return this.getRestAction(agentInfo, worldInfo);
+        } else if(this.commandType == ACTION_MOVE) {
+            EntityID position = agentInfo.getPosition();
+            if (position.getValue() == this.target.getValue()) {
+                return new ActionRest();
+            } else {
+                List<EntityID> path = this.pathPlanning.getResult(position, this.target);
+                if(path != null) {
+                    return new ActionMove(path);
+                }
+            }
+        } else if(this.commandType == ACTION_EXTINGUISH) {
+            return this.getExtinguishAction(agentInfo, worldInfo);
+        } else if(this.commandType == ACTION_REFILL) {
+            return this.getRefillAction(agentInfo, worldInfo);
+        } else if(this.commandType == ACTION_SCOUT) {
+            if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
+                return null;
+            }
+            this.pathPlanning.setFrom(agentInfo.getPosition());
+            this.pathPlanning.setDestination(this.scoutTargets);
+            List<EntityID> path = this.pathPlanning.calc().getResult();
+            if(path != null) {
+                return new ActionMove(path);
             }
         }
-        return false;
+        return null;
     }
 
-    private boolean checkMoveTask(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(this.target == null) {
-            return true;
-        }
-        if(!(worldInfo.getEntity(this.target) instanceof Area)) {
-            return true;
-        }
-        return (agentInfo.getPosition().getValue() == this.target.getValue());
-    }
-
-    private boolean checkScoutTask(WorldInfo worldInfo) {
-        this.scoutTargets.removeAll(worldInfo.getChanged().getChangedEntities());
-        return (this.scoutTargets == null || this.scoutTargets.isEmpty());
-    }
-
-    private boolean checkExtinguishTask(WorldInfo worldInfo) {
-        if(this.target == null) {
-            return true;
-        }
-        StandardEntity entity = worldInfo.getEntity(this.target);
-        if(entity instanceof Building) {
-            return (((Building)entity).getFieryness() >= 4);
+    private boolean isCommandComplete(AgentInfo agentInfo, WorldInfo worldInfo) {
+        if (this.commandType == ACTION_REST) {
+            if (worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
+                AmbulanceTeam agent = (AmbulanceTeam) agentInfo.me();
+                if (agent.getPosition().getValue() == this.target.getValue()) {
+                    return (agent.getDamage() == 0);
+                }
+            }
+            return false;
+        } else if (this.commandType == ACTION_MOVE) {
+            return (agentInfo.getPosition().getValue() == this.target.getValue());
+        } else if (this.commandType == ACTION_EXTINGUISH) {
+            return (((Building) worldInfo.getEntity(this.target)).getFieryness() >= 4);
+        } else if (this.commandType == ACTION_REFILL) {
+            return (((FireBrigade)agentInfo.me()).getWater() == this.maxWater);
+        } else if (this.commandType == ACTION_SCOUT) {
+            this.scoutTargets.removeAll(worldInfo.getChanged().getChangedEntities());
+            return (this.scoutTargets == null || this.scoutTargets.isEmpty());
         }
         return true;
-    }
-
-    private boolean checkRefillTask(AgentInfo agentInfo) {
-        return (((FireBrigade)agentInfo.me()).getWater() == this.maxWater);
-    }
-
-    private Action getTaskAction(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(this.task == ACTION_REST) {
-            return this.getRestAction(agentInfo, worldInfo);
-        } else if(this.task == ACTION_MOVE) {
-            return this.getMoveAction(agentInfo, worldInfo);
-        } else if(this.task == ACTION_EXTINGUISH) {
-            return this.getExtinguishAction(agentInfo, worldInfo);
-        } else if(this.task == ACTION_REFILL) {
-            return this.getRefillAction(agentInfo, worldInfo);
-        } else if(this.task == ACTION_SCOUT) {
-            return this.getScoutAction(agentInfo);
-        }
-        return null;
     }
 
     private Action getRestAction(AgentInfo agentInfo, WorldInfo worldInfo) {
@@ -322,36 +270,6 @@ public class SampleFire extends TacticsFire {
             return new ActionMove(path);
         }
         return new ActionRest();
-    }
-
-    private Action getMoveAction(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(worldInfo.getEntity(this.target) instanceof Area) {
-            EntityID position = agentInfo.getPosition();
-            if (position.getValue() == this.target.getValue()) {
-                return new ActionRest();
-            } else {
-                this.pathPlanning.setFrom(position);
-                this.pathPlanning.setDestination(this.target);
-                List<EntityID> path = this.pathPlanning.calc().getResult();
-                if(path != null) {
-                    return new ActionMove(path);
-                }
-            }
-        }
-        return null;
-    }
-
-    private Action getScoutAction(AgentInfo agentInfo) {
-        if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
-            return null;
-        }
-        this.pathPlanning.setFrom(agentInfo.getPosition());
-        this.pathPlanning.setDestination(this.scoutTargets);
-        List<EntityID> path = this.pathPlanning.calc().getResult();
-        if(path != null) {
-            return new ActionMove(path);
-        }
-        return null;
     }
 
     private Action getRefillAction(AgentInfo agentInfo, WorldInfo worldInfo) {
@@ -408,5 +326,30 @@ public class SampleFire extends TacticsFire {
             }
         }
         return null;
+    }
+
+    private void sendActionMessage(MessageManager messageManager, FireBrigade fireBrigade, Action action) {
+        Class<? extends Action> actionClass = action.getClass();
+        int actionIndex = -1;
+        EntityID target = null;
+        if (actionClass == ActionMove.class) {
+            List<EntityID> path = ((ActionMove) action).getPath();
+            actionIndex = MessageFireBrigade.ACTION_MOVE;
+            if(path.size() > 0) {
+                target = path.get(path.size() - 1);
+            }
+        } else if(actionClass == ActionExtinguish.class) {
+            actionIndex = MessageFireBrigade.ACTION_EXTINGUISH;
+            target = ((ActionExtinguish)action).getTarget();
+        } else if(actionClass == ActionRefill.class) {
+            actionIndex = MessageFireBrigade.ACTION_REFILL;
+            target = fireBrigade.getPosition();
+        } else if(actionClass == ActionRest.class) {
+            actionIndex = MessageFireBrigade.ACTION_REST;
+            target = fireBrigade.getPosition();
+        }
+        if(actionIndex != -1) {
+            messageManager.addMessage(new MessageFireBrigade(true, fireBrigade, actionIndex, target));
+        }
     }
 }
