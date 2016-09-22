@@ -275,7 +275,9 @@ public class SampleAmbulance extends TacticsAmbulance {
         if(actionClass == ActionMove.class) {
             actionIndex = MessageAmbulanceTeam.ACTION_MOVE;
             List<EntityID> path = ((ActionMove)action).getPath();
-            target = path.get(path.size() - 1);
+            if(path.size() > 0) {
+                target = path.get(path.size() - 1);
+            }
         } else if(actionClass == ActionRescue.class) {
             actionIndex = MessageAmbulanceTeam.ACTION_RESCUE;
             target = ((ActionRescue)action).getTarget();
