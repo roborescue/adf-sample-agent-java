@@ -4,6 +4,7 @@ import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.information.MessagePoliceForce;
 import adf.agent.communication.standard.bundle.information.MessageRoad;
 import adf.agent.communication.standard.bundle.topdown.CommandPolice;
+import adf.agent.communication.standard.bundle.topdown.MessageReport;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -21,29 +22,20 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.*;
 
 public class SampleControlPolice extends ControlPolice {
-    private static final int ACTION_UNKNOWN = -1;
-    private static final int ACTION_REST = CommandPolice.ACTION_REST;
-    private static final int ACTION_MOVE = CommandPolice.ACTION_MOVE;
-    private static final int ACTION_CLEAR = CommandPolice.ACTION_CLEAR;
 
-    private Map<EntityID, Task> agentTaskMap;
+    private Map<EntityID, EntityID> agentTaskMap;
     private Set<EntityID> request;
-    private int resetTime;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
-        this.resetTime = developData.getInteger("sample.control.SampleControlPolice.resetTime", 5);
         this.agentTaskMap = new HashMap<>();
         this.request = new HashSet<>();
-        for(StandardEntity entity : worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE)) {
-            this.agentTaskMap.put(entity.getID(), new Task(0, ACTION_UNKNOWN, null));
-        }
     }
 
     @Override
     public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
-        this.collectTask(worldInfo, messageManager);
-        this.updateAgentTaskInfo(agentInfo, messageManager);
+        this.updateAgentTaskInfo(worldInfo, messageManager);
+        this.collectTask(messageManager);
         this.sendCommand(worldInfo, messageManager);
     }
 
@@ -51,12 +43,9 @@ public class SampleControlPolice extends ControlPolice {
         if(this.request.isEmpty()) {
             return;
         }
-        List<StandardEntity> agents = new ArrayList<>();
+        List<StandardEntity> agents = new ArrayList<>(worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE));
         for(EntityID id : this.agentTaskMap.keySet()) {
-            Task task = this.agentTaskMap.get(id);
-            if(task.getAction() == ACTION_UNKNOWN || task.getAction() == ACTION_REST) {
-                agents.add(worldInfo.getEntity(id));
-            }
+            agents.remove(worldInfo.getEntity(id));
         }
         for(EntityID id : this.request) {
             if(agents.isEmpty()) {
@@ -65,62 +54,80 @@ public class SampleControlPolice extends ControlPolice {
             StandardEntity entity = worldInfo.getEntity(id);
             if(entity instanceof Road) {
                 agents.sort(new DistanceSorter(worldInfo, entity));
+                EntityID agentID = agents.get(0).getID();
                 messageManager.addMessage(new CommandPolice(
                         true,
-                        agents.get(0).getID(),
+                        agentID,
                         entity.getID(),
                         CommandPolice.ACTION_CLEAR
                 ));
+                this.agentTaskMap.put(agentID, entity.getID());
                 agents.remove(0);
             } else if(entity.getStandardURN() == StandardEntityURN.BLOCKADE) {
                 entity = worldInfo.getEntity(((Blockade)entity).getPosition());
                 agents.sort(new DistanceSorter(worldInfo, entity));
+                EntityID agentID = agents.get(0).getID();
                 messageManager.addMessage(new CommandPolice(
                         true,
-                        agents.get(0).getID(),
+                        agentID,
                         entity.getID(),
                         CommandPolice.ACTION_CLEAR
                 ));
+                this.agentTaskMap.put(agentID, entity.getID());
                 agents.remove(0);
             }
         }
 
     }
 
-    private void updateAgentTaskInfo(AgentInfo agentInfo, MessageManager messageManager) {
-        int currentTime = agentInfo.getTime();
+    private void updateAgentTaskInfo(WorldInfo worldInfo, MessageManager messageManager) {
+        Collection<EntityID> agentIDs = worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_FORCE);
         for (CommunicationMessage message : messageManager.getReceivedMessageList(MessagePoliceForce.class)) {
             MessagePoliceForce mpf = (MessagePoliceForce) message;
             if (mpf.getSenderID().getValue() == mpf.getAgentID().getValue()) {
-                this.agentTaskMap.put(
-                        mpf.getAgentID(),
-                        new Task(agentInfo.getTime(), mpf.getAction(), mpf.getTargetID())
-                );
-                if(mpf.getAction() == ACTION_CLEAR) {
-                    this.request.remove(mpf.getTargetID());
-                } else if(mpf.getAction() == ACTION_MOVE) {
-                    this.request.remove(mpf.getTargetID());
+                EntityID target = this.agentTaskMap.get(mpf.getAgentID());
+                if(target != null) {
+                    if(target.getValue() == mpf.getPosition().getValue()) {
+                        StandardEntity entity = worldInfo.getEntity(target);
+                        if(entity instanceof Road) {
+                            Road road = (Road)entity;
+                            if(road.isBlockadesDefined()) {
+                                if(road.getBlockades().isEmpty()) {
+                                    this.agentTaskMap.remove(mpf.getAgentID());
+                                }
+                            } else {
+                                this.agentTaskMap.remove(mpf.getAgentID());
+                            }
+                        } else {
+                            this.agentTaskMap.remove(mpf.getAgentID());
+                        }
+                    }
                 }
             }
         }
-        for(EntityID id : this.agentTaskMap.keySet()) {
-            Task task = this.agentTaskMap.get(id);
-            if(task.getTime() + this.resetTime <= currentTime) {
-                this.agentTaskMap.put(id, new Task(currentTime, ACTION_UNKNOWN, null));
+        for (CommunicationMessage message : messageManager.getReceivedMessageList(MessageReport.class)) {
+            MessageReport report = (MessageReport)message;
+            if(agentIDs.contains(report.getSenderID())) {
+                if (report.isDone()) {
+                    this.agentTaskMap.remove(report.getSenderID());
+                } else {
+                    EntityID target = this.agentTaskMap.get(report.getSenderID());
+                    if(target != null) {
+                        this.request.add(target);
+                    }
+                    this.agentTaskMap.remove(report.getSenderID());
+                }
             }
         }
     }
 
-    private void collectTask(WorldInfo worldInfo, MessageManager messageManager) {
-        Collection<EntityID> commanders = worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_OFFICE);
+    private void collectTask(MessageManager messageManager) {
         for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
             Class<? extends CommunicationMessage> messageClass = message.getClass();
             if(messageClass == CommandPolice.class) {
                 CommandPolice command = (CommandPolice)message;
-                if(!commanders.contains(command.getSenderID())) {
-                    if(command.getAction() == CommandPolice.ACTION_CLEAR) {
-                        this.request.add(command.getTargetID());
-                    }
+                if(command.getAction() == CommandPolice.ACTION_CLEAR) {
+                    this.request.add(command.getTargetID());
                 }
             } else if(messageClass == MessageRoad.class) {
                 MessageRoad mr = (MessageRoad)message;
@@ -143,30 +150,6 @@ public class SampleControlPolice extends ControlPolice {
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
 
-    }
-
-    private class Task {
-        private int time;
-        private int action;
-        private EntityID target;
-
-        Task(int time, int action, EntityID target) {
-            this.time = time;
-            this.action = action;
-            this.target = target;
-        }
-
-        int getTime() {
-            return this.time;
-        }
-
-        int getAction() {
-            return this.action;
-        }
-
-        EntityID getTarget() {
-            return this.target;
-        }
     }
 
     private class DistanceSorter implements Comparator<StandardEntity> {

@@ -16,8 +16,7 @@ import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class SampleBuildingSelector extends BuildingSelector {
     private int thresholdCompleted;
@@ -101,19 +100,35 @@ public class SampleBuildingSelector extends BuildingSelector {
         if(elements == null || elements.isEmpty()) {
             return null;
         }
-        StandardEntity agent = this.agentInfo.me();
-        EntityID nearBuildingID = null;
-        int minDistance = Integer.MAX_VALUE;
+        StandardEntity me = this.agentInfo.me();
+        List<StandardEntity> agents = new ArrayList<>(worldInfo.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE));
+        Set<StandardEntity> fireBuildings = new HashSet<>();
         for (StandardEntity entity : elements) {
             if (entity instanceof Building && ((Building)entity).isOnFire()) {
-                int distance = this.worldInfo.getDistance(agent, entity);
-                if(distance < minDistance) {
-                    minDistance = distance;
-                    nearBuildingID = entity.getID();
-                }
+                fireBuildings.add(entity);
             }
         }
-        return nearBuildingID;
+        for(StandardEntity entity : fireBuildings) {
+            if(agents.isEmpty()) {
+                break;
+            } else if(agents.size() == 1) {
+                if(agents.get(0).getID().getValue() == me.getID().getValue()) {
+                    return entity.getID();
+                }
+                break;
+            }
+            agents.sort(new DistanceSorter(worldInfo, entity));
+            StandardEntity a0 = agents.get(0);
+            StandardEntity a1 = agents.get(1);
+
+            if(me.getID().getValue() == a0.getID().getValue() || me.getID().getValue() == a1.getID().getValue()) {
+                return entity.getID();
+            } else {
+                agents.remove(a0);
+                agents.remove(a1);
+            }
+        }
+        return null;
     }
 
     private EntityID calcTargetInWorld() {
@@ -124,19 +139,35 @@ public class SampleBuildingSelector extends BuildingSelector {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
-        StandardEntity agent = this.agentInfo.me();
-        EntityID nearBuildingID = null;
-        int minDistance = Integer.MAX_VALUE;
+        StandardEntity me = this.agentInfo.me();
+        List<StandardEntity> agents = new ArrayList<>(worldInfo.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE));
+        Set<StandardEntity> fireBuildings = new HashSet<>();
         for (StandardEntity entity : entities) {
             if (((Building)entity).isOnFire()) {
-                int distance = this.worldInfo.getDistance(agent, entity);
-                if(distance < minDistance) {
-                    minDistance = distance;
-                    nearBuildingID = entity.getID();
-                }
+                fireBuildings.add(entity);
             }
         }
-        return nearBuildingID;
+        for(StandardEntity entity : fireBuildings) {
+            if(agents.isEmpty()) {
+                break;
+            } else if(agents.size() == 1) {
+                if(agents.get(0).getID().getValue() == me.getID().getValue()) {
+                    return entity.getID();
+                }
+                break;
+            }
+            agents.sort(new DistanceSorter(worldInfo, entity));
+            StandardEntity a0 = agents.get(0);
+            StandardEntity a1 = agents.get(1);
+
+            if(me.getID().getValue() == a0.getID().getValue() || me.getID().getValue() == a1.getID().getValue()) {
+                return entity.getID();
+            } else {
+                agents.remove(a0);
+                agents.remove(a1);
+            }
+        }
+        return null;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -162,5 +193,21 @@ public class SampleBuildingSelector extends BuildingSelector {
     public BuildingSelector preparate() {
         super.preparate();
         return this;
+    }
+
+    private class DistanceSorter implements Comparator<StandardEntity> {
+        private StandardEntity reference;
+        private WorldInfo worldInfo;
+
+        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+            this.reference = reference;
+            this.worldInfo = wi;
+        }
+
+        public int compare(StandardEntity a, StandardEntity b) {
+            int d1 = this.worldInfo.getDistance(this.reference, a);
+            int d2 = this.worldInfo.getDistance(this.reference, b);
+            return d1 - d2;
+        }
     }
 }

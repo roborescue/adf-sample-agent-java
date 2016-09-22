@@ -27,10 +27,9 @@ public class SampleControlAmbulance extends ControlAmbulance {
     @Override
     public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData) {
         Collection<EntityID> refuges = worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE);
-        Set<EntityID> changedEntities = worldInfo.getChanged().getChangedEntities();
         Set<Human> priorities = new HashSet<>();
         Set<Human> victims = new HashSet<>();
-        List<StandardEntity> agents = new ArrayList<>(worldInfo.getEntitiesOfType(StandardEntityURN.AMBULANCE_TEAM));
+        Collection<EntityID> agentIDs = worldInfo.getEntityIDsOfType(StandardEntityURN.AMBULANCE_TEAM);
         for (CommunicationMessage message : messageManager.getReceivedMessageList(MessageCivilian.class)) {
             MessageCivilian mc = (MessageCivilian) message;
             MessageUtil.reflectMessage(worldInfo, mc);
@@ -64,29 +63,34 @@ public class SampleControlAmbulance extends ControlAmbulance {
         }
         for (CommunicationMessage message : messageManager.getReceivedMessageList(MessageAmbulanceTeam.class)) {
             MessageAmbulanceTeam mat = (MessageAmbulanceTeam) message;
-            if (!changedEntities.contains(mat.getAgentID())) {
-                MessageUtil.reflectMessage(worldInfo, mat);
-            }
             if (mat.getAgentID().getValue() == mat.getSenderID().getValue()) {
-                AmbulanceTeam ambulance = (AmbulanceTeam) worldInfo.getEntity(mat.getAgentID());
+                AmbulanceTeam ambulance = MessageUtil.reflectMessage(worldInfo, mat);
                 if (mat.getBuriedness() > 0) {
                     priorities.add(ambulance);
-                    agents.remove(ambulance);
+                    agentIDs.remove(ambulance.getID());
                 } else if (mat.getAction() == MessageAmbulanceTeam.ACTION_RESCUE) {
-                    agents.remove(ambulance);
+                    StandardEntity entity = worldInfo.getEntity(mat.getTargetID());
+                    if(entity instanceof Human) {
+                        Human human = (Human)entity;
+                        if(human.isBuriednessDefined() && human.getBuriedness() > 0) {
+                            agentIDs.remove(ambulance.getID());
+                        }
+                    }
                 } else if (mat.getAction() == MessageAmbulanceTeam.ACTION_LOAD) {
-                    agents.remove(ambulance);
+                    agentIDs.remove(ambulance.getID());
                 } else if (mat.getAction() == MessageAmbulanceTeam.ACTION_MOVE) {
                     if (refuges.contains(mat.getTargetID())) {
-                        agents.remove(ambulance);
+                        agentIDs.remove(ambulance.getID());
                     }
                 }
             }
         }
+        List<StandardEntity> agents = new ArrayList<>();
+        for(EntityID id : agentIDs) {
+            agents.add(worldInfo.getEntity(id));
+        }
         for(Human human : priorities) {
-            if (agents.isEmpty()) {
-                return;
-            }
+            if (agents.isEmpty()) { return; }
             agents.sort(new DistanceSorter(worldInfo, human));
             messageManager.addMessage(new CommandAmbulance(
                     true,
@@ -96,9 +100,7 @@ public class SampleControlAmbulance extends ControlAmbulance {
             ));
         }
         for(Human human : victims) {
-            if (agents.isEmpty()) {
-                return;
-            }
+            if (agents.isEmpty()) { return; }
             agents.sort(new DistanceSorter(worldInfo, human));
             messageManager.addMessage(new CommandAmbulance(
                     true,
@@ -111,12 +113,10 @@ public class SampleControlAmbulance extends ControlAmbulance {
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeInfo, DevelopData debugData) {
-
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData debugData) {
-
     }
 
     private class DistanceSorter implements Comparator<StandardEntity> {

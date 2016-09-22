@@ -40,7 +40,7 @@ public class SampleRoadSelector extends RoadSelector {
             this.result = positionID;
             return this;
         }
-        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.RoadSelector");
+        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
         pathPlanning.setFrom(positionID);
         pathPlanning.setDestination(this.impassableArea);
         List<EntityID> path = pathPlanning.calc().getResult();
