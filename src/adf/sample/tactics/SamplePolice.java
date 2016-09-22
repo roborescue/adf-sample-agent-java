@@ -39,7 +39,7 @@ public class SamplePolice extends TacticsPolice {
 
     private int clearDistance;
 
-    private int task;
+    private int commandType;
     private EntityID target;
     private Collection<EntityID> scoutTargets;
     private EntityID commanderID;
@@ -60,45 +60,53 @@ public class SamplePolice extends TacticsPolice {
         );
         // init value
         this.clearDistance = scenarioInfo.getClearRepairDistance();
-        this.task = ACTION_UNKNOWN;
+        this.commandType = ACTION_UNKNOWN;
         //init ExtAction
         moduleManager.getExtAction("TacticsPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
         moduleManager.getExtAction("TacticsPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+        // init Algorithm Module
+        switch  (scenarioInfo.getMode()) {
+            case PRECOMPUTATION_PHASE:
+                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
+                this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
+            case PRECOMPUTED:
+                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
+                this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
+                break;
+            case NON_PRECOMPUTE:
+                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
+                this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
+                break;
+        }
     }
 
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
-        this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.precompute(precomputeData);
-        this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.precompute(precomputeData);
-        this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
         this.search.precompute(precomputeData);
-        this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
         this.roadSelector.precompute(precomputeData);
     }
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
-        this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.resume(precomputeData);
-        this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.resume(precomputeData);
-        this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
         this.search.resume(precomputeData);
-        this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
         this.roadSelector.resume(precomputeData);
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
-        this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
         this.pathPlanning.preparate();
-        this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
         this.clustering.preparate();
-        this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
         this.search.preparate();
-        this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
         this.roadSelector.preparate();
     }
 
@@ -110,9 +118,9 @@ public class SamplePolice extends TacticsPolice {
         this.roadSelector.updateInfo(messageManager);
 
         PoliceForce agent = (PoliceForce) agentInfo.me();
-        // task
+        // command
         this.updateTask(agentInfo, worldInfo, messageManager, true);
-        if(this.task != ACTION_UNKNOWN) {
+        if(this.commandType != ACTION_UNKNOWN) {
             Action action = this.getTaskAction(agentInfo, worldInfo, moduleManager);
             if(action != null) {
                 CommunicationMessage message = this.getActionMessage(worldInfo, agent, action);
@@ -190,10 +198,10 @@ public class SamplePolice extends TacticsPolice {
 
     private void updateTask(AgentInfo agentInfo, WorldInfo worldInfo, MessageManager messageManager, boolean sendReport) {
         if(this.checkTask(agentInfo, worldInfo) && sendReport) {
-            if(this.task != ACTION_UNKNOWN) {
+            if(this.commandType != ACTION_UNKNOWN) {
                 messageManager.addMessage(new MessageReport(true, true, false, this.commanderID));
             }
-            this.task = ACTION_UNKNOWN;
+            this.commandType = ACTION_UNKNOWN;
             this.target = null;
             this.scoutTargets = null;
             this.commanderID = null;
@@ -204,7 +212,7 @@ public class SamplePolice extends TacticsPolice {
             if(command.getToID().getValue() != agentID.getValue()) {
                 continue;
             }
-            this.task = ACTION_SCOUT;
+            this.commandType = ACTION_SCOUT;
             this.commanderID = command.getSenderID();
             this.scoutTargets = new HashSet<>();
             for(StandardEntity e : worldInfo.getObjectsInRange(command.getTargetID(), command.getRange())) {
@@ -217,7 +225,7 @@ public class SamplePolice extends TacticsPolice {
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
             CommandPolice command = (CommandPolice) message;
             if(command.getToID().getValue() == agentID.getValue()) {
-                this.task = command.getAction();
+                this.commandType = command.getAction();
                 this.target = command.getTargetID();
                 this.commanderID = command.getSenderID();
                 break;
@@ -226,13 +234,13 @@ public class SamplePolice extends TacticsPolice {
     }
 
     private boolean checkTask(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(this.task == ACTION_REST) {
+        if(this.commandType == ACTION_REST) {
             return this.checkRestTask(agentInfo, worldInfo);
-        } else if(this.task == ACTION_MOVE) {
+        } else if(this.commandType == ACTION_MOVE) {
             return this.checkMoveTask(agentInfo, worldInfo);
-        } else if(this.task == ACTION_CLEAR) {
+        } else if(this.commandType == ACTION_CLEAR) {
             return this.checkClearTask(agentInfo, worldInfo);
-        } else if(this.task == ACTION_SCOUT) {
+        } else if(this.commandType == ACTION_SCOUT) {
             return this.checkScoutTask(worldInfo);
         }
         return true;
@@ -282,13 +290,13 @@ public class SamplePolice extends TacticsPolice {
     }
 
     private Action getTaskAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager) {
-        if(this.task == ACTION_REST) {
+        if(this.commandType == ACTION_REST) {
             return this.getRestAction(agentInfo, worldInfo);
-        } else if(this.task == ACTION_MOVE) {
+        } else if(this.commandType == ACTION_MOVE) {
             return this.getMoveAction(agentInfo, worldInfo);
-        } else if(this.task == ACTION_CLEAR) {
+        } else if(this.commandType == ACTION_CLEAR) {
             return this.getClearTask(moduleManager);
-        } else if(this.task == ACTION_SCOUT) {
+        } else if(this.commandType == ACTION_SCOUT) {
             return this.getScoutAction(agentInfo);
         }
         return null;
