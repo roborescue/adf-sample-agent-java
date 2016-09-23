@@ -20,6 +20,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
+import static rescuecore2.standard.entities.StandardEntityURN.HYDRANT;
+import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
+
 public class ActionFireFighting extends ExtAction {
     private int maxExtinguishDistance;
     private int maxExtinguishPower;
@@ -75,6 +78,31 @@ public class ActionFireFighting extends ExtAction {
             }
             this.result = this.getMoveAction(pathPlanning, fireBrigade.getPosition(), this.targets);
             if(this.result != null) {
+                return this;
+            }
+            EntityID position = agentInfo.getPosition();
+            Collection<EntityID> refillArea = worldInfo.getEntityIDsOfType(REFUGE);
+            if(refillArea.contains(position)) {
+                this.result = new ActionRefill();
+                return this;
+            }
+            pathPlanning.setFrom(position);
+            pathPlanning.setDestination(refillArea);
+            List<EntityID> path = pathPlanning.calc().getResult();
+            if (path != null) {
+                result = new ActionMove(path);
+                return this;
+            }
+            refillArea = worldInfo.getEntityIDsOfType(HYDRANT);
+            if(refillArea.contains(position)) {
+                result = new ActionRefill();
+                return this;
+            }
+            pathPlanning.setFrom(position);
+            pathPlanning.setDestination(refillArea);
+            path = pathPlanning.calc().getResult();
+            if (path != null) {
+                result = new ActionMove(path);
                 return this;
             }
         }

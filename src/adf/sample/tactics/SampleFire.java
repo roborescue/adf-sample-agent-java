@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-import static rescuecore2.standard.entities.StandardEntityURN.HYDRANT;
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
 public class SampleFire extends TacticsFire {
@@ -41,8 +40,6 @@ public class SampleFire extends TacticsFire {
     private static final int ACTION_SCOUT = 5;
 
     private int maxWater;
-    private int maxExtinguishDistance;
-    private int maxExtinguishPower;
 
     private int commandType;
     private EntityID target;
@@ -68,8 +65,6 @@ public class SampleFire extends TacticsFire {
         );
         // init value
         this.maxWater = scenarioInfo.getFireTankMaximum();
-        this.maxExtinguishDistance = scenarioInfo.getFireExtinguishMaxDistance();
-        this.maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
         this.commandType = ACTION_UNKNOWN;
         //init ExtAction
         moduleManager.getExtAction("TacticsFire.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
@@ -130,7 +125,7 @@ public class SampleFire extends TacticsFire {
 
         FireBrigade agent = (FireBrigade) agentInfo.me();
         // command
-        Action action = this.getCommandAction(agentInfo, worldInfo, messageManager);
+        Action action = this.getCommandAction(agentInfo, worldInfo, moduleManager, messageManager);
         if(action != null) {
             this.sendActionMessage(messageManager, agent, action);
             return action;
@@ -138,8 +133,7 @@ public class SampleFire extends TacticsFire {
         // autonomous
         EntityID target = this.buildingSelector.calc().getTarget();
         if(target != null) {
-            action = moduleManager
-                    .getExtAction("TacticsFire.ActionFireFighting")
+            action = moduleManager.getExtAction("TacticsFire.ActionFireFighting")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
@@ -149,8 +143,7 @@ public class SampleFire extends TacticsFire {
         }
         target = this.search.calc().getTarget();
         if(target != null) {
-            action = moduleManager
-                    .getExtAction("TacticsFire.ActionExtMove")
+            action = moduleManager.getExtAction("TacticsFire.ActionExtMove")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
@@ -165,7 +158,7 @@ public class SampleFire extends TacticsFire {
         return new ActionRest();
     }
 
-    private Action getCommandAction(AgentInfo agentInfo, WorldInfo worldInfo, MessageManager messageManager) {
+    private Action getCommandAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager, MessageManager messageManager) {
         if(this.isCommandComplete(agentInfo, worldInfo)) {
             if(this.commandType != ACTION_UNKNOWN) {
                 messageManager.addMessage(new MessageReport(true, true, false, this.commanderID));
@@ -175,18 +168,17 @@ public class SampleFire extends TacticsFire {
         EntityID agentID = agentInfo.getID();
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
             CommandScout command = (CommandScout) message;
-            if(command.getToID().getValue() != agentID.getValue()) {
-                continue;
-            }
-            this.commandType = ACTION_SCOUT;
-            this.commanderID = command.getSenderID();
-            this.scoutTargets = new HashSet<>();
-            for(StandardEntity e : worldInfo.getObjectsInRange(command.getTargetID(), command.getRange())) {
-                if(e instanceof Area) {
-                    this.scoutTargets.add(e.getID());
+            if(command.getToID().getValue() == agentID.getValue()) {
+                this.commandType = ACTION_SCOUT;
+                this.commanderID = command.getSenderID();
+                this.scoutTargets = new HashSet<>();
+                for (StandardEntity e : worldInfo.getObjectsInRange(command.getTargetID(), command.getRange())) {
+                    if (e instanceof Area && e.getStandardURN() != REFUGE) {
+                        this.scoutTargets.add(e.getID());
+                    }
                 }
+                break;
             }
-            break;
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
             CommandFire command = (CommandFire) message;
@@ -197,135 +189,63 @@ public class SampleFire extends TacticsFire {
                 break;
             }
         }
-        if(this.commandType == ACTION_REST) {
-            return this.getRestAction(agentInfo, worldInfo);
-        } else if(this.commandType == ACTION_MOVE) {
-            EntityID position = agentInfo.getPosition();
-            if (position.getValue() == this.target.getValue()) {
+        switch (this.commandType) {
+            case ACTION_REST:
+                EntityID position = agentInfo.getPosition();
+                if (position.getValue() != this.target.getValue()) {
+                    List<EntityID> path = this.pathPlanning.getResult(position, this.target);
+                    if(path != null) {
+                        return new ActionMove(path);
+                    }
+                }
                 return new ActionRest();
-            } else {
-                List<EntityID> path = this.pathPlanning.getResult(position, this.target);
+            case ACTION_MOVE:
+                return moduleManager.getExtAction("TacticsFire.ActionExtMove")
+                        .setTarget(this.target)
+                        .calc().getAction();
+            case ACTION_EXTINGUISH:
+                return moduleManager.getExtAction("TacticsFire.ActionFireFighting")
+                        .setTarget(this.target)
+                        .calc().getAction();
+            case ACTION_REFILL:
+                return moduleManager.getExtAction("TacticsFire.ActionFireFighting")
+                        .setTarget(this.target)
+                        .calc().getAction();
+            case ACTION_SCOUT:
+                if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
+                    return null;
+                }
+                this.pathPlanning.setFrom(agentInfo.getPosition());
+                this.pathPlanning.setDestination(this.scoutTargets);
+                List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
                     return new ActionMove(path);
                 }
-            }
-        } else if(this.commandType == ACTION_EXTINGUISH) {
-            return this.getExtinguishAction(agentInfo, worldInfo);
-        } else if(this.commandType == ACTION_REFILL) {
-            return this.getRefillAction(agentInfo, worldInfo);
-        } else if(this.commandType == ACTION_SCOUT) {
-            if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
-                return null;
-            }
-            this.pathPlanning.setFrom(agentInfo.getPosition());
-            this.pathPlanning.setDestination(this.scoutTargets);
-            List<EntityID> path = this.pathPlanning.calc().getResult();
-            if(path != null) {
-                return new ActionMove(path);
-            }
         }
         return null;
     }
 
     private boolean isCommandComplete(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if (this.commandType == ACTION_REST) {
-            if (worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
-                AmbulanceTeam agent = (AmbulanceTeam) agentInfo.me();
-                if (agent.getPosition().getValue() == this.target.getValue()) {
-                    return (agent.getDamage() == 0);
+        switch (this.commandType) {
+            case ACTION_REST:
+                if (worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
+                    AmbulanceTeam agent = (AmbulanceTeam) agentInfo.me();
+                    if (agent.getPosition().getValue() == this.target.getValue()) {
+                        return (agent.getDamage() == 0);
+                    }
                 }
-            }
-            return false;
-        } else if (this.commandType == ACTION_MOVE) {
-            return (agentInfo.getPosition().getValue() == this.target.getValue());
-        } else if (this.commandType == ACTION_EXTINGUISH) {
-            return (((Building) worldInfo.getEntity(this.target)).getFieryness() >= 4);
-        } else if (this.commandType == ACTION_REFILL) {
-            return (((FireBrigade)agentInfo.me()).getWater() == this.maxWater);
-        } else if (this.commandType == ACTION_SCOUT) {
-            this.scoutTargets.removeAll(worldInfo.getChanged().getChangedEntities());
-            return (this.scoutTargets == null || this.scoutTargets.isEmpty());
+                return false;
+            case ACTION_MOVE:
+                return (agentInfo.getPosition().getValue() == this.target.getValue());
+            case ACTION_EXTINGUISH:
+                return (((Building) worldInfo.getEntity(this.target)).getFieryness() >= 4);
+            case ACTION_REFILL:
+                return (((FireBrigade)agentInfo.me()).getWater() == this.maxWater);
+            case ACTION_SCOUT:
+                this.scoutTargets.removeAll(worldInfo.getChanged().getChangedEntities());
+                return (this.scoutTargets == null || this.scoutTargets.isEmpty());
         }
         return true;
-    }
-
-    private Action getRestAction(AgentInfo agentInfo, WorldInfo worldInfo) {
-        EntityID position = agentInfo.getPosition();
-        if(worldInfo.getEntity(this.target) instanceof Area) {
-            if (position.getValue() == this.target.getValue()) {
-                return new ActionRest();
-            } else {
-                this.pathPlanning.setFrom(position);
-                this.pathPlanning.setDestination(this.target);
-                List<EntityID> path = this.pathPlanning.calc().getResult();
-                if(path != null) {
-                    return new ActionMove(path);
-                }
-            }
-        }
-        this.pathPlanning.setFrom(position);
-        this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(REFUGE));
-        List<EntityID> path = this.pathPlanning.calc().getResult();
-        if(path != null) {
-            return new ActionMove(path);
-        }
-        return new ActionRest();
-    }
-
-    private Action getRefillAction(AgentInfo agentInfo, WorldInfo worldInfo) {
-        EntityID position = agentInfo.getPosition();
-        Collection<EntityID> refillAreaIDs = worldInfo.getEntityIDsOfType(REFUGE);
-        if(refillAreaIDs.contains(position)) {
-            return new ActionRefill();
-        }
-        if(this.target != null) {
-            if (position.getValue() == this.target.getValue()) {
-                return new ActionRefill();
-            }
-            this.pathPlanning.setFrom(position);
-            this.pathPlanning.setDestination(this.target);
-            List<EntityID> path = this.pathPlanning.calc().getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-        } else {
-            this.pathPlanning.setFrom(position);
-            this.pathPlanning.setDestination(refillAreaIDs);
-            List<EntityID> path = this.pathPlanning.calc().getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-            refillAreaIDs = worldInfo.getEntityIDsOfType(HYDRANT);
-            if(refillAreaIDs.contains(agentInfo.getPosition())) {
-                return new ActionRefill();
-            }
-            this.pathPlanning.setFrom(position);
-            this.pathPlanning.setDestination(refillAreaIDs);
-            path = this.pathPlanning.calc().getResult();
-            if (path != null) {
-                return new ActionMove(path);
-            }
-        }
-        return null;
-    }
-
-    private Action getExtinguishAction(AgentInfo agentInfo, WorldInfo worldInfo) {
-        if(this.target != null) {
-            StandardEntity entity = worldInfo.getEntity(this.target);
-            if (entity instanceof Building) {
-                Human agent = (Human) agentInfo.me();
-                if (worldInfo.getDistance(agent, entity) < this.maxExtinguishDistance) {
-                    new ActionExtinguish((Building) entity, this.maxExtinguishPower);
-                }
-                this.pathPlanning.setFrom(agent.getPosition());
-                this.pathPlanning.setDestination(this.target);
-                List<EntityID> path = this.pathPlanning.calc().getResult();
-                if (path != null) {
-                    return new ActionMove(path);
-                }
-            }
-        }
-        return null;
     }
 
     private void sendActionMessage(MessageManager messageManager, FireBrigade fireBrigade, Action action) {
@@ -333,8 +253,8 @@ public class SampleFire extends TacticsFire {
         int actionIndex = -1;
         EntityID target = null;
         if (actionClass == ActionMove.class) {
-            List<EntityID> path = ((ActionMove) action).getPath();
             actionIndex = MessageFireBrigade.ACTION_MOVE;
+            List<EntityID> path = ((ActionMove) action).getPath();
             if(path.size() > 0) {
                 target = path.get(path.size() - 1);
             }

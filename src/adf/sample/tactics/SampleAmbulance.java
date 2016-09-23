@@ -137,8 +137,7 @@ public class SampleAmbulance extends TacticsAmbulance {
         // autonomous
         EntityID target = this.humanSelector.calc().getTarget();
         if(target != null) {
-            action = moduleManager
-                    .getExtAction("TacticsAmbulance.ActionTransport")
+            action = moduleManager.getExtAction("TacticsAmbulance.ActionTransport")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
@@ -148,8 +147,7 @@ public class SampleAmbulance extends TacticsAmbulance {
         }
         target = this.search.calc().getTarget();
         if(target != null) {
-            action = moduleManager
-                    .getExtAction("TacticsAmbulance.ActionExtMove")
+            action = moduleManager.getExtAction("TacticsAmbulance.ActionExtMove")
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
@@ -179,7 +177,7 @@ public class SampleAmbulance extends TacticsAmbulance {
                 this.commanderID = command.getSenderID();
                 this.scoutTargets = new HashSet<>();
                 for (StandardEntity e : worldInfo.getObjectsInRange(command.getTargetID(), command.getRange())) {
-                    if (e instanceof Area) {
+                    if (e instanceof Area && e.getStandardURN() != REFUGE) {
                         this.scoutTargets.add(e.getID());
                     }
                 }
@@ -195,33 +193,42 @@ public class SampleAmbulance extends TacticsAmbulance {
                 break;
             }
         }
-        if(this.type == ACTION_REST) {
-            EntityID position = agentInfo.getPosition();
-            if (position.getValue() != this.target.getValue()) {
-                List<EntityID> path = this.pathPlanning.getResult(position, this.target);
+        switch (this.type) {
+            case ACTION_REST:
+                EntityID position = agentInfo.getPosition();
+                if (position.getValue() != this.target.getValue()) {
+                    List<EntityID> path = this.pathPlanning.getResult(position, this.target);
+                    if(path != null) {
+                        return new ActionMove(path);
+                    }
+                }
+                return new ActionRest();
+            case ACTION_MOVE:
+                return moduleManager.getExtAction("TacticsAmbulance.ActionExtMove")
+                        .setTarget(this.target)
+                        .calc().getAction();
+            case ACTION_RESCUE:
+                return moduleManager.getExtAction("TacticsAmbulance.ActionTransport")
+                        .setTarget(this.target)
+                        .calc().getAction();
+            case ACTION_LOAD:
+                return moduleManager.getExtAction("TacticsAmbulance.ActionTransport")
+                        .setTarget(this.target)
+                        .calc().getAction();
+            case ACTION_UNLOAD:
+                return moduleManager.getExtAction("TacticsAmbulance.ActionTransport")
+                        .setTarget(this.target)
+                        .calc().getAction();
+            case ACTION_SCOUT:
+                if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
+                    return null;
+                }
+                this.pathPlanning.setFrom(agentInfo.getPosition());
+                this.pathPlanning.setDestination(this.scoutTargets);
+                List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
                     return new ActionMove(path);
                 }
-            }
-            return new ActionRest();
-        } else if(this.type == ACTION_MOVE) {
-            return moduleManager.getExtAction("TacticsAmbulance.ActionExtMove")
-                    .setTarget(this.target)
-                    .calc().getAction();
-        } else if(this.type == ACTION_RESCUE || this.type == ACTION_LOAD || this.type == ACTION_UNLOAD) {
-            return moduleManager.getExtAction("TacticsAmbulance.ActionTransport")
-                    .setTarget(this.target)
-                    .calc().getAction();
-        } else if(this.type == ACTION_SCOUT) {
-            if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
-                return null;
-            }
-            this.pathPlanning.setFrom(agentInfo.getPosition());
-            this.pathPlanning.setDestination(this.scoutTargets);
-            List<EntityID> path = this.pathPlanning.calc().getResult();
-            if(path != null) {
-                return new ActionMove(path);
-            }
         }
         return null;
     }
