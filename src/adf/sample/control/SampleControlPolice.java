@@ -85,22 +85,23 @@ public class SampleControlPolice extends ControlPolice {
         for (CommunicationMessage message : messageManager.getReceivedMessageList(MessagePoliceForce.class)) {
             MessagePoliceForce mpf = (MessagePoliceForce) message;
             if (mpf.getSenderID().getValue() == mpf.getAgentID().getValue()) {
-                EntityID target = this.agentTaskMap.get(mpf.getAgentID());
-                if(target != null) {
-                    if(target.getValue() == mpf.getPosition().getValue()) {
-                        StandardEntity entity = worldInfo.getEntity(target);
-                        if(entity instanceof Road) {
-                            Road road = (Road)entity;
-                            if(road.isBlockadesDefined()) {
-                                if(road.getBlockades().isEmpty()) {
-                                    this.agentTaskMap.remove(mpf.getAgentID());
-                                }
-                            } else {
+                EntityID target = this.agentTaskMap.get(mpf.getTargetID());
+                if(target == null) {
+                    continue;
+                }
+                if(target.getValue() == mpf.getPosition().getValue()) {
+                    StandardEntity entity = worldInfo.getEntity(target);
+                    if(entity instanceof Road) {
+                        Road road = (Road)entity;
+                        if(road.isBlockadesDefined()) {
+                            if(road.getBlockades().isEmpty()) {
                                 this.agentTaskMap.remove(mpf.getAgentID());
                             }
                         } else {
                             this.agentTaskMap.remove(mpf.getAgentID());
                         }
+                    } else {
+                        this.agentTaskMap.remove(mpf.getAgentID());
                     }
                 }
             }

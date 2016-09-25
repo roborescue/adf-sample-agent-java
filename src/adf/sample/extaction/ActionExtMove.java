@@ -31,7 +31,6 @@ public class ActionExtMove extends ExtAction {
         if(targets == null) {
             return this;
         }
-        boolean isMove = false;
         for(EntityID entityID : targets) {
             StandardEntity entity = this.worldInfo.getEntity(entityID);
             if(entity.getStandardURN().equals(StandardEntityURN.BLOCKADE)) {
@@ -42,12 +41,11 @@ public class ActionExtMove extends ExtAction {
 
             if(entity.getStandardURN().equals(StandardEntityURN.REFUGE)) {
                 this.searchTargets.add(entityID);
+                this.isRest = true;
             } else if(entity instanceof Area) {
                 this.searchTargets.add(entityID);
-                isMove = true;
             }
         }
-        this.isRest = !isMove;
         return this;
     }
 
@@ -68,27 +66,27 @@ public class ActionExtMove extends ExtAction {
             pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
         }
         if(pathPlanning != null) {
-            List<EntityID> path = pathPlanning
-                    .setFrom(agent.getPosition())
-                    .setDestination(this.searchTargets)
-                    .calc().getResult();
-            if (path != null) {
-                if(this.isRest) {
-                    boolean canRest = true;
-                    for(EntityID id : path) {
-                        if(this.worldInfo.getEntity(id).getStandardURN() != StandardEntityURN.REFUGE) {
-                            canRest = false;
-                            break;
-                        }
+            pathPlanning.setFrom(agent.getPosition());
+            pathPlanning.setDestination(this.searchTargets);
+            List<EntityID> path = pathPlanning.calc().getResult();
+            if (path == null) {
+                return this;
+            }
+            if(this.isRest) {
+                boolean canRest = true;
+                for(EntityID id : path) {
+                    if(this.worldInfo.getEntity(id).getStandardURN() != StandardEntityURN.REFUGE) {
+                        canRest = false;
+                        break;
                     }
-                    if(canRest) {
-                        this.result = new ActionRest();
-                    } else {
-                        this.result = new ActionMove(path);
-                    }
+                }
+                if(canRest) {
+                    this.result = new ActionRest();
                 } else {
                     this.result = new ActionMove(path);
                 }
+            } else {
+                this.result = new ActionMove(path);
             }
         }
         return this;

@@ -30,18 +30,18 @@ public class SampleControlFire extends ControlFire {
     private int thresholdCompleted;
 
     private List<Request> extinguishBuildingIDs;
-    private Map<EntityID, Task> taskMap;
+    private Map<EntityID, Command> commandMap;
     private int resetTime;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         this.extinguishBuildingIDs = new ArrayList<>();
-        this.taskMap = new HashMap<>();
+        this.commandMap = new HashMap<>();
         this.resetTime = developData.getInteger("sample.control.SampleControlFire.resetTime", 5);
         int maxWater = scenarioInfo.getFireTankMaximum();
         this.thresholdCompleted = (maxWater / 10) * developData.getInteger("sample.control.SampleControlFire.refill", 7);
         for(EntityID id : worldInfo.getEntityIDsOfType(StandardEntityURN.FIRE_BRIGADE)) {
-            taskMap.put(id, new Task(0, ACTION_UNKNOWN, null));
+            commandMap.put(id, new Command(0, ACTION_UNKNOWN, null));
         }
     }
 
@@ -63,13 +63,13 @@ public class SampleControlFire extends ControlFire {
             MessageFireBrigade mfb = (MessageFireBrigade)message;
             if(mfb.getSenderID().getValue() == mfb.getAgentID().getValue()) {
                 MessageUtil.reflectMessage(worldInfo, mfb);
-                this.taskMap.put(mfb.getAgentID(), new Task(currentTime, mfb.getAction(), mfb.getTargetID()));
+                this.commandMap.put(mfb.getAgentID(), new Command(currentTime, mfb.getAction(), mfb.getTargetID()));
             }
         }
-        for(EntityID id : this.taskMap.keySet()) {
-            Task task = this.taskMap.get(id);
-            if(task.getTime() + this.resetTime <= currentTime) {
-                taskMap.put(id, new Task(currentTime, ACTION_UNKNOWN, null));
+        for(EntityID id : this.commandMap.keySet()) {
+            Command command = this.commandMap.get(id);
+            if(command.getTime() + this.resetTime <= currentTime) {
+                commandMap.put(id, new Command(currentTime, ACTION_UNKNOWN, null));
             }
         }
         // request check
@@ -89,19 +89,19 @@ public class SampleControlFire extends ControlFire {
         this.extinguishBuildingIDs.addAll(requestList);
         // send Command
         List<StandardEntity> commandAgents = new ArrayList<>();
-        for(EntityID id : this.taskMap.keySet()) {
-            Task task = this.taskMap.get(id);
+        for(EntityID id : this.commandMap.keySet()) {
+            Command command = this.commandMap.get(id);
             FireBrigade fire = (FireBrigade)worldInfo.getEntity(id);
-            if(task.getAction() == ACTION_REST) {
+            if(command.getAction() == ACTION_REST) {
                 if(fire.getWater() >= this.thresholdCompleted) {
                     commandAgents.add(fire);
                 }
-            } else if(task.getAction() == ACTION_MOVE) {
-                StandardEntity entity = worldInfo.getEntity(task.getTarget());
+            } else if(command.getAction() == ACTION_MOVE) {
+                StandardEntity entity = worldInfo.getEntity(command.getTarget());
                 if(entity.getStandardURN() == StandardEntityURN.ROAD) {
                     commandAgents.add(fire);
                 }
-            } else if(task.getAction() == ACTION_REFILL) {
+            } else if(command.getAction() == ACTION_REFILL) {
                 if(fire.getWater() >= this.thresholdCompleted) {
                     commandAgents.add(fire);
                 }
@@ -126,12 +126,12 @@ public class SampleControlFire extends ControlFire {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private class Task {
+    private class Command {
         private int time;
         private int action;
         private EntityID target;
 
-        Task(int time, int action, EntityID target) {
+        Command(int time, int action, EntityID target) {
             this.time = time;
             this.action = action;
             this.target = target;

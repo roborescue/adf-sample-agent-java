@@ -1,6 +1,8 @@
 package adf.sample.module.complex;
 
 
+import adf.agent.communication.MessageManager;
+import adf.agent.communication.standard.bundle.topdown.CommandPolice;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -10,10 +12,7 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
-import rescuecore2.standard.entities.Building;
-import rescuecore2.standard.entities.FireBrigade;
-import rescuecore2.standard.entities.StandardEntity;
-import rescuecore2.standard.entities.StandardEntityURN;
+import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
@@ -23,6 +22,12 @@ public class SampleBuildingSelector extends BuildingSelector {
     private int thresholdRefill;
     private EntityID result;
 
+    private EntityID oldPosition;
+    private int oldX;
+    private int oldY;
+    private int sendTime;
+    private int commandInterval;
+
     public SampleBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         int maxWater = scenarioInfo.getFireTankMaximum();
@@ -30,6 +35,32 @@ public class SampleBuildingSelector extends BuildingSelector {
         this.thresholdCompleted = (maxWater / 10) * developData.getInteger("fire.threshold.completed", 10);
         this.thresholdRefill = maxExtinguishPower * developData.getInteger("fire.threshold.refill", 1);
         this.result = null;
+        this.oldPosition = ai.getID();
+        this.oldX = -1;
+        this.oldY = -1;
+        this.sendTime = 0;
+        this.commandInterval = developData.getInteger("fire.command.clear.interval", 5);
+    }
+
+    @Override
+    public BuildingSelector updateInfo(MessageManager messageManager) {
+        Human agent = (Human)this.agentInfo.me();
+        EntityID agentPosition = agent.getPosition();
+        if(agentPosition.getValue() == this.oldPosition.getValue()) {
+            if (this.equalsPoint(agent.getX(), agent.getY(), this.oldX, this.oldY, 1000)) {
+                int currentTime = this.agentInfo.getTime();
+                if ((this.sendTime + this.commandInterval) <= currentTime) {
+                    this.sendTime = currentTime;
+                    messageManager.addMessage(
+                            new CommandPolice(true, null, agentPosition, CommandPolice.ACTION_CLEAR)
+                    );
+                }
+            }
+        }
+        this.oldPosition = agentPosition;
+        this.oldX = agent.getX();
+        this.oldY = agent.getY();
+        return this;
     }
 
     @Override
@@ -76,15 +107,13 @@ public class SampleBuildingSelector extends BuildingSelector {
         if (water <= this.thresholdRefill) {
             pathPlanning.setFrom(fireBrigade.getPosition());
             pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            pathPlanning.calc();
-            List<EntityID> path = pathPlanning.getResult();
+            List<EntityID> path = pathPlanning.calc().getResult();
             if(path != null && !path.isEmpty()) {
                 return path.get(path.size() - 1);
             }
             pathPlanning.setFrom(fireBrigade.getPosition());
             pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
-            pathPlanning.calc();
-            path = pathPlanning.getResult();
+            path = pathPlanning.calc().getResult();
             if(path != null && !path.isEmpty()) {
                 return path.get(path.size() - 1);
             }
@@ -193,6 +222,10 @@ public class SampleBuildingSelector extends BuildingSelector {
     public BuildingSelector preparate() {
         super.preparate();
         return this;
+    }
+
+    private boolean equalsPoint(int p1X, int p1Y, int p2X, int p2Y, int range) {
+        return (p2X - range < p1X && p1X < p2X + range) && (p2Y - range < p1Y && p1Y < p2Y + range);
     }
 
     private class DistanceSorter implements Comparator<StandardEntity> {
