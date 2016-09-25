@@ -601,7 +601,7 @@ public class ActionExtClear extends ExtAction {
         Set<Point2D> points = new HashSet<>();
         int[] apex = road.getApexList();
         for(int i = 0; i < apex.length; i += 2) {
-            for(int j = i + 2; i < apex.length; j += 2) {
+            for(int j = i + 2; j < apex.length; j += 2) {
                 double midX = (apex[i] + apex[j]) / 2;
                 double midY = (apex[i + 1] + apex[j + 1]) / 2;
                 if(this.isInside(midX, midY, apex)) {

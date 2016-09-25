@@ -24,11 +24,11 @@ public class SampleSearch extends Search {
 
     private EntityID result;
 
-    private Collection<EntityID> unexploredBuildingIDs;
+    private Collection<EntityID> unsearchedBuildingIDs;
 
     public SampleSearch(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
-        this.unexploredBuildingIDs = new HashSet<>();
+        this.unsearchedBuildingIDs = new HashSet<>();
     }
 
     @Override
@@ -48,7 +48,7 @@ public class SampleSearch extends Search {
         }
 
         pathPlanning.setFrom(this.agentInfo.getPosition());
-        pathPlanning.setDestination(this.unexploredBuildingIDs);
+        pathPlanning.setDestination(this.unsearchedBuildingIDs);
         List<EntityID> path = pathPlanning.calc().getResult();
         if(path != null && path.size() > 0) {
             this.result = path.get(path.size() - 1);
@@ -61,14 +61,14 @@ public class SampleSearch extends Search {
         this.reflectMessage(messageManager);
         this.sendMessage(messageManager);
 
-        if(this.unexploredBuildingIDs.isEmpty()) {
+        if(this.unsearchedBuildingIDs.isEmpty()) {
             this.reset();
         }
-        this.unexploredBuildingIDs.removeAll(this.worldInfo.getChanged().getChangedEntities());
+        this.unsearchedBuildingIDs.removeAll(this.worldInfo.getChanged().getChangedEntities());
 
-        if(this.unexploredBuildingIDs.isEmpty()) {
+        if(this.unsearchedBuildingIDs.isEmpty()) {
             this.reset();
-            this.unexploredBuildingIDs.removeAll(this.worldInfo.getChanged().getChangedEntities());
+            this.unsearchedBuildingIDs.removeAll(this.worldInfo.getChanged().getChangedEntities());
         }
         return this;
     }
@@ -76,7 +76,7 @@ public class SampleSearch extends Search {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private void reset() {
-        this.unexploredBuildingIDs.clear();
+        this.unsearchedBuildingIDs.clear();
         StandardEntityURN agentURN = this.agentInfo.me().getStandardURN();
         Clustering clustering = null;
         if (agentURN == AMBULANCE_TEAM) {
@@ -102,11 +102,11 @@ public class SampleSearch extends Search {
         if(useClustering) {
             for(StandardEntity entity : clusterEntities) {
                 if(entity instanceof Building && entity.getStandardURN() != REFUGE) {
-                    this.unexploredBuildingIDs.add(entity.getID());
+                    this.unsearchedBuildingIDs.add(entity.getID());
                 }
             }
         } else {
-            this.unexploredBuildingIDs.addAll(
+            this.unsearchedBuildingIDs.addAll(
                     this.worldInfo.getEntityIDsOfType(
                             BUILDING,
                             GAS_STATION,
