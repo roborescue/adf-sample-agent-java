@@ -66,70 +66,43 @@ public class ActionExtClear extends ExtAction {
         PoliceForce policeForce = (PoliceForce)this.agentInfo.me();
         EntityID agentPosition = policeForce.getPosition();
         StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
-        if(targetEntity.getStandardURN() == StandardEntityURN.BLOCKADE) {
-            targetEntity = this.worldInfo.getEntity(((Blockade)targetEntity).getPosition());
+        StandardEntity positionEntity = this.worldInfo.getEntity(agentPosition);
+        if(!(targetEntity instanceof Area)) {
+            return this;
         }
-        /*if(!(targetEntity instanceof Road)) {
-            if(targetEntity.getStandardURN() == StandardEntityURN.BLOCKADE) {
-                targetEntity = this.worldInfo.getEntity(((Blockade)targetEntity).getPosition());
-            } else {
-                PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
-                pathPlanning.setFrom(agentPosition);
-                pathPlanning.setDestination(this.target);
-                List<EntityID> path = pathPlanning.calc().getResult();
-                if (path != null && path.size() > 0) {
-                    this.result = new ActionMove(path);
-                }
+
+        if (positionEntity instanceof Road) {
+            this.result = this.getRescueAction(policeForce, (Road) positionEntity);
+            if (this.result != null) {
                 return this;
             }
-        }*/
-        if(targetEntity instanceof Road) {
-            StandardEntity positionEntity = this.worldInfo.getEntity(agentPosition);
-            if (positionEntity instanceof Road) {
-                this.result = this.getRescueAction(policeForce, (Road) positionEntity);
-                if (this.result != null) return this;
-            }
+        }
 
-            Road targetRoad = (Road) targetEntity;
-            if (targetRoad.getID().getValue() == agentPosition.getValue()) {
-                this.result = this.calcTargetPosition(policeForce, targetRoad);
-                if (this.result != null) return this;
-            } else if (targetRoad.getEdgeTo(agentPosition) != null) {
-                this.result = this.calcNeighbourPosition(policeForce, targetRoad);
-                if (this.result != null) return this;
-            } else {
-                PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
-                pathPlanning.setFrom(agentPosition);
-                pathPlanning.setDestination(targetRoad.getID());
-                List<EntityID> path = pathPlanning.calc().getResult();
-                if (path != null) {
-                    int index = path.indexOf(agentPosition);
-                    StandardEntity entity = this.worldInfo.getEntity(path.get(index + 1));
-                    if(entity instanceof Road) {
-                        Road road = (Road)entity;
-                        if(road.isBlockadesDefined() && road.getBlockades().size() > 0) {
-                            this.result = this.calcNeighbourPosition(policeForce, road);
-                            if (this.result != null) return this;
-                        }
+        if(agentPosition.equals(this.target)) {
+            if(targetEntity instanceof Road) {
+                this.result = this.calcTargetPosition(policeForce, (Road)targetEntity);
+            }
+            return this;
+        } else if(((Area)targetEntity).getEdgeTo(agentPosition) != null) {
+            this.result = this.calcNeighbourPosition(policeForce, (Road)targetEntity);
+            if (this.result != null) return this;
+        } else {
+            PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
+            pathPlanning.setFrom(agentPosition);
+            pathPlanning.setDestination(this.target);
+            List<EntityID> path = pathPlanning.calc().getResult();
+            if (path != null) {
+                int index = path.indexOf(agentPosition);
+                StandardEntity entity = this.worldInfo.getEntity(path.get(index + 1));
+                if(entity instanceof Road) {
+                    Road road = (Road)entity;
+                    if(road.isBlockadesDefined() && road.getBlockades().size() > 0) {
+                        this.result = this.calcNeighbourPosition(policeForce, road);
+                        if (this.result != null) return this;
                     }
                 }
-                this.result = this.calcOtherPosition(policeForce, targetRoad);
-                if (this.result != null) return this;
             }
-        }
-        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
-        pathPlanning.setFrom(agentPosition);
-        pathPlanning.setDestination(this.target);
-        List<EntityID> path = pathPlanning.calc().getResult();
-        if (path != null) {
-            int index = path.indexOf(agentPosition);
-            StandardEntity entity = this.worldInfo.getEntity(path.get(index + 1));
-            if(entity instanceof Road) {
-                Road road = (Road)entity;
-                if(road.isBlockadesDefined() && road.getBlockades().size() > 0) {
-                    this.result = this.calcNeighbourPosition(policeForce, road);
-                }
-            }
+            this.result = this.calcOtherPosition(policeForce, (Road)targetEntity);
         }
         return this;
     }
