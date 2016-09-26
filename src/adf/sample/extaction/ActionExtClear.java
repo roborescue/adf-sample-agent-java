@@ -85,16 +85,15 @@ public class ActionExtClear extends ExtAction {
             }
             return this;
         } else if(((Area)targetEntity).getEdgeTo(agentPosition) != null) {
-            this.result = this.calcNeighbourPosition(policeForce, (Road) targetEntity);
-            if (this.result != null) {
-                return this;
+            if(targetEntity instanceof Road) {
+                this.result = this.calcNeighbourPosition(policeForce, (Road) targetEntity);
+                if (this.result != null) {
+                    return this;
+                }
+            } else {
+
             }
         } else {
-            //clear
-            this.result = this.calcOtherPosition(policeForce, (Road)targetEntity);
-            if(this.result != null) {
-                return this;
-            }
             //neighbour move clear
             PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
             List<EntityID> path = pathPlanning.getResult(agentPosition, this.target);
@@ -121,6 +120,11 @@ public class ActionExtClear extends ExtAction {
                         }
                     }
                 }
+            }
+            //clear
+            this.result = this.calcOtherPosition(policeForce, (Road)targetEntity);
+            if(this.result != null) {
+                return this;
             }
         }
         return this;

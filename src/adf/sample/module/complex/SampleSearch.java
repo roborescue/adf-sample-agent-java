@@ -186,8 +186,10 @@ public class SampleSearch extends Search {
                     messageManager.addMessage(new MessageRoad(true, road, blockade, false));
                 } else {
                     Blockade rollbackBlockade = (Blockade) rollbackEntity;
-                    if (blockade.getRepairCost() != rollbackBlockade.getRepairCost()) {
-                        messageManager.addMessage(new MessageRoad(true, road, blockade, false));
+                    if(blockade.isRepairCostDefined() && rollbackBlockade.isRepairCostDefined()) {
+                        if (blockade.getRepairCost() != rollbackBlockade.getRepairCost()) {
+                            messageManager.addMessage(new MessageRoad(true, road, blockade, false));
+                        }
                     }
                 }
             }
