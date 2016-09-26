@@ -125,6 +125,7 @@ public class SamplePathPlanning extends PathPlanning {
                 throw new RuntimeException("Found a node with no ancestor! Something is broken.");
             }
         } while (current != this.from);
+        path.add(0, this.from);
         this.result = path;
         return this;
     }

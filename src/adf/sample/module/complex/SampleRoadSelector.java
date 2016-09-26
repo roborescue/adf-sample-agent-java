@@ -103,6 +103,7 @@ public class SampleRoadSelector extends RoadSelector {
                 } else if(entity instanceof Road) {
                     Road road = (Road)entity;
                     if(!road.isBlockadesDefined() || road.getBlockades().isEmpty()) {
+                        this.impassableNeighbours.remove(this.result);
                         this.result = null;
                     }
                 }

@@ -122,6 +122,7 @@ public class SamplePolice extends TacticsPolice {
         // command
         Action action = this.getCommandAction(agentInfo, worldInfo, moduleManager, messageManager);
         if(action != null) {
+            //System.out.println("Command : " + action);
             this.sendActionMessage(worldInfo, messageManager, agent, action);
             return action;
         }
@@ -132,6 +133,7 @@ public class SamplePolice extends TacticsPolice {
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
+                //System.out.println("RoadSelecot : " + action);
                 this.sendActionMessage(worldInfo, messageManager, agent, action);
                 return action;
             }
@@ -142,6 +144,7 @@ public class SamplePolice extends TacticsPolice {
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
+                //System.out.println("Search : " + action);
                 this.sendActionMessage(worldInfo, messageManager, agent, action);
                 return action;
             }
@@ -150,6 +153,7 @@ public class SamplePolice extends TacticsPolice {
         messageManager.addMessage(
                 new MessagePoliceForce(true, agent, MessagePoliceForce.ACTION_REST, agent.getPosition())
         );
+        //System.out.println("Command : REST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         return new ActionRest();
     }
 

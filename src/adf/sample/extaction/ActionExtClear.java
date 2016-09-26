@@ -23,15 +23,23 @@ import java.util.stream.Collectors;
 
 public class ActionExtClear extends ExtAction {
     private int clearDistance;
+    private int forcedMove;
 
     private EntityID target;
     private Map<EntityID, Set<Point2D>> movePointCache;
+    private int oldClearX;
+    private int oldClearY;
+    private int count;
 
     public ActionExtClear(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         this.clearDistance = this.scenarioInfo.getClearRepairDistance();
+        this.forcedMove = developData.getInteger("police.clear.forcedMove", 3);
         this.target = null;
         this.movePointCache = new HashMap<>();
+        this.oldClearX = 0;
+        this.oldClearY = 0;
+        this.count = 0;
     }
 
     @Override
@@ -74,18 +82,37 @@ public class ActionExtClear extends ExtAction {
                 return this;
             }
         }
-
+        /*if(policeForce.getID().getValue() == 1217452120) {
+            System.out.println(this.target);
+        }*/
         if(agentPosition.equals(this.target)) {
             this.result = this.getAreaClearAction(policeForce, targetEntity);
+            /*if(policeForce.getID().getValue() == 100377416) {
+                System.out.println("POSITION : " + this.result);
+            }*/
         } else if(((Area)targetEntity).getEdgeTo(agentPosition) != null) {
             this.result = this.getNeighbourPositionAction(policeForce, (Road)targetEntity);
+            /*if(policeForce.getID().getValue() == 100377416) {
+                System.out.println("NEIGTHBOUR : " + this.result);
+            }*/
         } else {
             PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
             List<EntityID> path = pathPlanning.getResult(agentPosition, this.target);
-            if (path != null && path.size() > 1) {
+            if (path != null && path.size() > 0) {
                 int index = path.indexOf(agentPosition);
-                if(index >= 0 && index < (path.size() - 1)) {
-                    StandardEntity entity = this.worldInfo.getEntity(path.get(index + 1));
+                if(index == -1) {
+                    Area area = (Area)positionEntity;
+                    for(int i = 0; i < path.size(); i++) {
+                        if(area.getEdgeTo(path.get(i)) != null) {
+                            index = i;
+                            break;
+                        }
+                    }
+                } else if(index >= 0){
+                    index++;
+                }
+                if(index >= 0 && index < (path.size())) {
+                    StandardEntity entity = this.worldInfo.getEntity(path.get(index));
                     this.result = this.getNeighbourPositionAction(policeForce, (Area) entity);
                     if (this.result != null && this.result.getClass() == ActionMove.class) {
                         if(!((ActionMove)this.result).getUsePosition()) {
@@ -96,6 +123,9 @@ public class ActionExtClear extends ExtAction {
                 if(this.result == null) {
                     this.result = new ActionMove(path);
                 }
+                /*if(policeForce.getID().getValue() == 100377416) {
+                    System.out.println(index + " : OTHER : " + this.result);
+                }*/
             }
         }
         return this;
@@ -292,6 +322,15 @@ public class ActionExtClear extends ExtAction {
                         if(this.intersect(agentX, agentY, clearX, clearY, blockade)) {
                             if(actionClear == null) {
                                 actionClear =  new ActionClear(clearX, clearY, blockade);
+                                if(this.equalsPoint(this.oldClearX, this.oldClearY, clearX, clearY)) {
+                                    if(this.count >= this.forcedMove) {
+                                        this.count = 0;
+                                        return new ActionMove(Lists.newArrayList(road.getID()), clearX, clearY);
+                                    }
+                                    this.count++;
+                                }
+                                this.oldClearX = clearX;
+                                this.oldClearY = clearY;
                             } else {
                                 if(actionClear.getTarget() != null) {
                                     Blockade another = (Blockade)this.worldInfo.getEntity(actionClear.getTarget());
@@ -341,6 +380,15 @@ public class ActionExtClear extends ExtAction {
                 Vector2D vector = this.scaleClear(this.getVector(agentX, agentY, clearX, clearY));
                 clearX = (int) (agentX + vector.getX());
                 clearY = (int) (agentY + vector.getY());
+                if(this.equalsPoint(this.oldClearX, this.oldClearY, clearX, clearY)) {
+                    if(this.count >= this.forcedMove) {
+                        this.count = 0;
+                        return new ActionMove(Lists.newArrayList(road.getID()), clearX, clearY);
+                    }
+                    this.count++;
+                }
+                this.oldClearX = clearX;
+                this.oldClearY = clearY;
                 return new ActionClear(clearX, clearY, clearBlockade);
             }
         }
