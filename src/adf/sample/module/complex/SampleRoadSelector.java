@@ -16,14 +16,13 @@ import adf.component.module.complex.RoadSelector;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
 import static rescuecore2.standard.entities.StandardEntityURN.*;
 
 public class SampleRoadSelector extends RoadSelector {
-    private Collection<EntityID> impassableNeighbours;
+    private HashSet<EntityID> impassableNeighbours;
 
     private EntityID result;
 
@@ -66,7 +65,7 @@ public class SampleRoadSelector extends RoadSelector {
     public RoadSelector resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         this.impassableNeighbours = new HashSet<>();
-        for(StandardEntity e : this.worldInfo.getEntitiesOfType(BUILDING, GAS_STATION)) {
+        for(StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE, BUILDING, GAS_STATION)) {
             for(EntityID id : ((Building)e).getNeighbours()) {
                 StandardEntity neighbour = this.worldInfo.getEntity(id);
                 if(neighbour instanceof Road) {
@@ -81,7 +80,7 @@ public class SampleRoadSelector extends RoadSelector {
     public RoadSelector preparate() {
         super.preparate();
         this.impassableNeighbours = new HashSet<>();
-        for(StandardEntity e : this.worldInfo.getEntitiesOfType(BUILDING, GAS_STATION)) {
+        for(StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE, BUILDING, GAS_STATION)) {
             for(EntityID id : ((Building)e).getNeighbours()) {
                 StandardEntity neighbour = this.worldInfo.getEntity(id);
                 if(neighbour instanceof Road) {

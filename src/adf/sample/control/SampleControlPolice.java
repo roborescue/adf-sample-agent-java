@@ -23,19 +23,19 @@ import java.util.*;
 
 public class SampleControlPolice extends ControlPolice {
 
-    private Map<EntityID, EntityID> agentTaskMap;
+    private Map<EntityID, EntityID> targetMap;
     private Set<EntityID> request;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
-        this.agentTaskMap = new HashMap<>();
+        this.targetMap = new HashMap<>();
         this.request = new HashSet<>();
     }
 
     @Override
     public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
-        this.updateAgentTaskInfo(worldInfo, messageManager);
-        this.collectTask(messageManager);
+        this.updateAgentInfo(worldInfo, messageManager);
+        this.collectRequest(messageManager);
         this.sendCommand(worldInfo, messageManager);
     }
 
@@ -44,9 +44,6 @@ public class SampleControlPolice extends ControlPolice {
             return;
         }
         List<StandardEntity> agents = new ArrayList<>(worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE));
-        for(EntityID id : this.agentTaskMap.keySet()) {
-            agents.remove(worldInfo.getEntity(id));
-        }
         for(EntityID id : this.request) {
             if(agents.isEmpty()) {
                 return;
@@ -61,7 +58,7 @@ public class SampleControlPolice extends ControlPolice {
                         entity.getID(),
                         CommandPolice.ACTION_CLEAR
                 ));
-                this.agentTaskMap.put(agentID, entity.getID());
+                this.targetMap.put(agentID, entity.getID());
                 agents.remove(0);
             } else if(entity.getStandardURN() == StandardEntityURN.BLOCKADE) {
                 entity = worldInfo.getEntity(((Blockade)entity).getPosition());
@@ -73,36 +70,20 @@ public class SampleControlPolice extends ControlPolice {
                         entity.getID(),
                         CommandPolice.ACTION_CLEAR
                 ));
-                this.agentTaskMap.put(agentID, entity.getID());
+                this.targetMap.put(agentID, entity.getID());
                 agents.remove(0);
             }
         }
 
     }
 
-    private void updateAgentTaskInfo(WorldInfo worldInfo, MessageManager messageManager) {
+    private void updateAgentInfo(WorldInfo worldInfo, MessageManager messageManager) {
         Collection<EntityID> agentIDs = worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_FORCE);
         for (CommunicationMessage message : messageManager.getReceivedMessageList(MessagePoliceForce.class)) {
             MessagePoliceForce mpf = (MessagePoliceForce) message;
             if (mpf.getSenderID().getValue() == mpf.getAgentID().getValue()) {
-                EntityID target = this.agentTaskMap.get(mpf.getTargetID());
-                if(target == null) {
-                    continue;
-                }
-                if(target.getValue() == mpf.getPosition().getValue()) {
-                    StandardEntity entity = worldInfo.getEntity(target);
-                    if(entity instanceof Road) {
-                        Road road = (Road)entity;
-                        if(road.isBlockadesDefined()) {
-                            if(road.getBlockades().isEmpty()) {
-                                this.agentTaskMap.remove(mpf.getAgentID());
-                            }
-                        } else {
-                            this.agentTaskMap.remove(mpf.getAgentID());
-                        }
-                    } else {
-                        this.agentTaskMap.remove(mpf.getAgentID());
-                    }
+                if(mpf.getAction() != MessagePoliceForce.ACTION_REST) {
+                    this.request.remove(mpf.getTargetID());
                 }
             }
         }
@@ -110,19 +91,14 @@ public class SampleControlPolice extends ControlPolice {
             MessageReport report = (MessageReport)message;
             if(agentIDs.contains(report.getSenderID())) {
                 if (report.isDone()) {
-                    this.agentTaskMap.remove(report.getSenderID());
-                } else {
-                    EntityID target = this.agentTaskMap.get(report.getSenderID());
-                    if(target != null) {
-                        this.request.add(target);
-                    }
-                    this.agentTaskMap.remove(report.getSenderID());
+                    this.request.remove(this.targetMap.get(report.getSenderID()));
+                    this.targetMap.remove(report.getSenderID());
                 }
             }
         }
     }
 
-    private void collectTask(MessageManager messageManager) {
+    private void collectRequest(MessageManager messageManager) {
         for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
             Class<? extends CommunicationMessage> messageClass = message.getClass();
             if(messageClass == CommandPolice.class) {
@@ -145,12 +121,10 @@ public class SampleControlPolice extends ControlPolice {
 
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeInfo, DevelopData developData) {
-
     }
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
-
     }
 
     private class DistanceSorter implements Comparator<StandardEntity> {

@@ -122,7 +122,6 @@ public class SamplePolice extends TacticsPolice {
         // command
         Action action = this.getCommandAction(agentInfo, worldInfo, moduleManager, messageManager);
         if(action != null) {
-            //System.out.println("Command : " + action);
             this.sendActionMessage(worldInfo, messageManager, agent, action);
             return action;
         }
@@ -133,7 +132,6 @@ public class SamplePolice extends TacticsPolice {
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
-                //System.out.println("RoadSelecot : " + action);
                 this.sendActionMessage(worldInfo, messageManager, agent, action);
                 return action;
             }
@@ -144,7 +142,6 @@ public class SamplePolice extends TacticsPolice {
                     .setTarget(target)
                     .calc().getAction();
             if(action != null) {
-                //System.out.println("Search : " + action);
                 this.sendActionMessage(worldInfo, messageManager, agent, action);
                 return action;
             }
@@ -153,7 +150,6 @@ public class SamplePolice extends TacticsPolice {
         messageManager.addMessage(
                 new MessagePoliceForce(true, agent, MessagePoliceForce.ACTION_REST, agent.getPosition())
         );
-        //System.out.println("Command : REST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         return new ActionRest();
     }
 
@@ -203,7 +199,7 @@ public class SamplePolice extends TacticsPolice {
                 }
                 return new ActionRest();
             case ACTION_MOVE:
-                return moduleManager.getExtAction("TacticsAmbulance.ActionExtMove")
+                return moduleManager.getExtAction("TacticsPolice.ActionExtClear")
                         .setTarget(this.target)
                         .calc().getAction();
             case ACTION_CLEAR:
@@ -218,7 +214,13 @@ public class SamplePolice extends TacticsPolice {
                 this.pathPlanning.setDestination(this.scoutTargets);
                 List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
-                    return new ActionMove(path);
+                    Action action = moduleManager.getExtAction("TacticsPolice.ActionExtClear")
+                            .setTarget(path.get(path.size() - 1))
+                            .calc().getAction();
+                    if(action == null) {
+                        action = new ActionMove(path);
+                    }
+                    return action;
                 }
         }
         return null;

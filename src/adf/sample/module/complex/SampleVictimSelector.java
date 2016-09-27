@@ -14,6 +14,8 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.HumanSelector;
+import rescuecore2.misc.geometry.Point2D;
+import rescuecore2.misc.geometry.Vector2D;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
@@ -25,40 +27,47 @@ public class SampleVictimSelector extends HumanSelector {
 
     private EntityID result;
 
-    private EntityID oldPosition;
-    private int oldX;
-    private int oldY;
     private int sendTime;
     private int commandInterval;
 
     public SampleVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         this.result = null;
-        this.oldPosition = ai.getID();
-        this.oldX = -1;
-        this.oldY = -1;
         this.sendTime = 0;
         this.commandInterval = developData.getInteger("ambulance.command.clear.interval", 5);
     }
 
     @Override
     public HumanSelector updateInfo(MessageManager messageManager) {
+        int currentTime = this.agentInfo.getTime();
         Human agent = (Human)this.agentInfo.me();
-        EntityID agentPosition = agent.getPosition();
-        if(agentPosition.getValue() == this.oldPosition.getValue()) {
-            if (this.equalsPoint(agent.getX(), agent.getY(), this.oldX, this.oldY, 1000)) {
-                int currentTime = this.agentInfo.getTime();
-                if ((this.sendTime + this.commandInterval) <= currentTime) {
-                    this.sendTime = currentTime;
-                    messageManager.addMessage(
-                            new CommandPolice(true, null, agentPosition, CommandPolice.ACTION_CLEAR)
-                    );
+        int agentX = agent.getX();
+        int agentY = agent.getY();
+        StandardEntity positionEntity = this.worldInfo.getPosition(agent);
+        if(positionEntity instanceof Road) {
+            Road road = (Road)positionEntity;
+            if(road.isBlockadesDefined() && road.getBlockades().size() > 0) {
+                for(Blockade blockade : this.worldInfo.getBlockades(road)) {
+                    if(!blockade.isApexesDefined()) {
+                        continue;
+                    }
+                    if(this.isInside(agentX, agentY, blockade.getApexes())) {
+                        if ((this.sendTime + this.commandInterval) <= currentTime) {
+                            this.sendTime = currentTime;
+                            messageManager.addMessage(
+                                    new CommandPolice(
+                                            true,
+                                            null,
+                                            agent.getPosition(),
+                                            CommandPolice.ACTION_CLEAR
+                                    )
+                            );
+                            break;
+                        }
+                    }
                 }
             }
         }
-        this.oldPosition = agentPosition;
-        this.oldX = agent.getX();
-        this.oldY = agent.getY();
 
         if(this.result != null) {
             StandardEntity entity = this.worldInfo.getEntity(this.result);
@@ -251,8 +260,30 @@ public class SampleVictimSelector extends HumanSelector {
         return this;
     }
 
-    private boolean equalsPoint(int p1X, int p1Y, int p2X, int p2Y, int range) {
-        return (p2X - range < p1X && p1X < p2X + range) && (p2Y - range < p1Y && p1Y < p2Y + range);
+    private boolean isInside(double pX, double pY, int[] apex) {
+        Point2D p = new Point2D(pX, pY);
+        Vector2D v1 = (new Point2D(apex[apex.length - 2], apex[apex.length - 1])).minus(p);
+        Vector2D v2 = (new Point2D(apex[0], apex[1])).minus(p);
+        double theta = this.getAngle(v1, v2);
+
+        for(int i = 0; i < apex.length - 2; i += 2) {
+            v1 = (new Point2D(apex[i], apex[i + 1])).minus(p);
+            v2 = (new Point2D(apex[i + 2], apex[i + 3])).minus(p);
+            theta += this.getAngle(v1, v2);
+        }
+        return Math.round(Math.abs((theta / 2) / Math.PI)) >= 1;
+    }
+
+    private double getAngle(Vector2D v1, Vector2D v2) {
+        double flag = (v1.getX() * v2.getY()) - (v1.getY() * v2.getX());
+        double angle = Math.acos(((v1.getX() * v2.getX()) + (v1.getY() * v2.getY())) / (v1.getLength() * v2.getLength()));
+        if(flag > 0) {
+            return angle;
+        }
+        if(flag < 0) {
+            return -1 * angle;
+        }
+        return 0.0D;
     }
 
     private class DistanceSorter implements Comparator<StandardEntity> {
