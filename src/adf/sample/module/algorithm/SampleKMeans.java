@@ -68,6 +68,10 @@ public class SampleKMeans extends StaticClustering {
 
     @Override
     public Clustering updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
+        if(this.getCountUpdateInfo() >= 2) {
+            return this;
+        }
         this.centerList.clear();
         this.clusterEntitiesList.clear();
         return this;
@@ -79,7 +83,9 @@ public class SampleKMeans extends StaticClustering {
         if(this.getCountPrecompute() >= 2) {
             return this;
         }
-        this.calc();
+        this.calcPathBased(this.repeatPrecompute);
+        this.entities = null;
+        // write
         precomputeData.setInteger(KEY_CLUSTER_SIZE, this.clusterSize);
         precomputeData.setEntityIDList(KEY_CLUSTER_CENTER, this.centerIDs);
         for(int i = 0; i < this.clusterSize; i++) {
@@ -96,6 +102,7 @@ public class SampleKMeans extends StaticClustering {
             return this;
         }
         this.entities = null;
+        // read
         this.clusterSize = precomputeData.getInteger(KEY_CLUSTER_SIZE);
         this.centerIDs = new ArrayList<>(precomputeData.getEntityIDList(KEY_CLUSTER_CENTER));
         this.clusterEntityIDsList = new ArrayList<>(this.clusterSize);
@@ -112,7 +119,8 @@ public class SampleKMeans extends StaticClustering {
         if(this.getCountPreparate() >= 2) {
             return this;
         }
-        this.calc();
+        this.calcStandard(this.repeatPreparate);
+        this.entities = null;
         return this;
     }
 
@@ -158,13 +166,6 @@ public class SampleKMeans extends StaticClustering {
 
     @Override
     public Clustering calc() {
-        if(this.scenarioInfo.getMode() == ScenarioInfo.Mode.NON_PRECOMPUTE) {
-            this.calcStandard(this.repeatPreparate);
-        }
-        else if(this.scenarioInfo.getMode() == ScenarioInfo.Mode.PRECOMPUTATION_PHASE) {
-            this.calcPathBased(this.repeatPrecompute);
-        }
-        this.entities = null;
         return this;
     }
 
