@@ -25,6 +25,8 @@ import static rescuecore2.standard.entities.StandardEntityURN.*;
 
 public class SampleVictimSelector extends HumanSelector {
 
+    private Clustering clustering;
+
     private EntityID result;
 
     private int sendTime;
@@ -32,6 +34,17 @@ public class SampleVictimSelector extends HumanSelector {
 
     public SampleVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
+        switch  (scenarioInfo.getMode()) {
+            case PRECOMPUTATION_PHASE:
+                this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                break;
+            case PRECOMPUTED:
+                this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                break;
+            case NON_PRECOMPUTE:
+                this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                break;
+        }
         this.result = null;
         this.sendTime = 0;
         this.commandInterval = developData.getInteger("ambulance.command.clear.interval", 5);
@@ -39,6 +52,11 @@ public class SampleVictimSelector extends HumanSelector {
 
     @Override
     public HumanSelector updateInfo(MessageManager messageManager) {
+        if(this.getCountUpdateInfo() >= 2) {
+            return this;
+        }
+        this.clustering.updateInfo(messageManager);
+
         int currentTime = this.agentInfo.getTime();
         Human agent = (Human)this.agentInfo.me();
         int agentX = agent.getX();
@@ -135,7 +153,6 @@ public class SampleVictimSelector extends HumanSelector {
             }
         }
         if(this.result == null) {
-            Clustering clustering = this.moduleManager.getModule("TacticsAmbulance.Clustering");
             if (clustering == null) {
                 this.result = this.calcTargetInWorld();
                 return this;
@@ -245,18 +262,30 @@ public class SampleVictimSelector extends HumanSelector {
     @Override
     public HumanSelector precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
+        this.clustering.precompute(precomputeData);
         return this;
     }
 
     @Override
     public HumanSelector resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
+        if(this.getCountResume() >= 2) {
+            return this;
+        }
+        this.clustering.resume(precomputeData);
         return this;
     }
 
     @Override
     public HumanSelector preparate() {
         super.preparate();
+        if(this.getCountPreparate() >= 2) {
+            return this;
+        }
+        this.clustering.preparate();
         return this;
     }
 

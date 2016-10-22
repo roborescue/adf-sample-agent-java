@@ -16,7 +16,6 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
-import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.RoadSelector;
 import adf.component.module.complex.Search;
@@ -47,7 +46,6 @@ public class SamplePolice extends TacticsPolice {
     private PathPlanning pathPlanning;
     private RoadSelector roadSelector;
     private Search search;
-    private Clustering clustering;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -68,19 +66,16 @@ public class SamplePolice extends TacticsPolice {
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
                 this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
                 this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
                 break;
             case PRECOMPUTED:
                 this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
                 this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
                 break;
             case NON_PRECOMPUTE:
                 this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
                 this.roadSelector = moduleManager.getModule("TacticsPolice.RoadSelector", "adf.sample.module.complex.SampleRoadSelector");
                 break;
@@ -90,7 +85,6 @@ public class SamplePolice extends TacticsPolice {
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
         this.pathPlanning.precompute(precomputeData);
-        this.clustering.precompute(precomputeData);
         this.search.precompute(precomputeData);
         this.roadSelector.precompute(precomputeData);
     }
@@ -98,7 +92,6 @@ public class SamplePolice extends TacticsPolice {
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
         this.pathPlanning.resume(precomputeData);
-        this.clustering.resume(precomputeData);
         this.search.resume(precomputeData);
         this.roadSelector.resume(precomputeData);
     }
@@ -106,7 +99,6 @@ public class SamplePolice extends TacticsPolice {
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         this.pathPlanning.preparate();
-        this.clustering.preparate();
         this.search.preparate();
         this.roadSelector.preparate();
     }
@@ -115,7 +107,6 @@ public class SamplePolice extends TacticsPolice {
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         this.search.updateInfo(messageManager);
         this.pathPlanning.updateInfo(messageManager);
-        this.clustering.updateInfo(messageManager);
         this.roadSelector.updateInfo(messageManager);
 
         PoliceForce agent = (PoliceForce) agentInfo.me();

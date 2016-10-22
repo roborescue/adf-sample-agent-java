@@ -24,10 +24,23 @@ import static rescuecore2.standard.entities.StandardEntityURN.*;
 public class SampleRoadSelector extends RoadSelector {
     private HashSet<EntityID> impassableNeighbours;
 
+    private PathPlanning pathPlanning;
+
     private EntityID result;
 
     public SampleRoadSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
+        switch  (scenarioInfo.getMode()) {
+            case PRECOMPUTATION_PHASE:
+                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+            case PRECOMPUTED:
+                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+            case NON_PRECOMPUTE:
+                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+        }
         this.result = null;
     }
 
@@ -39,10 +52,10 @@ public class SampleRoadSelector extends RoadSelector {
                 this.result = positionID;
                 return this;
             }
-            PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
-            pathPlanning.setFrom(positionID);
-            pathPlanning.setDestination(this.impassableNeighbours);
-            List<EntityID> path = pathPlanning.calc().getResult();
+
+            this.pathPlanning.setFrom(positionID);
+            this.pathPlanning.setDestination(this.impassableNeighbours);
+            List<EntityID> path = this.pathPlanning.calc().getResult();
             if (path != null && path.size() > 0) {
                 this.result = path.get(path.size() - 1);
             }
@@ -58,12 +71,20 @@ public class SampleRoadSelector extends RoadSelector {
     @Override
     public RoadSelector precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
+        this.pathPlanning.precompute(precomputeData);
         return this;
     }
 
     @Override
     public RoadSelector resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
+        if(this.getCountResume() >= 2) {
+            return this;
+        }
+        this.pathPlanning.resume(precomputeData);
         this.impassableNeighbours = new HashSet<>();
         for(StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE, BUILDING, GAS_STATION)) {
             for(EntityID id : ((Building)e).getNeighbours()) {
@@ -79,6 +100,10 @@ public class SampleRoadSelector extends RoadSelector {
     @Override
     public RoadSelector preparate() {
         super.preparate();
+        if(this.getCountPreparate() >= 2) {
+            return this;
+        }
+        this.pathPlanning.preparate();
         this.impassableNeighbours = new HashSet<>();
         for(StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE, BUILDING, GAS_STATION)) {
             for(EntityID id : ((Building)e).getNeighbours()) {
@@ -94,6 +119,10 @@ public class SampleRoadSelector extends RoadSelector {
     @Override
     public RoadSelector updateInfo(MessageManager messageManager) {
         super.updateInfo(messageManager);
+        if(this.getCountUpdateInfo() >= 2) {
+            return this;
+        }
+        this.pathPlanning.updateInfo(messageManager);
         if(this.result != null) {
             if(this.agentInfo.getPosition().equals(this.result)) {
                 StandardEntity entity = this.worldInfo.getEntity(this.result);
@@ -146,8 +175,8 @@ public class SampleRoadSelector extends RoadSelector {
                 }
             }
         }
-        for(EntityID id : worldInfo.getChanged().getChangedEntities()) {
-            StandardEntity entity = worldInfo.getEntity(id);
+        for(EntityID id : this.worldInfo.getChanged().getChangedEntities()) {
+            StandardEntity entity = this.worldInfo.getEntity(id);
             if(entity instanceof Road) {
                 Road road = (Road)entity;
                 if(!road.isBlockadesDefined() || road.getBlockades().isEmpty()) {

@@ -12,13 +12,9 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
-import firesimulator.world.*;
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Vector2D;
 import rescuecore2.standard.entities.*;
-import rescuecore2.standard.entities.Building;
-import rescuecore2.standard.entities.FireBrigade;
-import rescuecore2.standard.entities.Road;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
@@ -28,21 +24,46 @@ public class SampleBuildingSelector extends BuildingSelector {
     private int thresholdRefill;
     private EntityID result;
 
+    private Clustering clustering;
+    private PathPlanning pathPlanning;
+
     private int sendTime;
     private int commandInterval;
 
     public SampleBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
-        int maxWater = scenarioInfo.getFireTankMaximum();
-        int maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
+        switch  (si.getMode()) {
+            case PRECOMPUTATION_PHASE:
+                this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                break;
+            case PRECOMPUTED:
+                this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                break;
+            case NON_PRECOMPUTE:
+                this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                break;
+        }
+        int maxWater = si.getFireTankMaximum();
+        int maxExtinguishPower = si.getFireExtinguishMaxSum();
         this.thresholdCompleted = (maxWater / 10) * developData.getInteger("fire.threshold.completed", 10);
         this.thresholdRefill = maxExtinguishPower * developData.getInteger("fire.threshold.refill", 1);
         this.sendTime = 0;
         this.commandInterval = developData.getInteger("fire.command.clear.interval", 5);
+
     }
 
     @Override
     public BuildingSelector updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
+        if(this.getCountUpdateInfo() >= 2) {
+            return this;
+        }
+        this.pathPlanning.updateInfo(messageManager);
+        this.clustering.updateInfo(messageManager);
+
         int currentTime = this.agentInfo.getTime();
         Human agent = (Human)this.agentInfo.me();
         int agentX = agent.getX();
@@ -84,12 +105,7 @@ public class SampleBuildingSelector extends BuildingSelector {
             return this;
         }
         // select building
-        Clustering clustering = this.moduleManager.getModule("TacticsFire.Clustering");
-        if(clustering == null) {
-            this.result = this.calcTargetInWorld();
-            return this;
-        }
-        this.result = this.calcTargetInCluster(clustering);
+        this.result = this.calcTargetInCluster();
         if(this.result == null) {
             this.result = this.calcTargetInWorld();
         }
@@ -105,11 +121,10 @@ public class SampleBuildingSelector extends BuildingSelector {
         if(positionURN.equals(StandardEntityURN.REFUGE) && water < this.thresholdCompleted) {
             return fireBrigade.getPosition();
         }
-        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
         if(positionURN.equals(StandardEntityURN.HYDRANT) && water < this.thresholdCompleted) {
-            pathPlanning.setFrom(fireBrigade.getPosition());
-            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = pathPlanning.calc().getResult();
+            this.pathPlanning.setFrom(fireBrigade.getPosition());
+            this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+            List<EntityID> path = this.pathPlanning.calc().getResult();
             if(path != null && !path.isEmpty()) {
                 return path.get(path.size() - 1);
             } else {
@@ -117,15 +132,15 @@ public class SampleBuildingSelector extends BuildingSelector {
             }
         }
         if (water <= this.thresholdRefill) {
-            pathPlanning.setFrom(fireBrigade.getPosition());
-            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = pathPlanning.calc().getResult();
+            this.pathPlanning.setFrom(fireBrigade.getPosition());
+            this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+            List<EntityID> path = this.pathPlanning.calc().getResult();
             if(path != null && !path.isEmpty()) {
                 return path.get(path.size() - 1);
             }
-            pathPlanning.setFrom(fireBrigade.getPosition());
-            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
-            path = pathPlanning.calc().getResult();
+            this.pathPlanning.setFrom(fireBrigade.getPosition());
+            this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
+            path = this.pathPlanning.calc().getResult();
             if(path != null && !path.isEmpty()) {
                 return path.get(path.size() - 1);
             }
@@ -135,14 +150,14 @@ public class SampleBuildingSelector extends BuildingSelector {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private EntityID calcTargetInCluster(Clustering clustering) {
-        int clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
-        Collection<StandardEntity> elements = clustering.getClusterEntities(clusterIndex);
+    private EntityID calcTargetInCluster() {
+        int clusterIndex = this.clustering.getClusterIndex(this.agentInfo.getID());
+        Collection<StandardEntity> elements = this.clustering.getClusterEntities(clusterIndex);
         if(elements == null || elements.isEmpty()) {
             return null;
         }
         StandardEntity me = this.agentInfo.me();
-        List<StandardEntity> agents = new ArrayList<>(worldInfo.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE));
+        List<StandardEntity> agents = new ArrayList<>(this.worldInfo.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE));
         Set<StandardEntity> fireBuildings = new HashSet<>();
         for (StandardEntity entity : elements) {
             if (entity instanceof Building && ((Building)entity).isOnFire()) {
@@ -158,7 +173,7 @@ public class SampleBuildingSelector extends BuildingSelector {
                 }
                 break;
             }
-            agents.sort(new DistanceSorter(worldInfo, entity));
+            agents.sort(new DistanceSorter(this.worldInfo, entity));
             StandardEntity a0 = agents.get(0);
             StandardEntity a1 = agents.get(1);
 
@@ -197,7 +212,7 @@ public class SampleBuildingSelector extends BuildingSelector {
                 }
                 break;
             }
-            agents.sort(new DistanceSorter(worldInfo, entity));
+            agents.sort(new DistanceSorter(this.worldInfo, entity));
             StandardEntity a0 = agents.get(0);
             StandardEntity a1 = agents.get(1);
 
@@ -221,18 +236,33 @@ public class SampleBuildingSelector extends BuildingSelector {
     @Override
     public BuildingSelector precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
+        this.clustering.precompute(precomputeData);
+        this.pathPlanning.precompute(precomputeData);
         return this;
     }
 
     @Override
     public BuildingSelector resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
+        this.clustering.resume(precomputeData);
+        this.pathPlanning.resume(precomputeData);
         return this;
     }
 
     @Override
     public BuildingSelector preparate() {
         super.preparate();
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
+        this.clustering.preparate();
+        this.pathPlanning.preparate();
         return this;
     }
 

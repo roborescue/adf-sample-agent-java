@@ -17,7 +17,6 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
-import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
 import adf.component.module.complex.Search;
@@ -49,7 +48,6 @@ public class SampleFire extends TacticsFire {
     private PathPlanning pathPlanning;
     private BuildingSelector buildingSelector;
     private Search search;
-    private Clustering clustering;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -73,19 +71,16 @@ public class SampleFire extends TacticsFire {
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
                 this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
                 this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
                 break;
             case PRECOMPUTED:
                 this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
                 this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
                 break;
             case NON_PRECOMPUTE:
                 this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
                 this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
                 break;
@@ -95,7 +90,6 @@ public class SampleFire extends TacticsFire {
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
         this.pathPlanning.precompute(precomputeData);
-        this.clustering.precompute(precomputeData);
         this.search.precompute(precomputeData);
         this.buildingSelector.precompute(precomputeData);
     }
@@ -103,7 +97,6 @@ public class SampleFire extends TacticsFire {
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
         this.pathPlanning.resume(precomputeData);
-        this.clustering.resume(precomputeData);
         this.search.resume(precomputeData);
         this.buildingSelector.resume(precomputeData);
     }
@@ -111,7 +104,6 @@ public class SampleFire extends TacticsFire {
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         this.pathPlanning.preparate();
-        this.clustering.preparate();
         this.search.preparate();
         this.buildingSelector.preparate();
     }
@@ -120,7 +112,6 @@ public class SampleFire extends TacticsFire {
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         this.search.updateInfo(messageManager);
         this.pathPlanning.updateInfo(messageManager);
-        this.clustering.updateInfo(messageManager);
         this.buildingSelector.updateInfo(messageManager);
 
         FireBrigade agent = (FireBrigade) agentInfo.me();

@@ -1,5 +1,6 @@
 package adf.sample.module.algorithm;
 
+import adf.agent.communication.MessageManager;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -56,9 +57,15 @@ public class SamplePathPlanning extends PathPlanning {
 
     @Override
     public PathPlanning setDestination(Collection<EntityID> targets) {
-			this.targets = targets;
-			return this;
-		}
+        this.targets = targets;
+        return this;
+    }
+
+    @Override
+    public PathPlanning updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
+        return this;
+    }
 
     @Override
     public PathPlanning precompute(PrecomputeData precomputeData) {

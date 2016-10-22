@@ -18,7 +18,6 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
-import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.HumanSelector;
 import adf.component.module.complex.Search;
@@ -50,7 +49,6 @@ public class SampleAmbulance extends TacticsAmbulance {
     private PathPlanning pathPlanning;
     private HumanSelector humanSelector;
     private Search search;
-    private Clustering clustering;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -77,19 +75,16 @@ public class SampleAmbulance extends TacticsAmbulance {
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
                 this.pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
                 this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
                 break;
             case PRECOMPUTED:
                 this.pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
                 this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
                 break;
             case NON_PRECOMPUTE:
                 this.pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
                 this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
                 break;
@@ -99,7 +94,6 @@ public class SampleAmbulance extends TacticsAmbulance {
     @Override
     public void precompute(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
         this.pathPlanning.precompute(precomputeData);
-        this.clustering.precompute(precomputeData);
         this.humanSelector.precompute(precomputeData);
         this.search.precompute(precomputeData);
     }
@@ -107,7 +101,6 @@ public class SampleAmbulance extends TacticsAmbulance {
     @Override
     public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData developData) {
         this.pathPlanning.resume(precomputeData);
-        this.clustering.resume(precomputeData);
         this.humanSelector.resume(precomputeData);
         this.search.resume(precomputeData);
     }
@@ -115,7 +108,6 @@ public class SampleAmbulance extends TacticsAmbulance {
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         this.pathPlanning.preparate();
-        this.clustering.preparate();
         this.humanSelector.preparate();
         this.search.preparate();
     }
@@ -124,7 +116,6 @@ public class SampleAmbulance extends TacticsAmbulance {
     public Action think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         this.search.updateInfo(messageManager);
         this.pathPlanning.updateInfo(messageManager);
-        this.clustering.updateInfo(messageManager);
         this.humanSelector.updateInfo(messageManager);
 
         AmbulanceTeam agent = (AmbulanceTeam)agentInfo.me();
