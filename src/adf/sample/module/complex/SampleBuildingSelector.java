@@ -34,16 +34,16 @@ public class SampleBuildingSelector extends BuildingSelector {
         super(ai, wi, si, moduleManager, developData);
         switch  (si.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.pathPlanning = moduleManager.getModule("SampleBuildingSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("SampleBuildingSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.pathPlanning = moduleManager.getModule("SampleBuildingSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("SampleBuildingSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.pathPlanning = moduleManager.getModule("SampleBuildingSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("SampleBuildingSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
         int maxWater = si.getFireTankMaximum();

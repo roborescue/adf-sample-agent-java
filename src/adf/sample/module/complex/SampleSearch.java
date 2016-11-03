@@ -35,38 +35,38 @@ public class SampleSearch extends Search {
         switch  (si.getMode()) {
             case PRECOMPUTATION_PHASE:
                 if(agentURN == AMBULANCE_TEAM) {
-                    this.pathPlanning = this.moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                    this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                    this.pathPlanning = this.moduleManager.getModule("SampleSearch.PathPlanning.Ambulance", "adf.sample.module.algorithm.SamplePathPlanning");
+                    this.clustering = moduleManager.getModule("SampleSearch.Clustering.Ambulance", "adf.sample.module.algorithm.SampleKMeans");
                 } else if(agentURN == FIRE_BRIGADE) {
-                    this.pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                    this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                    this.pathPlanning = this.moduleManager.getModule("SampleSearch.PathPlanning.Fire", "adf.sample.module.algorithm.SamplePathPlanning");
+                    this.clustering = moduleManager.getModule("SampleSearch.Clustering.Fire", "adf.sample.module.algorithm.SampleKMeans");
                 } else if(agentURN == POLICE_FORCE) {
-                    this.pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                    this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                    this.pathPlanning = this.moduleManager.getModule("SampleSearch.PathPlanning.Police", "adf.sample.module.algorithm.SamplePathPlanning");
+                    this.clustering = moduleManager.getModule("SampleSearch.Clustering.Police", "adf.sample.module.algorithm.SampleKMeans");
                 }
                 break;
             case PRECOMPUTED:
                 if(agentURN == AMBULANCE_TEAM) {
-                    this.pathPlanning = this.moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                    this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                    this.pathPlanning = this.moduleManager.getModule("SampleSearch.PathPlanning.Ambulance", "adf.sample.module.algorithm.SamplePathPlanning");
+                    this.clustering = moduleManager.getModule("SampleSearch.Clustering.Ambulance", "adf.sample.module.algorithm.SampleKMeans");
                 } else if(agentURN == FIRE_BRIGADE) {
-                    this.pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                    this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                    this.pathPlanning = this.moduleManager.getModule("SampleSearch.PathPlanning.Fire", "adf.sample.module.algorithm.SamplePathPlanning");
+                    this.clustering = moduleManager.getModule("SampleSearch.Clustering.Fire", "adf.sample.module.algorithm.SampleKMeans");
                 } else if(agentURN == POLICE_FORCE) {
-                    this.pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                    this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                    this.pathPlanning = this.moduleManager.getModule("SampleSearch.PathPlanning.Police", "adf.sample.module.algorithm.SamplePathPlanning");
+                    this.clustering = moduleManager.getModule("SampleSearch.Clustering.Police", "adf.sample.module.algorithm.SampleKMeans");
                 }
                 break;
             case NON_PRECOMPUTE:
                 if(agentURN == AMBULANCE_TEAM) {
-                    this.pathPlanning = this.moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                    this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                    this.pathPlanning = this.moduleManager.getModule("SampleSearch.PathPlanning.Ambulance", "adf.sample.module.algorithm.SamplePathPlanning");
+                    this.clustering = moduleManager.getModule("SampleSearch.Clustering.Ambulance", "adf.sample.module.algorithm.SampleKMeans");
                 } else if(agentURN == FIRE_BRIGADE) {
-                    this.pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                    this.clustering = moduleManager.getModule("TacticsFire.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                    this.pathPlanning = this.moduleManager.getModule("SampleSearch.PathPlanning.Fire", "adf.sample.module.algorithm.SamplePathPlanning");
+                    this.clustering = moduleManager.getModule("SampleSearch.Clustering.Fire", "adf.sample.module.algorithm.SampleKMeans");
                 } else if(agentURN == POLICE_FORCE) {
-                    this.pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                    this.clustering = moduleManager.getModule("TacticsPolice.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                    this.pathPlanning = this.moduleManager.getModule("SampleSearch.PathPlanning.Police", "adf.sample.module.algorithm.SamplePathPlanning");
+                    this.clustering = moduleManager.getModule("SampleSearch.Clustering.Police", "adf.sample.module.algorithm.SampleKMeans");
                 }
                 break;
         }

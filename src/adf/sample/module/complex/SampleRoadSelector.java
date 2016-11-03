@@ -32,13 +32,13 @@ public class SampleRoadSelector extends RoadSelector {
         super(ai, wi, si, moduleManager, developData);
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("SampleRoadSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("SampleRoadSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("SampleRoadSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
         }
         this.result = null;

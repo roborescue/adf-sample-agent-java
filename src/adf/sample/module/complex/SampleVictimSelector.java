@@ -36,13 +36,13 @@ public class SampleVictimSelector extends HumanSelector {
         super(ai, wi, si, moduleManager, developData);
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.clustering = moduleManager.getModule("SampleVictimSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case PRECOMPUTED:
-                this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.clustering = moduleManager.getModule("SampleVictimSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case NON_PRECOMPUTE:
-                this.clustering = moduleManager.getModule("TacticsAmbulance.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.clustering = moduleManager.getModule("SampleVictimSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
         this.result = null;
