@@ -9,6 +9,6 @@ PWD=`pwd`
 CP=`find $PWD/library/ -name '*.jar' ! -name '*-sources.jar' | awk -F '\n' -v ORS=':' '{print}'`
 
 cd src
-javac -classpath "${CP}." -d ../build/ `find ./ -name '*.java'` && echo Done. || echo Failed.
+javac -encoding UTF-8 -classpath "${CP}." -d ../build/ `find ./ -name '*.java'` && echo Done. || echo Failed.
 
 
