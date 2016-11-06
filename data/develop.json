@@ -1,0 +1,5 @@
+{
+"fire.threshold.completed":10,
+"fire.threshold.refill":1,
+"fire.command.clear.interval":5
+}
