@@ -20,8 +20,6 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.*;
 
 public class SampleBuildingSelector extends BuildingSelector {
-    private int thresholdCompleted;
-    private int thresholdRefill;
     private EntityID result;
 
     private Clustering clustering;
@@ -46,10 +44,6 @@ public class SampleBuildingSelector extends BuildingSelector {
                 this.clustering = moduleManager.getModule("SampleBuildingSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
-        int maxWater = si.getFireTankMaximum();
-        int maxExtinguishPower = si.getFireExtinguishMaxSum();
-        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("fire.threshold.completed", 10);
-        this.thresholdRefill = maxExtinguishPower * developData.getInteger("fire.threshold.refill", 1);
         this.sendTime = 0;
         this.commandInterval = developData.getInteger("fire.command.clear.interval", 5);
 
@@ -98,54 +92,11 @@ public class SampleBuildingSelector extends BuildingSelector {
 
     @Override
     public BuildingSelector calc() {
-        this.result = null;
-        // refill
-        this.result = this.calcRefill();
-        if(this.result != null) {
-            return this;
-        }
-        // select building
         this.result = this.calcTargetInCluster();
         if(this.result == null) {
             this.result = this.calcTargetInWorld();
         }
         return this;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private EntityID calcRefill() {
-        FireBrigade fireBrigade = (FireBrigade)this.agentInfo.me();
-        int water = fireBrigade.getWater();
-        StandardEntityURN positionURN = this.worldInfo.getPosition(fireBrigade).getStandardURN();
-        if(positionURN.equals(StandardEntityURN.REFUGE) && water < this.thresholdCompleted) {
-            return fireBrigade.getPosition();
-        }
-        if(positionURN.equals(StandardEntityURN.HYDRANT) && water < this.thresholdCompleted) {
-            this.pathPlanning.setFrom(fireBrigade.getPosition());
-            this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = this.pathPlanning.calc().getResult();
-            if(path != null && !path.isEmpty()) {
-                return path.get(path.size() - 1);
-            } else {
-                return fireBrigade.getPosition();
-            }
-        }
-        if (water <= this.thresholdRefill) {
-            this.pathPlanning.setFrom(fireBrigade.getPosition());
-            this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = this.pathPlanning.calc().getResult();
-            if(path != null && !path.isEmpty()) {
-                return path.get(path.size() - 1);
-            }
-            this.pathPlanning.setFrom(fireBrigade.getPosition());
-            this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
-            path = this.pathPlanning.calc().getResult();
-            if(path != null && !path.isEmpty()) {
-                return path.get(path.size() - 1);
-            }
-        }
-        return null;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

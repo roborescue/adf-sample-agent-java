@@ -26,6 +26,11 @@ import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 public class ActionFireFighting extends ExtAction {
     private int maxExtinguishDistance;
     private int maxExtinguishPower;
+    private int maxWater;
+
+    private int thresholdCompleted;
+    private int thresholdRefill;
+
     private Collection<EntityID> targets;
     private boolean isRefill;
 
@@ -35,7 +40,9 @@ public class ActionFireFighting extends ExtAction {
         this.isRefill = false;
         this.maxExtinguishDistance = scenarioInfo.getFireExtinguishMaxDistance();
         this.maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
-
+        this.maxWater = scenarioInfo.getFireTankMaximum();
+        this.thresholdCompleted = (this.maxWater / 10) * developData.getInteger("fire.threshold.completed", 10);
+        this.thresholdRefill = this.maxExtinguishPower * developData.getInteger("fire.threshold.refill", 1);
     }
 
     @Override
@@ -158,5 +165,40 @@ public class ActionFireFighting extends ExtAction {
             int d2 = this.worldInfo.getDistance(this.reference, b);
             return d1 - d2;
         }
+    }
+
+    private EntityID calcRefill() {
+        FireBrigade fireBrigade = (FireBrigade)this.agentInfo.me();
+        int water = fireBrigade.getWater();
+        StandardEntityURN positionURN = this.worldInfo.getPosition(fireBrigade).getStandardURN();
+        if(positionURN.equals(StandardEntityURN.REFUGE) && water < this.thresholdCompleted) {
+            return fireBrigade.getPosition();
+        }
+        PathPlanning pathPlanning = this.moduleManager.getModule("adf.sample.module.algorithm.SamplePathPlanning");
+        if(positionURN.equals(StandardEntityURN.HYDRANT) && water < this.thresholdCompleted) {
+            pathPlanning.setFrom(fireBrigade.getPosition());
+            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+            List<EntityID> path = pathPlanning.calc().getResult();
+            if(path != null && !path.isEmpty()) {
+                return path.get(path.size() - 1);
+            } else {
+                return fireBrigade.getPosition();
+            }
+        }
+        if (water <= this.thresholdRefill) {
+            pathPlanning.setFrom(fireBrigade.getPosition());
+            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+            List<EntityID> path = pathPlanning.calc().getResult();
+            if(path != null && !path.isEmpty()) {
+                return path.get(path.size() - 1);
+            }
+            pathPlanning.setFrom(fireBrigade.getPosition());
+            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
+            path = pathPlanning.calc().getResult();
+            if(path != null && !path.isEmpty()) {
+                return path.get(path.size() - 1);
+            }
+        }
+        return null;
     }
 }

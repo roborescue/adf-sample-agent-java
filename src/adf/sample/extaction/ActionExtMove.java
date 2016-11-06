@@ -1,5 +1,6 @@
 package adf.sample.extaction;
 
+import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.develop.DevelopData;
@@ -13,16 +14,20 @@ import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ActionExtMove extends ExtAction {
     private List<EntityID> searchTargets;
-    private boolean isRest;
+
+    private int thresholdRest;
+    private int kernelTime;
 
     public ActionExtMove(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
         this.searchTargets = new ArrayList<>();
-        this.isRest = false;
+        this.thresholdRest = developData.getInteger("ActionExtMove.rest", 100);
+        this.kernelTime = scenarioInfo.getKernelTimesteps();
     }
 
     @Override
@@ -38,11 +43,7 @@ public class ActionExtMove extends ExtAction {
             } else if(entity instanceof Human) {
                 entity = this.worldInfo.getPosition((Human)entity);
             }
-
-            if(entity.getStandardURN().equals(StandardEntityURN.REFUGE)) {
-                this.searchTargets.add(entityID);
-                this.isRest = true;
-            } else if(entity instanceof Area) {
+            if(entity instanceof Area) {
                 this.searchTargets.add(entityID);
             }
         }
@@ -65,30 +66,72 @@ public class ActionExtMove extends ExtAction {
         } else if(agent.getStandardURN() == StandardEntityURN.POLICE_FORCE) {
             pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
         }
-        if(pathPlanning != null) {
-            pathPlanning.setFrom(agent.getPosition());
-            pathPlanning.setDestination(this.searchTargets);
-            List<EntityID> path = pathPlanning.calc().getResult();
-            if (path == null) {
+        if(pathPlanning == null) {
+            return this;
+        }
+
+        if(this.needRest(agent)) {
+            this.result = this.calcRest(agent, pathPlanning, this.searchTargets);
+            if(this.result != null) {
                 return this;
             }
-            if(this.isRest) {
-                boolean canRest = true;
-                for(EntityID id : path) {
-                    if(this.worldInfo.getEntity(id).getStandardURN() != StandardEntityURN.REFUGE) {
-                        canRest = false;
+        }
+
+        pathPlanning.setFrom(agent.getPosition());
+        pathPlanning.setDestination(this.searchTargets);
+        List<EntityID> path = pathPlanning.calc().getResult();
+        if (path != null && path.size() > 0) {
+            this.result = new ActionMove(path);
+        }
+        return this;
+    }
+
+    private boolean needRest(Human agent) {
+        int hp = agent.getHP();
+        int damage = agent.getDamage();
+        if(damage == 0 || hp == 0) {
+            return false;
+        }
+        int step = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
+        return (step + this.agentInfo.getTime()) < this.kernelTime || damage >= this.thresholdRest;
+    }
+
+    private Action calcRest(Human human, PathPlanning pathPlanning, Collection<EntityID> targets) {
+        EntityID position = human.getPosition();
+        Collection<EntityID> refuges = this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE);
+        int refugesSize = refuges.size();
+        if(refuges.contains(position)) {
+            return new ActionRest();
+        }
+        List<EntityID> firstResult = null;
+        while(refuges.size() > 0) {
+            pathPlanning.setFrom(position);
+            pathPlanning.setDestination(refuges);
+            List<EntityID> path = pathPlanning.calc().getResult();
+            if (path != null && path.size() > 0) {
+                if (firstResult == null) {
+                    firstResult = new ArrayList<>(path);
+                    if(targets == null || targets.isEmpty()) {
                         break;
                     }
                 }
-                if(canRest) {
-                    this.result = new ActionRest();
-                } else {
-                    this.result = new ActionMove(path);
+                EntityID refugeID = path.get(path.size() - 1);
+                pathPlanning.setFrom(refugeID);
+                pathPlanning.setDestination(targets);
+                List<EntityID> fromRefugeToTarget = pathPlanning.calc().getResult();
+                if (fromRefugeToTarget != null && fromRefugeToTarget.size() > 0) {
+                    return new ActionMove(path);
                 }
+                refuges.remove(refugeID);
+                //remove failed
+                if (refugesSize == refuges.size()) {
+                    break;
+                }
+                refugesSize = refuges.size();
             } else {
-                this.result = new ActionMove(path);
+                break;
             }
         }
-        return this;
+        return firstResult != null ? new ActionMove(firstResult) : null;
     }
 }
