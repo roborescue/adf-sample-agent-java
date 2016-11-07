@@ -38,9 +38,10 @@ public class ActionExtClear extends ExtAction {
     public ActionExtClear(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         this.clearDistance = this.scenarioInfo.getClearRepairDistance();
-        this.forcedMove = developData.getInteger("police.clear.forcedMove", 3);
-        this.thresholdRest = developData.getInteger("ActionExtMove.rest", 100);
+        this.forcedMove = developData.getInteger("ActionExtClear.forcedMove", 3);
+        this.thresholdRest = developData.getInteger("ActionExtClear.rest", 100);
         this.kernelTime = scenarioInfo.getKernelTimesteps();
+
         this.target = null;
         this.movePointCache = new HashMap<>();
         this.oldClearX = 0;
@@ -134,8 +135,6 @@ public class ActionExtClear extends ExtAction {
         return this;
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     private Action getRescueAction(PoliceForce police, Road road) {
         if(!road.isBlockadesDefined()) {
             return null;
@@ -228,8 +227,6 @@ public class ActionExtClear extends ExtAction {
         }
         return moveAction;
     }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private Action getAreaClearAction(PoliceForce police, StandardEntity targetEntity) {
         if(targetEntity instanceof Building) {
@@ -472,8 +469,6 @@ public class ActionExtClear extends ExtAction {
         }
         return action;
     }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private boolean equalsPoint(double p1X, double p1Y, double p2X, double p2Y) {
         return this.equalsPoint(p1X, p1Y, p2X, p2Y, 1000.0D);

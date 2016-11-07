@@ -3,6 +3,7 @@ package adf.sample.extaction;
 
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
+import adf.agent.action.common.ActionRest;
 import adf.agent.action.fire.ActionExtinguish;
 import adf.agent.action.fire.ActionRefill;
 import adf.agent.develop.DevelopData;
@@ -26,39 +27,35 @@ import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 public class ActionFireFighting extends ExtAction {
     private int maxExtinguishDistance;
     private int maxExtinguishPower;
-    private int maxWater;
-
-    private int thresholdCompleted;
-    private int thresholdRefill;
+    private int thresholdRest;
+    private int kernelTime;
+    private int refillCompleted;
+    private int refillRequest;
+    private boolean refillFlag;
 
     private Collection<EntityID> targets;
-    private boolean isRefill;
 
     public ActionFireFighting(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
-        this.targets = new ArrayList<>();
-        this.isRefill = false;
         this.maxExtinguishDistance = scenarioInfo.getFireExtinguishMaxDistance();
         this.maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
-        this.maxWater = scenarioInfo.getFireTankMaximum();
-        this.thresholdCompleted = (this.maxWater / 10) * developData.getInteger("fire.threshold.completed", 10);
-        this.thresholdRefill = this.maxExtinguishPower * developData.getInteger("fire.threshold.refill", 1);
+        this.thresholdRest = developData.getInteger("ActionFireFighting.rest", 100);
+        this.kernelTime = scenarioInfo.getKernelTimesteps();
+        int maxWater = scenarioInfo.getFireTankMaximum();
+        this.refillCompleted = (maxWater / 10) * developData.getInteger("ActionFireFighting.refill.completed", 10);
+        this.refillRequest = this.maxExtinguishPower * developData.getInteger("ActionFireFighting.refill.request", 1);
+        this.refillFlag = false;
+
+        this.targets = new ArrayList<>();
     }
 
     @Override
     public ExtAction setTarget(EntityID... targets) {
         this.targets.clear();
-        this.isRefill = false;
         if(targets != null) {
             for(EntityID id : targets) {
                 StandardEntity entity = this.worldInfo.getEntity(id);
                 if(entity instanceof Building) {
-                    if(entity.getStandardURN() == StandardEntityURN.REFUGE) {
-                        this.isRefill = true;
-                    }
-                    this.targets.add(id);
-                } else if(entity.getStandardURN() == StandardEntityURN.HYDRANT) {
-                    this.isRefill = true;
                     this.targets.add(id);
                 }
             }
@@ -69,83 +66,69 @@ public class ActionFireFighting extends ExtAction {
     @Override
     public ExtAction calc() {
         this.result = null;
+        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
+        FireBrigade agent = (FireBrigade)this.agentInfo.me();
+
+        this.refillFlag = this.needRefill(agent, this.refillFlag);
+        if(this.refillFlag) {
+            this.result = this.calcRefill(agent, pathPlanning, this.targets);
+            if(this.result != null) {
+                return this;
+            }
+        }
+
+        if(this.needRest(agent)) {
+            this.result = this.calcRefugeAction(agent, pathPlanning, this.targets, false);
+            if(this.result != null) {
+                return this;
+            }
+        }
+
         if(this.targets == null || this.targets.isEmpty()) {
             return this;
         }
+        this.result = this.calcExtinguish(agent, pathPlanning, this.targets);
+        return this;
+    }
 
-        FireBrigade fireBrigade = (FireBrigade)this.agentInfo.me();
-        EntityID agentPosition = fireBrigade.getPosition();
-        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
-
-        if(this.isRefill) {
-            if(this.targets.contains(agentPosition)) {
-                this.result = new ActionRefill();
-                return this;
-            }
-            this.result = this.getMoveAction(pathPlanning, agentPosition, this.targets);
-            if(this.result != null) {
-                return this;
-            }
-            this.result = this.getRefillAction(pathPlanning, agentPosition, REFUGE);
-            if(this.result == null) {
-                this.result = this.getRefillAction(pathPlanning, agentPosition, HYDRANT);
-            }
-            if(this.result != null) {
-                return this;
-            }
-        }
-
-        if(StandardEntityURN.REFUGE == this.worldInfo.getPosition(fireBrigade).getStandardURN()) {
-            this.result = this.getMoveAction(pathPlanning, agentPosition, this.targets);
-            if(this.result != null) {
-                return this;
+    private Action calcExtinguish(FireBrigade agent, PathPlanning pathPlanning, Collection<EntityID> targets) {
+        EntityID agentPosition = agent.getPosition();
+        StandardEntity positionEntity = this.worldInfo.getPosition(agent);
+        if(StandardEntityURN.REFUGE == positionEntity.getStandardURN()) {
+            Action action = this.getMoveAction(pathPlanning, agentPosition, targets);
+            if(action != null) {
+                return action;
             }
         }
 
         List<StandardEntity> neighbourBuilding = new ArrayList<>();
-        for(EntityID target : this.targets) {
+        for(EntityID target : targets) {
             StandardEntity entity = this.worldInfo.getEntity(target);
             if(entity instanceof Building) {
-                if (this.worldInfo.getDistance(fireBrigade, entity) < this.maxExtinguishDistance) {
+                if (this.worldInfo.getDistance(positionEntity, entity) < this.maxExtinguishDistance) {
                     neighbourBuilding.add(entity);
                 }
             }
         }
 
         if(neighbourBuilding.size() > 0) {
-            neighbourBuilding.sort(new DistanceSorter(this.worldInfo, fireBrigade));
-            this.result = new ActionExtinguish(neighbourBuilding.get(0).getID(), this.maxExtinguishPower);
-        } else {
-            this.result = this.getMoveAction(pathPlanning, agentPosition, this.targets);
+            neighbourBuilding.sort(new DistanceSorter(this.worldInfo, agent));
+            return new ActionExtinguish(neighbourBuilding.get(0).getID(), this.maxExtinguishPower);
         }
-        return this;
+        return this.getMoveAction(pathPlanning, agentPosition, targets);
     }
 
     private Action getMoveAction(PathPlanning pathPlanning, EntityID from, Collection<EntityID> targets) {
         pathPlanning.setFrom(from);
         pathPlanning.setDestination(targets);
         List<EntityID> path = pathPlanning.calc().getResult();
-        if(path != null && !path.isEmpty()) {
+        if(path != null && path.size() > 0) {
             StandardEntity entity = this.worldInfo.getEntity(path.get(path.size() - 1));
             if(entity instanceof Building) {
                 if(entity.getStandardURN() != StandardEntityURN.REFUGE) {
                     path.remove(path.size() - 1);
                 }
             }
-            return new ActionMove(path);
-        }
-        return null;
-    }
-
-    private Action getRefillAction(PathPlanning pathPlanning, EntityID agentPosition, StandardEntityURN areaURN) {
-        Collection<EntityID> refillArea = this.worldInfo.getEntityIDsOfType(areaURN);
-        if(refillArea.contains(agentPosition)) {
-            return new ActionRefill();
-        }
-        pathPlanning.setFrom(agentPosition);
-        pathPlanning.setDestination(refillArea);
-        List<EntityID> path = pathPlanning.calc().getResult();
-        if (path != null) {
             return new ActionMove(path);
         }
         return null;
@@ -167,38 +150,99 @@ public class ActionFireFighting extends ExtAction {
         }
     }
 
-    private EntityID calcRefill() {
-        FireBrigade fireBrigade = (FireBrigade)this.agentInfo.me();
-        int water = fireBrigade.getWater();
-        StandardEntityURN positionURN = this.worldInfo.getPosition(fireBrigade).getStandardURN();
-        if(positionURN.equals(StandardEntityURN.REFUGE) && water < this.thresholdCompleted) {
-            return fireBrigade.getPosition();
+    private boolean needRefill(FireBrigade agent, boolean refillFlag) {
+        if(refillFlag) {
+            StandardEntityURN position = this.worldInfo.getEntity(agent.getPosition()).getStandardURN();
+            return !(position == REFUGE || position == HYDRANT) || agent.getWater() < this.refillCompleted;
         }
-        PathPlanning pathPlanning = this.moduleManager.getModule("adf.sample.module.algorithm.SamplePathPlanning");
-        if(positionURN.equals(StandardEntityURN.HYDRANT) && water < this.thresholdCompleted) {
-            pathPlanning.setFrom(fireBrigade.getPosition());
-            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = pathPlanning.calc().getResult();
-            if(path != null && !path.isEmpty()) {
-                return path.get(path.size() - 1);
-            } else {
-                return fireBrigade.getPosition();
-            }
+        return  agent.getWater() <= this.refillRequest;
+    }
+
+    private boolean needRest(Human agent) {
+        int hp = agent.getHP();
+        int damage = agent.getDamage();
+        if(hp == 0 || damage == 0) {
+            return false;
         }
-        if (water <= this.thresholdRefill) {
-            pathPlanning.setFrom(fireBrigade.getPosition());
-            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = pathPlanning.calc().getResult();
-            if(path != null && !path.isEmpty()) {
-                return path.get(path.size() - 1);
+        int step = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
+        return (step + this.agentInfo.getTime()) < this.kernelTime || damage >= this.thresholdRest;
+    }
+
+    private Action calcRefill(FireBrigade agent, PathPlanning pathPlanning, Collection<EntityID> targets) {
+        EntityID position = agent.getPosition();
+        StandardEntityURN positionURN = this.worldInfo.getPosition(position).getStandardURN();
+        if(positionURN == REFUGE) {
+            return new ActionRefill();
+        }
+        Action action = this.calcRefugeAction(agent, pathPlanning, targets, true);
+        if(action != null) {
+            return action;
+        }
+        action = this.calcHydrantAction(agent, pathPlanning, targets);
+        if(action != null) {
+            if(positionURN == HYDRANT && action.getClass().equals(ActionMove.class)) {
+                pathPlanning.setFrom(position);
+                pathPlanning.setDestination(targets);
+                double currentDistance = pathPlanning.calc().getDistance();
+                List<EntityID> path = ((ActionMove)action).getPath();
+                pathPlanning.setFrom(path.get(path.size() - 1));
+                pathPlanning.setDestination(targets);
+                double newHydrantDistance = pathPlanning.calc().getDistance();
+                if(currentDistance <= newHydrantDistance) {
+                    return new ActionRefill();
+                }
             }
-            pathPlanning.setFrom(fireBrigade.getPosition());
-            pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(StandardEntityURN.HYDRANT));
-            path = pathPlanning.calc().getResult();
-            if(path != null && !path.isEmpty()) {
-                return path.get(path.size() - 1);
-            }
+            return action;
         }
         return null;
     }
+
+    private Action calcRefugeAction(Human human, PathPlanning pathPlanning, Collection<EntityID> targets, boolean isRefill) {
+        return this.calcSupply(human, pathPlanning, this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE), targets, isRefill);
+    }
+
+    private Action calcHydrantAction(Human human, PathPlanning pathPlanning, Collection<EntityID> targets) {
+        Collection<EntityID> hydrants = this.worldInfo.getEntityIDsOfType(HYDRANT);
+        hydrants.remove(human.getPosition());
+        return this.calcSupply(human, pathPlanning, hydrants, targets, true);
+    }
+
+    private Action calcSupply(Human human, PathPlanning pathPlanning, Collection<EntityID> supplyPositions, Collection<EntityID> targets, boolean isRefill) {
+        EntityID position = human.getPosition();
+        int size = supplyPositions.size();
+        if(supplyPositions.contains(position)) {
+            return isRefill ? new ActionRefill() : new ActionRest();
+        }
+        List<EntityID> firstResult = null;
+        while(supplyPositions.size() > 0) {
+            pathPlanning.setFrom(position);
+            pathPlanning.setDestination(supplyPositions);
+            List<EntityID> path = pathPlanning.calc().getResult();
+            if (path != null && path.size() > 0) {
+                if (firstResult == null) {
+                    firstResult = new ArrayList<>(path);
+                    if(targets == null || targets.isEmpty()) {
+                        break;
+                    }
+                }
+                EntityID supplyPositionID = path.get(path.size() - 1);
+                pathPlanning.setFrom(supplyPositionID);
+                pathPlanning.setDestination(targets);
+                List<EntityID> fromRefugeToTarget = pathPlanning.calc().getResult();
+                if (fromRefugeToTarget != null && fromRefugeToTarget.size() > 0) {
+                    return new ActionMove(path);
+                }
+                supplyPositions.remove(supplyPositionID);
+                //remove failed
+                if (size == supplyPositions.size()) {
+                    break;
+                }
+                size = supplyPositions.size();
+            } else {
+                break;
+            }
+        }
+        return firstResult != null ? new ActionMove(firstResult) : null;
+    }
 }
+

@@ -89,7 +89,7 @@ public class ActionExtMove extends ExtAction {
     private boolean needRest(Human agent) {
         int hp = agent.getHP();
         int damage = agent.getDamage();
-        if(damage == 0 || hp == 0) {
+        if(hp == 0 || damage == 0) {
             return false;
         }
         int step = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);

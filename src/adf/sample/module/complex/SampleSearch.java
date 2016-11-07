@@ -115,10 +115,6 @@ public class SampleSearch extends Search {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private void remove() {
-
-    }
-
     private void reset() {
         this.unsearchedBuildingIDs.clear();
 

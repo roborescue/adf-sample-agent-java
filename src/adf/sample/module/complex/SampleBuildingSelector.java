@@ -45,7 +45,7 @@ public class SampleBuildingSelector extends BuildingSelector {
                 break;
         }
         this.sendTime = 0;
-        this.commandInterval = developData.getInteger("fire.command.clear.interval", 5);
+        this.commandInterval = developData.getInteger("SampleBuildingSelector.command.clear.interval", 5);
 
     }
 

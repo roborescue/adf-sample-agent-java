@@ -47,7 +47,7 @@ public class SampleVictimSelector extends HumanSelector {
         }
         this.result = null;
         this.sendTime = 0;
-        this.commandInterval = developData.getInteger("ambulance.command.clear.interval", 5);
+        this.commandInterval = developData.getInteger("SampleVictimSelector.command.clear.interval", 5);
     }
 
     @Override

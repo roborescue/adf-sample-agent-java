@@ -1,5 +1,12 @@
 {
-"fire.threshold.completed":10,
-"fire.threshold.refill":1,
-"fire.command.clear.interval":5
+
+"ActionFireFighting.refill.completed":10,
+"ActionFireFighting.refill.request":1,
+"ActionFireFighting.rest":100,
+"ActionExtClear.forcedMove":3,
+"ActionExtClear.rest":100,
+"ActionTransport.rest":100,
+"ActionExtMove.rest":100,
+"SampleBuildingSelector.command.clear.interval":5,
+"SampleVictimSelector.command.clear.interval":5
 }
