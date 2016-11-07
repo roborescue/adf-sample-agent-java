@@ -102,7 +102,7 @@ public class ActionExtClear extends ExtAction {
         if(agentPosition.equals(this.target)) {
             this.result = this.getAreaClearAction(policeForce, targetEntity);
         } else if(((Area)targetEntity).getEdgeTo(agentPosition) != null) {
-            this.result = this.getNeighbourPositionAction(policeForce, (Road)targetEntity);
+            this.result = this.getNeighbourPositionAction(policeForce, (Area)targetEntity);
         } else {
             List<EntityID> path = pathPlanning.getResult(agentPosition, this.target);
             if (path != null && path.size() > 0) {
