@@ -4,11 +4,13 @@ import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.action.police.ActionClear;
+import adf.agent.communication.MessageManager;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import com.google.common.collect.Lists;
@@ -23,6 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ActionExtClear extends ExtAction {
+    private PathPlanning pathPlanning;
     private int clearDistance;
     private int forcedMove;
 
@@ -37,16 +40,64 @@ public class ActionExtClear extends ExtAction {
 
     public ActionExtClear(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
-        this.clearDistance = this.scenarioInfo.getClearRepairDistance();
+        this.clearDistance = si.getClearRepairDistance();
         this.forcedMove = developData.getInteger("ActionExtClear.forcedMove", 3);
         this.thresholdRest = developData.getInteger("ActionExtClear.rest", 100);
-        this.kernelTime = scenarioInfo.getKernelTimesteps();
+        this.kernelTime = si.getKernelTimesteps();
 
         this.target = null;
         this.movePointCache = new HashMap<>();
         this.oldClearX = 0;
         this.oldClearY = 0;
         this.count = 0;
+
+        switch  (si.getMode()) {
+            case PRECOMPUTATION_PHASE:
+                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+            case PRECOMPUTED:
+                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+            case NON_PRECOMPUTE:
+                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+        }
+    }
+
+    public ExtAction precompute(PrecomputeData precomputeData) {
+        super.precompute(precomputeData);
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
+        this.pathPlanning.precompute(precomputeData);
+        return this;
+    }
+
+    public ExtAction resume(PrecomputeData precomputeData) {
+        super.resume(precomputeData);
+        if(this.getCountResume() >= 2) {
+            return this;
+        }
+        this.pathPlanning.resume(precomputeData);
+        return this;
+    }
+
+    public ExtAction preparate() {
+        super.preparate();
+        if(this.getCountPreparate() >= 2) {
+            return this;
+        }
+        this.pathPlanning.preparate();
+        return this;
+    }
+
+    public ExtAction updateInfo(MessageManager messageManager){
+        super.updateInfo(messageManager);
+        if(this.getCountUpdateInfo() >= 2) {
+            return this;
+        }
+        this.pathPlanning.updateInfo(messageManager);
+        return this;
     }
 
     @Override
@@ -80,9 +131,8 @@ public class ActionExtClear extends ExtAction {
             return this;
         }
         PoliceForce policeForce = (PoliceForce)this.agentInfo.me();
-        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
         if(this.needRest(policeForce)) {
-            this.result = this.calcRest(policeForce, pathPlanning, Lists.newArrayList(this.target));
+            this.result = this.calcRest(policeForce, this.pathPlanning, Lists.newArrayList(this.target));
             if(this.result != null) {
                 return this;
             }
@@ -104,7 +154,7 @@ public class ActionExtClear extends ExtAction {
         } else if(((Area)targetEntity).getEdgeTo(agentPosition) != null) {
             this.result = this.getNeighbourPositionAction(policeForce, (Area)targetEntity);
         } else {
-            List<EntityID> path = pathPlanning.getResult(agentPosition, this.target);
+            List<EntityID> path = this.pathPlanning.getResult(agentPosition, this.target);
             if (path != null && path.size() > 0) {
                 int index = path.indexOf(agentPosition);
                 if(index == -1) {

@@ -6,11 +6,13 @@ import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.action.fire.ActionExtinguish;
 import adf.agent.action.fire.ActionRefill;
+import adf.agent.communication.MessageManager;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.*;
@@ -25,6 +27,7 @@ import static rescuecore2.standard.entities.StandardEntityURN.HYDRANT;
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
 public class ActionFireFighting extends ExtAction {
+    private PathPlanning pathPlanning;
     private int maxExtinguishDistance;
     private int maxExtinguishPower;
     private int thresholdRest;
@@ -47,6 +50,54 @@ public class ActionFireFighting extends ExtAction {
         this.refillFlag = false;
 
         this.targets = new ArrayList<>();
+
+        switch  (scenarioInfo.getMode()) {
+            case PRECOMPUTATION_PHASE:
+                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+            case PRECOMPUTED:
+                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+            case NON_PRECOMPUTE:
+                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+        }
+    }
+
+    public ExtAction precompute(PrecomputeData precomputeData) {
+        super.precompute(precomputeData);
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
+        this.pathPlanning.precompute(precomputeData);
+        return this;
+    }
+
+    public ExtAction resume(PrecomputeData precomputeData) {
+        super.resume(precomputeData);
+        if(this.getCountResume() >= 2) {
+            return this;
+        }
+        this.pathPlanning.resume(precomputeData);
+        return this;
+    }
+
+    public ExtAction preparate() {
+        super.preparate();
+        if(this.getCountPreparate() >= 2) {
+            return this;
+        }
+        this.pathPlanning.preparate();
+        return this;
+    }
+
+    public ExtAction updateInfo(MessageManager messageManager){
+        super.updateInfo(messageManager);
+        if(this.getCountUpdateInfo() >= 2) {
+            return this;
+        }
+        this.pathPlanning.updateInfo(messageManager);
+        return this;
     }
 
     @Override
@@ -66,19 +117,18 @@ public class ActionFireFighting extends ExtAction {
     @Override
     public ExtAction calc() {
         this.result = null;
-        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
         FireBrigade agent = (FireBrigade)this.agentInfo.me();
 
         this.refillFlag = this.needRefill(agent, this.refillFlag);
         if(this.refillFlag) {
-            this.result = this.calcRefill(agent, pathPlanning, this.targets);
+            this.result = this.calcRefill(agent, this.pathPlanning, this.targets);
             if(this.result != null) {
                 return this;
             }
         }
 
         if(this.needRest(agent)) {
-            this.result = this.calcRefugeAction(agent, pathPlanning, this.targets, false);
+            this.result = this.calcRefugeAction(agent, this.pathPlanning, this.targets, false);
             if(this.result != null) {
                 return this;
             }
@@ -87,7 +137,7 @@ public class ActionFireFighting extends ExtAction {
         if(this.targets == null || this.targets.isEmpty()) {
             return this;
         }
-        this.result = this.calcExtinguish(agent, pathPlanning, this.targets);
+        this.result = this.calcExtinguish(agent, this.pathPlanning, this.targets);
         return this;
     }
 

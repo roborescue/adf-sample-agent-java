@@ -6,11 +6,13 @@ import adf.agent.action.ambulance.ActionRescue;
 import adf.agent.action.ambulance.ActionUnload;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
+import adf.agent.communication.MessageManager;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import com.google.common.collect.Lists;
@@ -26,6 +28,8 @@ import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
 public class ActionTransport extends ExtAction {
+    private PathPlanning pathPlanning;
+
     private int thresholdRest;
     private int kernelTime;
 
@@ -36,6 +40,54 @@ public class ActionTransport extends ExtAction {
         this.target = null;
         this.thresholdRest = developData.getInteger("ActionTransport.rest", 100);
         this.kernelTime = scenarioInfo.getKernelTimesteps();
+
+        switch  (scenarioInfo.getMode()) {
+            case PRECOMPUTATION_PHASE:
+                this.pathPlanning = moduleManager.getModule("ActionTransport.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+            case PRECOMPUTED:
+                this.pathPlanning = moduleManager.getModule("ActionTransport.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+            case NON_PRECOMPUTE:
+                this.pathPlanning = moduleManager.getModule("ActionTransport.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                break;
+        }
+    }
+
+    public ExtAction precompute(PrecomputeData precomputeData) {
+        super.precompute(precomputeData);
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
+        this.pathPlanning.precompute(precomputeData);
+        return this;
+    }
+
+    public ExtAction resume(PrecomputeData precomputeData) {
+        super.resume(precomputeData);
+        if(this.getCountResume() >= 2) {
+            return this;
+        }
+        this.pathPlanning.resume(precomputeData);
+        return this;
+    }
+
+    public ExtAction preparate() {
+        super.preparate();
+        if(this.getCountPreparate() >= 2) {
+            return this;
+        }
+        this.pathPlanning.preparate();
+        return this;
+    }
+
+    public ExtAction updateInfo(MessageManager messageManager){
+        super.updateInfo(messageManager);
+        if(this.getCountUpdateInfo() >= 2) {
+            return this;
+        }
+        this.pathPlanning.updateInfo(messageManager);
+        return this;
     }
 
     @Override
@@ -56,12 +108,11 @@ public class ActionTransport extends ExtAction {
     @Override
     public ExtAction calc() {
         this.result = null;
-        PathPlanning pathPlanning = this.moduleManager.getModule("TacticsAmbulance.PathPlanning");
         AmbulanceTeam agent = (AmbulanceTeam)this.agentInfo.me();
         Human transportHuman = this.agentInfo.someoneOnBoard();
 
         if(transportHuman != null) {
-            this.result = this.calcUnload(agent, pathPlanning, transportHuman, this.target);
+            this.result = this.calcUnload(agent, this.pathPlanning, transportHuman, this.target);
             if(this.result != null) {
                 return this;
             }
@@ -72,13 +123,13 @@ public class ActionTransport extends ExtAction {
             if(areaID != null) {
                 targets.add(areaID);
             }
-            this.result = this.calcRefugeAction(agent, pathPlanning, targets, false);
+            this.result = this.calcRefugeAction(agent, this.pathPlanning, targets, false);
             if(this.result != null) {
                 return this;
             }
         }
         if(this.target != null) {
-            this.result = this.calcRescue(agent, pathPlanning, this.target);
+            this.result = this.calcRescue(agent, this.pathPlanning, this.target);
         }
         return this;
     }
