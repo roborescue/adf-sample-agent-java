@@ -18,6 +18,7 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
+import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.HumanSelector;
 import adf.component.module.complex.Search;
@@ -50,6 +51,9 @@ public class SampleAmbulance extends TacticsAmbulance {
     private HumanSelector humanSelector;
     private Search search;
 
+    private ExtAction actionTransport;
+    private ExtAction actionExtMove;
+
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         worldInfo.indexClass(
@@ -68,25 +72,28 @@ public class SampleAmbulance extends TacticsAmbulance {
         );
         // init value
         this.type = ACTION_UNKNOWN;
-        // init ExtAction
-        moduleManager.getExtAction("TacticsAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
-        moduleManager.getExtAction("TacticsAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-        // init Algorithm Module
+        // init Algorithm Module & ExtAction
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
                 this.pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
                 this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
+                this.actionTransport = moduleManager.getExtAction("TacticsAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
+                this.actionExtMove = moduleManager.getExtAction("TacticsAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case PRECOMPUTED:
                 this.pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
                 this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
+                this.actionTransport = moduleManager.getExtAction("TacticsAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
+                this.actionExtMove = moduleManager.getExtAction("TacticsAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case NON_PRECOMPUTE:
                 this.pathPlanning = moduleManager.getModule("TacticsAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.humanSelector = moduleManager.getModule("TacticsAmbulance.HumanSelector", "adf.sample.module.complex.SampleVictimSelector");
                 this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
+                this.actionTransport = moduleManager.getExtAction("TacticsAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
+                this.actionExtMove = moduleManager.getExtAction("TacticsAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
         }
     }
@@ -96,6 +103,8 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.pathPlanning.precompute(precomputeData);
         this.humanSelector.precompute(precomputeData);
         this.search.precompute(precomputeData);
+        this.actionTransport.precompute(precomputeData);
+        this.actionExtMove.precompute(precomputeData);
     }
 
     @Override
@@ -103,6 +112,8 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.pathPlanning.resume(precomputeData);
         this.humanSelector.resume(precomputeData);
         this.search.resume(precomputeData);
+        this.actionTransport.resume(precomputeData);
+        this.actionExtMove.resume(precomputeData);
     }
 
     @Override
@@ -110,6 +121,8 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.pathPlanning.preparate();
         this.humanSelector.preparate();
         this.search.preparate();
+        this.actionTransport.preparate();
+        this.actionExtMove.preparate();
     }
 
     @Override
@@ -117,6 +130,8 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.search.updateInfo(messageManager);
         this.pathPlanning.updateInfo(messageManager);
         this.humanSelector.updateInfo(messageManager);
+        this.actionTransport.updateInfo(messageManager);
+        this.actionExtMove.updateInfo(messageManager);
 
         AmbulanceTeam agent = (AmbulanceTeam)agentInfo.me();
         // command
@@ -127,24 +142,16 @@ public class SampleAmbulance extends TacticsAmbulance {
         }
         // autonomous
         EntityID target = this.humanSelector.calc().getTarget();
-        if(target != null) {
-            action = moduleManager.getExtAction("TacticsAmbulance.ActionTransport")
-                    .setTarget(target)
-                    .calc().getAction();
-            if(action != null) {
-                this.sendActionMessage(messageManager, agent, action);
-                return action;
-            }
+        action = this.actionTransport.setTarget(target).calc().getAction();
+        if(action != null) {
+            this.sendActionMessage(messageManager, agent, action);
+            return action;
         }
         target = this.search.calc().getTarget();
-        if(target != null) {
-            action = moduleManager.getExtAction("TacticsAmbulance.ActionExtMove")
-                    .setTarget(target)
-                    .calc().getAction();
-            if(action != null) {
-                this.sendActionMessage(messageManager, agent, action);
-                return action;
-            }
+        action = this.actionExtMove.setTarget(target).calc().getAction();
+        if(action != null) {
+            this.sendActionMessage(messageManager, agent, action);
+            return action;
         }
 
         messageManager.addMessage(

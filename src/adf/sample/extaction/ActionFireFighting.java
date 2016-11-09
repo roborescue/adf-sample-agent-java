@@ -28,6 +28,7 @@ import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
 public class ActionFireFighting extends ExtAction {
     private PathPlanning pathPlanning;
+
     private int maxExtinguishDistance;
     private int maxExtinguishPower;
     private int thresholdRest;
@@ -53,13 +54,13 @@ public class ActionFireFighting extends ExtAction {
 
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("ActionFireFighting.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("ActionFireFighting.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("ActionFireFighting.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
         }
     }
@@ -184,22 +185,6 @@ public class ActionFireFighting extends ExtAction {
         return null;
     }
 
-    private class DistanceSorter implements Comparator<StandardEntity> {
-        private StandardEntity reference;
-        private WorldInfo worldInfo;
-
-        DistanceSorter(WorldInfo wi, StandardEntity reference) {
-            this.reference = reference;
-            this.worldInfo = wi;
-        }
-
-        public int compare(StandardEntity a, StandardEntity b) {
-            int d1 = this.worldInfo.getDistance(this.reference, a);
-            int d2 = this.worldInfo.getDistance(this.reference, b);
-            return d1 - d2;
-        }
-    }
-
     private boolean needRefill(FireBrigade agent, boolean refillFlag) {
         if(refillFlag) {
             StandardEntityURN position = this.worldInfo.getEntity(agent.getPosition()).getStandardURN();
@@ -214,8 +199,8 @@ public class ActionFireFighting extends ExtAction {
         if(hp == 0 || damage == 0) {
             return false;
         }
-        int step = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
-        return (step + this.agentInfo.getTime()) < this.kernelTime || damage >= this.thresholdRest;
+        int activeTime = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
+        return damage >= this.thresholdRest || (activeTime + this.agentInfo.getTime()) < this.kernelTime;
     }
 
     private Action calcRefill(FireBrigade agent, PathPlanning pathPlanning, Collection<EntityID> targets) {
@@ -248,16 +233,16 @@ public class ActionFireFighting extends ExtAction {
     }
 
     private Action calcRefugeAction(Human human, PathPlanning pathPlanning, Collection<EntityID> targets, boolean isRefill) {
-        return this.calcSupply(human, pathPlanning, this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE), targets, isRefill);
+        return this.calcSupplyAction(human, pathPlanning, this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE), targets, isRefill);
     }
 
     private Action calcHydrantAction(Human human, PathPlanning pathPlanning, Collection<EntityID> targets) {
         Collection<EntityID> hydrants = this.worldInfo.getEntityIDsOfType(HYDRANT);
         hydrants.remove(human.getPosition());
-        return this.calcSupply(human, pathPlanning, hydrants, targets, true);
+        return this.calcSupplyAction(human, pathPlanning, hydrants, targets, true);
     }
 
-    private Action calcSupply(Human human, PathPlanning pathPlanning, Collection<EntityID> supplyPositions, Collection<EntityID> targets, boolean isRefill) {
+    private Action calcSupplyAction(Human human, PathPlanning pathPlanning, Collection<EntityID> supplyPositions, Collection<EntityID> targets, boolean isRefill) {
         EntityID position = human.getPosition();
         int size = supplyPositions.size();
         if(supplyPositions.contains(position)) {
@@ -294,5 +279,22 @@ public class ActionFireFighting extends ExtAction {
         }
         return firstResult != null ? new ActionMove(firstResult) : null;
     }
+
+    private class DistanceSorter implements Comparator<StandardEntity> {
+        private StandardEntity reference;
+        private WorldInfo worldInfo;
+
+        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+            this.reference = reference;
+            this.worldInfo = wi;
+        }
+
+        public int compare(StandardEntity a, StandardEntity b) {
+            int d1 = this.worldInfo.getDistance(this.reference, a);
+            int d2 = this.worldInfo.getDistance(this.reference, b);
+            return d1 - d2;
+        }
+    }
+
 }
 

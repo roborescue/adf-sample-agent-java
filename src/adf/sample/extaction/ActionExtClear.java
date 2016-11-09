@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 
 public class ActionExtClear extends ExtAction {
     private PathPlanning pathPlanning;
+
     private int clearDistance;
     private int forcedMove;
-
     private int thresholdRest;
     private int kernelTime;
 
@@ -53,13 +53,13 @@ public class ActionExtClear extends ExtAction {
 
         switch  (si.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("ActionExtClear.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("ActionExtClear.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("ActionExtMove.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("ActionExtClear.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
         }
     }
@@ -127,15 +127,21 @@ public class ActionExtClear extends ExtAction {
     @Override
     public ExtAction calc() {
         this.result = null;
-        if(this.target == null) {
-            return this;
-        }
         PoliceForce policeForce = (PoliceForce)this.agentInfo.me();
+
         if(this.needRest(policeForce)) {
-            this.result = this.calcRest(policeForce, this.pathPlanning, Lists.newArrayList(this.target));
+            List<EntityID> list = new ArrayList<>();
+            if(this.target != null) {
+                list.add(this.target);
+            }
+            this.result = this.calcRest(policeForce, this.pathPlanning, list);
             if(this.result != null) {
                 return this;
             }
+        }
+
+        if(this.target == null) {
+            return this;
         }
         EntityID agentPosition = policeForce.getPosition();
         StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
@@ -675,14 +681,14 @@ public class ActionExtClear extends ExtAction {
         if(damage == 0 || hp == 0) {
             return false;
         }
-        int step = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
-        return (step + this.agentInfo.getTime()) < this.kernelTime || damage >= this.thresholdRest;
+        int activeTime = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
+        return damage >= this.thresholdRest || (activeTime + this.agentInfo.getTime()) < this.kernelTime;
     }
 
     private Action calcRest(Human human, PathPlanning pathPlanning, Collection<EntityID> targets) {
         EntityID position = human.getPosition();
         Collection<EntityID> refuges = this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE);
-        int refugesSize = refuges.size();
+        int currentSize = refuges.size();
         if(refuges.contains(position)) {
             return new ActionRest();
         }
@@ -707,10 +713,10 @@ public class ActionExtClear extends ExtAction {
                 }
                 refuges.remove(refugeID);
                 //remove failed
-                if (refugesSize == refuges.size()) {
+                if (currentSize == refuges.size()) {
                     break;
                 }
-                refugesSize = refuges.size();
+                currentSize = refuges.size();
             } else {
                 break;
             }

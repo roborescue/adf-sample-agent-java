@@ -17,6 +17,7 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
+import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingSelector;
 import adf.component.module.complex.Search;
@@ -49,6 +50,9 @@ public class SampleFire extends TacticsFire {
     private BuildingSelector buildingSelector;
     private Search search;
 
+    private ExtAction actionFireFighting;
+    private ExtAction actionExtMove;
+
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         worldInfo.indexClass(
@@ -64,25 +68,28 @@ public class SampleFire extends TacticsFire {
         // init value
         this.maxWater = scenarioInfo.getFireTankMaximum();
         this.commandType = ACTION_UNKNOWN;
-        //init ExtAction
-        moduleManager.getExtAction("TacticsFire.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
-        moduleManager.getExtAction("TacticsFire.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-        // init Algorithm Module
+        // init Algorithm Module & ExtAction
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
                 this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
                 this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                this.actionFireFighting = moduleManager.getExtAction("TacticsFire.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
+                this.actionExtMove = moduleManager.getExtAction("TacticsFire.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case PRECOMPUTED:
                 this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
                 this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                this.actionFireFighting = moduleManager.getExtAction("TacticsFire.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
+                this.actionExtMove = moduleManager.getExtAction("TacticsFire.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case NON_PRECOMPUTE:
                 this.pathPlanning = moduleManager.getModule("TacticsFire.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
                 this.buildingSelector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                this.actionFireFighting = moduleManager.getExtAction("TacticsFire.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
+                this.actionExtMove = moduleManager.getExtAction("TacticsFire.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
         }
     }
@@ -92,6 +99,8 @@ public class SampleFire extends TacticsFire {
         this.pathPlanning.precompute(precomputeData);
         this.search.precompute(precomputeData);
         this.buildingSelector.precompute(precomputeData);
+        this.actionFireFighting.precompute(precomputeData);
+        this.actionExtMove.precompute(precomputeData);
     }
 
     @Override
@@ -99,6 +108,8 @@ public class SampleFire extends TacticsFire {
         this.pathPlanning.resume(precomputeData);
         this.search.resume(precomputeData);
         this.buildingSelector.resume(precomputeData);
+        this.actionFireFighting.resume(precomputeData);
+        this.actionExtMove.resume(precomputeData);
     }
 
     @Override
@@ -106,6 +117,8 @@ public class SampleFire extends TacticsFire {
         this.pathPlanning.preparate();
         this.search.preparate();
         this.buildingSelector.preparate();
+        this.actionFireFighting.preparate();
+        this.actionExtMove.preparate();
     }
 
     @Override
@@ -113,6 +126,8 @@ public class SampleFire extends TacticsFire {
         this.search.updateInfo(messageManager);
         this.pathPlanning.updateInfo(messageManager);
         this.buildingSelector.updateInfo(messageManager);
+        this.actionFireFighting.updateInfo(messageManager);
+        this.actionExtMove.updateInfo(messageManager);
 
         FireBrigade agent = (FireBrigade) agentInfo.me();
         // command
@@ -123,24 +138,16 @@ public class SampleFire extends TacticsFire {
         }
         // autonomous
         EntityID target = this.buildingSelector.calc().getTarget();
-        if(target != null) {
-            action = moduleManager.getExtAction("TacticsFire.ActionFireFighting")
-                    .setTarget(target)
-                    .calc().getAction();
-            if(action != null) {
-                this.sendActionMessage(messageManager, agent, action);
-                return action;
-            }
+        action = this.actionFireFighting.setTarget(target).calc().getAction();
+        if(action != null) {
+            this.sendActionMessage(messageManager, agent, action);
+            return action;
         }
         target = this.search.calc().getTarget();
-        if(target != null) {
-            action = moduleManager.getExtAction("TacticsFire.ActionExtMove")
-                    .setTarget(target)
-                    .calc().getAction();
-            if(action != null) {
-                this.sendActionMessage(messageManager, agent, action);
-                return action;
-            }
+        action = this.actionExtMove.setTarget(target).calc().getAction();
+        if(action != null) {
+            this.sendActionMessage(messageManager, agent, action);
+            return action;
         }
 
         messageManager.addMessage(

@@ -237,8 +237,8 @@ public class ActionTransport extends ExtAction {
         if(hp == 0 || damage == 0) {
             return false;
         }
-        int step = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
-        return (step + this.agentInfo.getTime()) < this.kernelTime || damage >= this.thresholdRest;
+        int activeTime = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
+        return damage >= this.thresholdRest || (activeTime + this.agentInfo.getTime()) < this.kernelTime;
     }
 
     private EntityID convertArea(EntityID targetID) {

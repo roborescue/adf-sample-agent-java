@@ -20,12 +20,12 @@ import java.util.Collection;
 import java.util.List;
 
 public class ActionExtMove extends ExtAction {
-    private List<EntityID> searchTargets;
+    private PathPlanning pathPlanning;
 
     private int thresholdRest;
     private int kernelTime;
 
-    private PathPlanning pathPlanning;
+    private List<EntityID> searchTargets;
 
     public ActionExtMove(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
@@ -105,33 +105,21 @@ public class ActionExtMove extends ExtAction {
     @Override
     public ExtAction calc() {
         this.result = null;
-        if(this.searchTargets == null || this.searchTargets.isEmpty()) {
-            return this;
-        }
-
         Human agent = (Human)this.agentInfo.me();
-        PathPlanning pathPlanning = null;
-        if(agent.getStandardURN() == StandardEntityURN.AMBULANCE_TEAM) {
-            pathPlanning = this.moduleManager.getModule("TacticsAmbulance.PathPlanning");
-        } else if(agent.getStandardURN() == StandardEntityURN.FIRE_BRIGADE) {
-            pathPlanning = this.moduleManager.getModule("TacticsFire.PathPlanning");
-        } else if(agent.getStandardURN() == StandardEntityURN.POLICE_FORCE) {
-            pathPlanning = this.moduleManager.getModule("TacticsPolice.PathPlanning");
-        }
-        if(pathPlanning == null) {
-            return this;
-        }
 
         if(this.needRest(agent)) {
-            this.result = this.calcRest(agent, pathPlanning, this.searchTargets);
+            this.result = this.calcRest(agent, this.pathPlanning, this.searchTargets);
             if(this.result != null) {
                 return this;
             }
         }
 
-        pathPlanning.setFrom(agent.getPosition());
-        pathPlanning.setDestination(this.searchTargets);
-        List<EntityID> path = pathPlanning.calc().getResult();
+        if(this.searchTargets == null || this.searchTargets.isEmpty()) {
+            return this;
+        }
+        this.pathPlanning.setFrom(agent.getPosition());
+        this.pathPlanning.setDestination(this.searchTargets);
+        List<EntityID> path = this.pathPlanning.calc().getResult();
         if (path != null && path.size() > 0) {
             this.result = new ActionMove(path);
         }
@@ -144,14 +132,14 @@ public class ActionExtMove extends ExtAction {
         if(hp == 0 || damage == 0) {
             return false;
         }
-        int step = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
-        return (step + this.agentInfo.getTime()) < this.kernelTime || damage >= this.thresholdRest;
+        int activeTime = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
+        return damage >= this.thresholdRest || (activeTime + this.agentInfo.getTime()) < this.kernelTime;
     }
 
     private Action calcRest(Human human, PathPlanning pathPlanning, Collection<EntityID> targets) {
         EntityID position = human.getPosition();
         Collection<EntityID> refuges = this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE);
-        int refugesSize = refuges.size();
+        int currentSize = refuges.size();
         if(refuges.contains(position)) {
             return new ActionRest();
         }
@@ -176,10 +164,10 @@ public class ActionExtMove extends ExtAction {
                 }
                 refuges.remove(refugeID);
                 //remove failed
-                if (refugesSize == refuges.size()) {
+                if (currentSize == refuges.size()) {
                     break;
                 }
-                refugesSize = refuges.size();
+                currentSize = refuges.size();
             } else {
                 break;
             }
