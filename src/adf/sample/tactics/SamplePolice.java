@@ -126,7 +126,7 @@ public class SamplePolice extends TacticsPolice {
 
         PoliceForce agent = (PoliceForce) agentInfo.me();
         // command
-        Action action = this.getCommandAction(agentInfo, worldInfo, moduleManager, messageManager);
+        Action action = this.getCommandAction(agentInfo, worldInfo, messageManager);
         if(action != null) {
             this.sendActionMessage(worldInfo, messageManager, agent, action);
             return action;
@@ -152,7 +152,7 @@ public class SamplePolice extends TacticsPolice {
         return new ActionRest();
     }
 
-    private Action getCommandAction(AgentInfo agentInfo, WorldInfo worldInfo, ModuleManager moduleManager, MessageManager messageManager) {
+    private Action getCommandAction(AgentInfo agentInfo, WorldInfo worldInfo, MessageManager messageManager) {
         if(this.isCommandCompleted(agentInfo, worldInfo)) {
             if(this.commandType != ACTION_UNKNOWN) {
                 messageManager.addMessage(new MessageReport(true, true, false, this.commanderID));
@@ -165,7 +165,8 @@ public class SamplePolice extends TacticsPolice {
         EntityID agentID = agentInfo.getID();
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
             CommandScout command = (CommandScout) message;
-            if(command.getToID().getValue() != agentID.getValue()) {
+
+            if(command.isBroadcast() || command.getToID().getValue() != agentID.getValue()) {
                 continue;
             }
             this.commandType = ACTION_SCOUT;
@@ -180,42 +181,47 @@ public class SamplePolice extends TacticsPolice {
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
             CommandPolice command = (CommandPolice) message;
-            if(command.getToID().getValue() == agentID.getValue()) {
+            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
                 this.commandType = command.getAction();
                 this.target = command.getTargetID();
                 this.commanderID = command.getSenderID();
                 break;
             }
         }
+        EntityID position = agentInfo.getPosition();
         switch (this.commandType) {
             case ACTION_REST:
-                EntityID position = agentInfo.getPosition();
-                if (position.getValue() != this.target.getValue()) {
+                if(this.target == null) {
+                    if(worldInfo.getEntity(position).getStandardURN() == REFUGE) {
+                        return new ActionRest();
+                    }
+                    this.pathPlanning.setFrom(position);
+                    this.pathPlanning.setDestination(worldInfo.getEntityIDsOfType(REFUGE));
+                    List<EntityID> path = this.pathPlanning.calc().getResult();
+                    if(path != null && path.size() > 0) {
+                        return new ActionMove(path);
+                    }
+                }
+                else if (position.getValue() != this.target.getValue()) {
                     List<EntityID> path = this.pathPlanning.getResult(position, this.target);
-                    if(path != null) {
+                    if (path != null) {
                         return new ActionMove(path);
                     }
                 }
                 return new ActionRest();
             case ACTION_MOVE:
-                return moduleManager.getExtAction("TacticsPolice.ActionExtClear")
-                        .setTarget(this.target)
-                        .calc().getAction();
+                return this.actionExtClear.setTarget(this.target).calc().getAction();
             case ACTION_CLEAR:
-                return moduleManager.getExtAction("TacticsPolice.ActionExtClear")
-                        .setTarget(this.target)
-                        .calc().getAction();
+                return this.actionExtClear.setTarget(this.target).calc().getAction();
             case ACTION_SCOUT:
                 if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
                     return null;
                 }
-                this.pathPlanning.setFrom(agentInfo.getPosition());
+                this.pathPlanning.setFrom(position);
                 this.pathPlanning.setDestination(this.scoutTargets);
                 List<EntityID> path = this.pathPlanning.calc().getResult();
-                if(path != null) {
-                    Action action = moduleManager.getExtAction("TacticsPolice.ActionExtClear")
-                            .setTarget(path.get(path.size() - 1))
-                            .calc().getAction();
+                if(path != null && path.size() > 0) {
+                    Action action = this.actionExtClear.setTarget(path.get(path.size() - 1)).calc().getAction();
                     if(action == null) {
                         action = new ActionMove(path);
                     }
@@ -226,31 +232,41 @@ public class SamplePolice extends TacticsPolice {
     }
 
     private boolean isCommandCompleted(AgentInfo agentInfo, WorldInfo worldInfo) {
+        EntityID position = agentInfo.getPosition();
         switch (this.commandType) {
             case ACTION_REST:
-                if(worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
-                    AmbulanceTeam agent = (AmbulanceTeam) agentInfo.me();
+                PoliceForce agent = (PoliceForce) agentInfo.me();
+                if (this.target == null) {
+                    return (agent.getDamage() == 0);
+                }
+                if (worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
                     if (agent.getPosition().getValue() == this.target.getValue()) {
                         return (agent.getDamage() == 0);
                     }
                 }
                 return false;
             case ACTION_MOVE:
-                return (agentInfo.getPosition().getValue() == this.target.getValue());
+                return this.target == null || position.getValue() == this.target.getValue();
             case ACTION_CLEAR:
+                if(this.target == null) {
+                    return true;
+                }
                 StandardEntity entity = worldInfo.getEntity(this.target);
-                if(entity instanceof Road) {
-                    Road road = (Road)entity;
-                    if(road.isBlockadesDefined()) {
+                if (entity instanceof Road) {
+                    Road road = (Road) entity;
+                    if (road.isBlockadesDefined()) {
                         return road.getBlockades().isEmpty();
                     }
-                    if(agentInfo.getPosition().getValue() != this.target.getValue()) {
+                    if (position.getValue() != this.target.getValue()) {
                         return false;
                     }
+                } else {
+                    return position.getValue() == this.target.getValue();
                 }
-                return true;
             case ACTION_SCOUT:
-                this.scoutTargets.removeAll(worldInfo.getChanged().getChangedEntities());
+                if (this.scoutTargets != null) {
+                    this.scoutTargets.removeAll(worldInfo.getChanged().getChangedEntities());
+                }
                 return (this.scoutTargets == null || this.scoutTargets.isEmpty());
         }
         return true;
