@@ -11,7 +11,7 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
-import adf.component.control.ControlFire;
+import adf.component.tactics.center.TacticsFireCenter;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.FireBrigade;
 import rescuecore2.standard.entities.StandardEntity;
@@ -20,7 +20,7 @@ import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
 
-public class SampleControlFire extends ControlFire {
+public class SampleFireCenter extends TacticsFireCenter {
     private static final int ACTION_UNKNOWN = -1;
     private static final int ACTION_REST = CommandFire.ACTION_REST;
     private static final int ACTION_MOVE = CommandFire.ACTION_MOVE;
@@ -37,9 +37,9 @@ public class SampleControlFire extends ControlFire {
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         this.extinguishBuildingIDs = new ArrayList<>();
         this.commandMap = new HashMap<>();
-        this.resetTime = developData.getInteger("sample.control.SampleControlFire.resetTime", 5);
+        this.resetTime = developData.getInteger("sample.control.SampleFireCenter.resetTime", 5);
         int maxWater = scenarioInfo.getFireTankMaximum();
-        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("sample.control.SampleControlFire.refill", 7);
+        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("sample.control.SampleFireCenter.refill", 7);
         for(EntityID id : worldInfo.getEntityIDsOfType(StandardEntityURN.FIRE_BRIGADE)) {
             commandMap.put(id, new Command(0, ACTION_UNKNOWN, null));
         }

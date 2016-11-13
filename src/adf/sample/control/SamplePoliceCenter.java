@@ -12,7 +12,7 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
-import adf.component.control.ControlPolice;
+import adf.component.tactics.center.TacticsPoliceCenter;
 import rescuecore2.standard.entities.Blockade;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.StandardEntity;
@@ -21,7 +21,7 @@ import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
 
-public class SampleControlPolice extends ControlPolice {
+public class SamplePoliceCenter extends TacticsPoliceCenter {
 
     private Map<EntityID, EntityID> targetMap;
     private Set<EntityID> request;

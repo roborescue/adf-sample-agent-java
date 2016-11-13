@@ -13,7 +13,7 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.algorithm.Clustering;
-import adf.component.module.complex.HumanSelector;
+import adf.component.module.complex.HumanDetector;
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Vector2D;
 import rescuecore2.standard.entities.*;
@@ -23,7 +23,7 @@ import java.util.*;
 
 import static rescuecore2.standard.entities.StandardEntityURN.*;
 
-public class SampleVictimSelector extends HumanSelector {
+public class SampleVictimDetector extends HumanDetector {
 
     private Clustering clustering;
 
@@ -32,26 +32,26 @@ public class SampleVictimSelector extends HumanSelector {
     private int sendTime;
     private int commandInterval;
 
-    public SampleVictimSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+    public SampleVictimDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.clustering = moduleManager.getModule("SampleVictimSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.clustering = moduleManager.getModule("SampleVictimDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case PRECOMPUTED:
-                this.clustering = moduleManager.getModule("SampleVictimSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.clustering = moduleManager.getModule("SampleVictimDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case NON_PRECOMPUTE:
-                this.clustering = moduleManager.getModule("SampleVictimSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.clustering = moduleManager.getModule("SampleVictimDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
         this.result = null;
         this.sendTime = 0;
-        this.commandInterval = developData.getInteger("SampleVictimSelector.command.clear.interval", 5);
+        this.commandInterval = developData.getInteger("SampleVictimDetector.command.clear.interval", 5);
     }
 
     @Override
-    public HumanSelector updateInfo(MessageManager messageManager) {
+    public HumanDetector updateInfo(MessageManager messageManager) {
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
@@ -132,7 +132,7 @@ public class SampleVictimSelector extends HumanSelector {
     }
 
     @Override
-    public HumanSelector calc() {
+    public HumanDetector calc() {
         Human transportHuman =  this.agentInfo.someoneOnBoard();
         if(transportHuman != null) {
             this.result = transportHuman.getID();
@@ -260,7 +260,7 @@ public class SampleVictimSelector extends HumanSelector {
     }
 
     @Override
-    public HumanSelector precompute(PrecomputeData precomputeData) {
+    public HumanDetector precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
             return this;
@@ -270,7 +270,7 @@ public class SampleVictimSelector extends HumanSelector {
     }
 
     @Override
-    public HumanSelector resume(PrecomputeData precomputeData) {
+    public HumanDetector resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountResume() >= 2) {
             return this;
@@ -280,7 +280,7 @@ public class SampleVictimSelector extends HumanSelector {
     }
 
     @Override
-    public HumanSelector preparate() {
+    public HumanDetector preparate() {
         super.preparate();
         if(this.getCountPreparate() >= 2) {
             return this;

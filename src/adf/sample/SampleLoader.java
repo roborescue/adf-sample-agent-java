@@ -1,15 +1,15 @@
 package adf.sample;
 
 import adf.component.AbstractLoader;
-import adf.component.control.ControlAmbulance;
-import adf.component.control.ControlFire;
-import adf.component.control.ControlPolice;
 import adf.component.tactics.TacticsAmbulance;
 import adf.component.tactics.TacticsFire;
 import adf.component.tactics.TacticsPolice;
-import adf.sample.control.SampleControlAmbulance;
-import adf.sample.control.SampleControlFire;
-import adf.sample.control.SampleControlPolice;
+import adf.component.tactics.center.TacticsAmbulanceCenter;
+import adf.component.tactics.center.TacticsFireCenter;
+import adf.component.tactics.center.TacticsPoliceCenter;
+import adf.sample.control.SampleAmbulanceCenter;
+import adf.sample.control.SampleFireCenter;
+import adf.sample.control.SamplePoliceCenter;
 import adf.sample.tactics.SampleAmbulance;
 import adf.sample.tactics.SampleFire;
 import adf.sample.tactics.SamplePolice;
@@ -36,17 +36,17 @@ public class SampleLoader extends AbstractLoader {
     }
 
     @Override
-    public ControlAmbulance getControlAmbulance() {
-        return new SampleControlAmbulance();
+    public TacticsAmbulanceCenter getTacticsAmbulanceCenter() {
+        return new SampleAmbulanceCenter();
     }
 
     @Override
-    public ControlFire getControlFire() {
-        return new SampleControlFire();
+    public TacticsFireCenter getTacticsFireCenter() {
+        return new SampleFireCenter();
     }
 
     @Override
-    public ControlPolice getControlPolice() {
-        return new SampleControlPolice();
+    public TacticsPoliceCenter getTacticsPoliceCenter() {
+        return new SamplePoliceCenter();
     }
 }

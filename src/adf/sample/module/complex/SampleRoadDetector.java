@@ -12,7 +12,7 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.algorithm.PathPlanning;
-import adf.component.module.complex.RoadSelector;
+import adf.component.module.complex.RoadDetector;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
@@ -21,31 +21,31 @@ import java.util.List;
 
 import static rescuecore2.standard.entities.StandardEntityURN.*;
 
-public class SampleRoadSelector extends RoadSelector {
+public class SampleRoadDetector extends RoadDetector {
     private HashSet<EntityID> impassableNeighbours;
 
     private PathPlanning pathPlanning;
 
     private EntityID result;
 
-    public SampleRoadSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+    public SampleRoadDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("SampleRoadSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("SampleRoadDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("SampleRoadSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("SampleRoadDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("SampleRoadSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("SampleRoadDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
         }
         this.result = null;
     }
 
     @Override
-    public RoadSelector calc() {
+    public RoadDetector calc() {
         if(this.result == null) {
             EntityID positionID = this.agentInfo.getPosition();
             if (this.impassableNeighbours.contains(positionID)) {
@@ -69,7 +69,7 @@ public class SampleRoadSelector extends RoadSelector {
     }
 
     @Override
-    public RoadSelector precompute(PrecomputeData precomputeData) {
+    public RoadDetector precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
             return this;
@@ -79,7 +79,7 @@ public class SampleRoadSelector extends RoadSelector {
     }
 
     @Override
-    public RoadSelector resume(PrecomputeData precomputeData) {
+    public RoadDetector resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountResume() >= 2) {
             return this;
@@ -98,7 +98,7 @@ public class SampleRoadSelector extends RoadSelector {
     }
 
     @Override
-    public RoadSelector preparate() {
+    public RoadDetector preparate() {
         super.preparate();
         if(this.getCountPreparate() >= 2) {
             return this;
@@ -117,7 +117,7 @@ public class SampleRoadSelector extends RoadSelector {
     }
 
     @Override
-    public RoadSelector updateInfo(MessageManager messageManager) {
+    public RoadDetector updateInfo(MessageManager messageManager) {
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
             return this;

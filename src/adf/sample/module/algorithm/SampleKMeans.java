@@ -21,7 +21,6 @@ import java.util.*;
 //import static java.util.Comparator.comparing;
 //import static java.util.Comparator.reverseOrder;
 
-
 public class SampleKMeans extends StaticClustering {
     private static final String KEY_CLUSTER_SIZE = "sample.clustering.size";
     private static final String KEY_CLUSTER_CENTER = "sample.clustering.centers";

@@ -12,13 +12,13 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
-import adf.component.control.ControlAmbulance;
+import adf.component.tactics.center.TacticsAmbulanceCenter;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
 
-public class SampleControlAmbulance extends ControlAmbulance {
+public class SampleAmbulanceCenter extends TacticsAmbulanceCenter {
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData) {
 

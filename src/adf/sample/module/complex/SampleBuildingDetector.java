@@ -11,7 +11,7 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
-import adf.component.module.complex.BuildingSelector;
+import adf.component.module.complex.BuildingDetector;
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Vector2D;
 import rescuecore2.standard.entities.*;
@@ -19,7 +19,7 @@ import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
 
-public class SampleBuildingSelector extends BuildingSelector {
+public class SampleBuildingDetector extends BuildingDetector {
     private EntityID result;
 
     private Clustering clustering;
@@ -28,29 +28,29 @@ public class SampleBuildingSelector extends BuildingSelector {
     private int sendTime;
     private int commandInterval;
 
-    public SampleBuildingSelector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+    public SampleBuildingDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         switch  (si.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("SampleBuildingSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("SampleBuildingSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.pathPlanning = moduleManager.getModule("SampleBuildingDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("SampleBuildingDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("SampleBuildingSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("SampleBuildingSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.pathPlanning = moduleManager.getModule("SampleBuildingDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("SampleBuildingDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("SampleBuildingSelector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.clustering = moduleManager.getModule("SampleBuildingSelector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.pathPlanning = moduleManager.getModule("SampleBuildingDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.clustering = moduleManager.getModule("SampleBuildingDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
         this.sendTime = 0;
-        this.commandInterval = developData.getInteger("SampleBuildingSelector.command.clear.interval", 5);
+        this.commandInterval = developData.getInteger("SampleBuildingDetector.command.clear.interval", 5);
 
     }
 
     @Override
-    public BuildingSelector updateInfo(MessageManager messageManager) {
+    public BuildingDetector updateInfo(MessageManager messageManager) {
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
             return this;
@@ -91,7 +91,7 @@ public class SampleBuildingSelector extends BuildingSelector {
     }
 
     @Override
-    public BuildingSelector calc() {
+    public BuildingDetector calc() {
         this.result = this.calcTargetInCluster();
         if(this.result == null) {
             this.result = this.calcTargetInWorld();
@@ -185,7 +185,7 @@ public class SampleBuildingSelector extends BuildingSelector {
     }
 
     @Override
-    public BuildingSelector precompute(PrecomputeData precomputeData) {
+    public BuildingDetector precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
             return this;
@@ -196,7 +196,7 @@ public class SampleBuildingSelector extends BuildingSelector {
     }
 
     @Override
-    public BuildingSelector resume(PrecomputeData precomputeData) {
+    public BuildingDetector resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountPrecompute() >= 2) {
             return this;
@@ -207,7 +207,7 @@ public class SampleBuildingSelector extends BuildingSelector {
     }
 
     @Override
-    public BuildingSelector preparate() {
+    public BuildingDetector preparate() {
         super.preparate();
         if(this.getCountPrecompute() >= 2) {
             return this;
