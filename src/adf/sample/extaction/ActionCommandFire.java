@@ -2,6 +2,7 @@ package adf.sample.extaction;
 
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
+import adf.agent.action.fire.ActionRefill;
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.topdown.CommandFire;
 import adf.agent.communication.standard.bundle.topdown.CommandScout;
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static rescuecore2.standard.entities.StandardEntityURN.HYDRANT;
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
 public class ActionCommandFire extends ExtCommandAction{
@@ -116,13 +118,16 @@ public class ActionCommandFire extends ExtCommandAction{
         if(this.isCommandCompleted()) {
             if(this.commandType != ACTION_UNKNOWN) {
                 messageManager.addMessage(new MessageReport(true, true, false, this.commanderID));
+                this.commandType = ACTION_UNKNOWN;
+                this.target = null;
+                this.scoutTargets = null;
+                this.commanderID = null;
             }
-            this.commandType = ACTION_UNKNOWN;
         }
         EntityID agentID = agentInfo.getID();
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
             CommandScout command = (CommandScout) message;
-            if(command.getToID().getValue() == agentID.getValue()) {
+            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
                 this.commandType = ACTION_SCOUT;
                 this.commanderID = command.getSenderID();
                 this.scoutTargets = new HashSet<>();
@@ -138,7 +143,7 @@ public class ActionCommandFire extends ExtCommandAction{
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
             CommandFire command = (CommandFire) message;
-            if(command.getToID().getValue() == agentID.getValue()) {
+            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
                 this.commandType = command.getAction();
                 this.target = command.getTargetID();
                 this.commanderID = command.getSenderID();
@@ -151,12 +156,12 @@ public class ActionCommandFire extends ExtCommandAction{
     @Override
     public ExtCommandAction calc() {
         this.result = null;
+        EntityID position = this.agentInfo.getPosition();
         switch (this.commandType) {
             case ACTION_REST:
-                EntityID position = this.agentInfo.getPosition();
                 if (position.getValue() != this.target.getValue()) {
                     List<EntityID> path = this.pathPlanning.getResult(position, this.target);
-                    if(path != null) {
+                    if(path != null && path.size() > 0) {
                         this.result = new ActionMove(path);
                         return this;
                     }
@@ -170,7 +175,38 @@ public class ActionCommandFire extends ExtCommandAction{
                 this.result = this.actionFireFighting.setTarget(this.target).calc().getAction();
                 return this;
             case ACTION_REFILL:
-                this.result = this.actionFireFighting.setTarget(this.target).calc().getAction();
+                if(this.target == null) {
+                    StandardEntityURN positionURN = this.worldInfo.getEntity(position).getStandardURN();
+                    if(positionURN == REFUGE) {
+                        this.result = new ActionRefill();
+                        return this;
+                    }
+                    this.pathPlanning.setFrom(position);
+                    this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(REFUGE));
+                    List<EntityID> path = this.pathPlanning.calc().getResult();
+                    if(path != null && path.size() > 0) {
+                        this.result = new ActionMove(path);
+                        return this;
+                    }
+                    if(positionURN == HYDRANT) {
+                        this.result = new ActionRefill();
+                        return this;
+                    }
+                    this.pathPlanning.setFrom(position);
+                    this.pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(HYDRANT));
+                    path = this.pathPlanning.calc().getResult();
+                    if(path != null && path.size() > 0) {
+                        this.result = new ActionMove(path);
+                        return this;
+                    }
+                } else if (position.getValue() != this.target.getValue()) {
+                    List<EntityID> path = this.pathPlanning.getResult(position, this.target);
+                    if(path != null) {
+                        this.result = new ActionMove(path);
+                        return this;
+                    }
+                }
+                this.result = new ActionRefill();
                 return this;
             case ACTION_AUTONOMY:
                 if(this.target != null) {
@@ -178,9 +214,8 @@ public class ActionCommandFire extends ExtCommandAction{
                     if(targetEntity.getStandardURN() == REFUGE) {
                         FireBrigade agent = (FireBrigade) this.agentInfo.me();
                         if(agent.getDamage() > 0) {
-                            EntityID position1 = this.agentInfo.getPosition();
-                            if (position1.getValue() != this.target.getValue()) {
-                                List<EntityID> path = this.pathPlanning.getResult(position1, this.target);
+                            if (position.getValue() != this.target.getValue()) {
+                                List<EntityID> path = this.pathPlanning.getResult(position, this.target);
                                 if(path != null) {
                                     this.result = new ActionMove(path);
                                     return this;
@@ -201,7 +236,7 @@ public class ActionCommandFire extends ExtCommandAction{
                 if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
                     return this;
                 }
-                this.pathPlanning.setFrom(this.agentInfo.getPosition());
+                this.pathPlanning.setFrom(position);
                 this.pathPlanning.setDestination(this.scoutTargets);
                 List<EntityID> path = this.pathPlanning.calc().getResult();
                 if(path != null) {
@@ -212,26 +247,35 @@ public class ActionCommandFire extends ExtCommandAction{
     }
 
     private boolean isCommandCompleted() {
+        FireBrigade agent = (FireBrigade) this.agentInfo.me();
         switch (this.commandType) {
             case ACTION_REST:
+                if(this.target == null) {
+                    return (agent.getDamage() == 0);
+                }
                 if (this.worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
-                    FireBrigade agent = (FireBrigade) this.agentInfo.me();
                     if (agent.getPosition().getValue() == this.target.getValue()) {
                         return (agent.getDamage() == 0);
                     }
                 }
                 return false;
             case ACTION_MOVE:
-                return (this.agentInfo.getPosition().getValue() == this.target.getValue());
+                return this.target == null || (this.agentInfo.getPosition().getValue() == this.target.getValue());
             case ACTION_EXTINGUISH:
-                return (((Building) this.worldInfo.getEntity(this.target)).getFieryness() >= 4);
+                if(this.target == null) {
+                    return true;
+                }
+                Building building = (Building) this.worldInfo.getEntity(this.target);
+                if(building.isFierynessDefined()) {
+                    return building.getFieryness() >= 4;
+                }
+                return this.agentInfo.getPosition().getValue() == this.target.getValue();
             case ACTION_REFILL:
                 return (((FireBrigade)this.agentInfo.me()).getWater() == this.maxWater);
             case ACTION_AUTONOMY:
                 if(this.target != null) {
                     StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
                     if(targetEntity.getStandardURN() == REFUGE) {
-                        FireBrigade agent = (FireBrigade) this.agentInfo.me();
                         this.commandType = agent.getDamage() > 0 ? ACTION_REST : ACTION_REFILL;
                         return this.isCommandCompleted();
                     } else if (targetEntity instanceof Building) {
@@ -244,7 +288,9 @@ public class ActionCommandFire extends ExtCommandAction{
                 }
                 return true;
             case ACTION_SCOUT:
-                this.scoutTargets.removeAll(this.worldInfo.getChanged().getChangedEntities());
+                if(this.scoutTargets != null) {
+                    this.scoutTargets.removeAll(this.worldInfo.getChanged().getChangedEntities());
+                }
                 return (this.scoutTargets == null || this.scoutTargets.isEmpty());
         }
         return true;

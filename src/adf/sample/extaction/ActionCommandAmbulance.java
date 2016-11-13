@@ -125,12 +125,15 @@ public class ActionCommandAmbulance extends ExtCommandAction {
                     this.target = null;
                 } else {
                     this.type = ACTION_UNKNOWN;
+                    this.target = null;
+                    this.scoutTargets = null;
+                    this.commanderID = null;
                 }
             }
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
             CommandScout command = (CommandScout) message;
-            if(command.getToID().getValue() == agent.getID().getValue()) {
+            if(command.isToIDDefined() && command.getToID().getValue() == agent.getID().getValue()) {
                 this.type = ACTION_SCOUT;
                 this.commanderID = command.getSenderID();
                 this.scoutTargets = new HashSet<>();
@@ -146,7 +149,7 @@ public class ActionCommandAmbulance extends ExtCommandAction {
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandAmbulance.class)) {
             CommandAmbulance command = (CommandAmbulance) message;
-            if(command.getToID().getValue() == agent.getID().getValue()) {
+            if(command.isToIDDefined() && command.getToID().getValue() == agent.getID().getValue()) {
                 this.type = command.getAction();
                 this.target = command.getTargetID();
                 this.commanderID = command.getSenderID();
@@ -164,7 +167,7 @@ public class ActionCommandAmbulance extends ExtCommandAction {
                 EntityID position = this.agentInfo.getPosition();
                 if (position.getValue() != this.target.getValue()) {
                     List<EntityID> path = this.pathPlanning.getResult(position, this.target);
-                    if(path != null) {
+                    if(path != null && path.size() > 0) {
                         this.result = new ActionMove(path);
                         return this;
                     }
@@ -212,21 +215,30 @@ public class ActionCommandAmbulance extends ExtCommandAction {
     }
 
     private boolean isCommandCompleted() {
+        Human agent = (Human) this.agentInfo.me();
         switch (this.type) {
             case ACTION_REST:
+                if(this.target == null) {
+                    return (agent.getDamage() == 0);
+                }
                 if (this.worldInfo.getEntity(this.target).getStandardURN() == REFUGE) {
-                    Human agent = (Human) this.agentInfo.me();
                     if (agent.getPosition().getValue() == this.target.getValue()) {
                         return (agent.getDamage() == 0);
                     }
                 }
                 return false;
             case ACTION_MOVE:
-                return this.agentInfo.getPosition().getValue() == this.target.getValue();
+                return this.target == null || this.agentInfo.getPosition().getValue() == this.target.getValue();
             case ACTION_RESCUE:
+                if(this.target == null) {
+                    return true;
+                }
                 Human human = (Human) this.worldInfo.getEntity(this.target);
                 return human.isBuriednessDefined() && human.getBuriedness() == 0 || (human.isHPDefined() && human.getHP() == 0);
             case ACTION_LOAD:
+                if(this.target == null) {
+                    return true;
+                }
                 Human human1 = (Human) this.worldInfo.getEntity(this.target);
                 if((human1.isHPDefined() && human1.getHP() == 0)) {
                     return true;
@@ -245,10 +257,12 @@ public class ActionCommandAmbulance extends ExtCommandAction {
                 }
                 return false;
             case ACTION_UNLOAD:
-                StandardEntity entity = this.worldInfo.getEntity(this.target);
-                if (entity != null && entity instanceof Area) {
-                    if (this.target.getValue() != this.agentInfo.getPosition().getValue()) {
-                        return false;
+                if(this.target != null) {
+                    StandardEntity entity = this.worldInfo.getEntity(this.target);
+                    if (entity != null && entity instanceof Area) {
+                        if (this.target.getValue() != this.agentInfo.getPosition().getValue()) {
+                            return false;
+                        }
                     }
                 }
                 return (this.agentInfo.someoneOnBoard() == null);
@@ -269,7 +283,9 @@ public class ActionCommandAmbulance extends ExtCommandAction {
                 }
                 return true;
             case ACTION_SCOUT:
-                this.scoutTargets.removeAll(this.worldInfo.getChanged().getChangedEntities());
+                if(this.scoutTargets != null) {
+                    this.scoutTargets.removeAll(this.worldInfo.getChanged().getChangedEntities());
+                }
                 return (this.scoutTargets == null || this.scoutTargets.isEmpty());
         }
         return true;
