@@ -70,7 +70,7 @@ public class ActionCommandPolice extends ExtCommandAction {
         }
     }
 
-    public ActionCommandPolice precompute(PrecomputeData precomputeData) {
+    public ExtCommandAction precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
             return this;
@@ -81,7 +81,7 @@ public class ActionCommandPolice extends ExtCommandAction {
         return this;
     }
 
-    public ActionCommandPolice resume(PrecomputeData precomputeData) {
+    public ExtCommandAction resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountResume() >= 2) {
             return this;
@@ -92,7 +92,7 @@ public class ActionCommandPolice extends ExtCommandAction {
         return this;
     }
 
-    public ActionCommandPolice preparate() {
+    public ExtCommandAction preparate() {
         super.preparate();
         if(this.getCountPreparate() >= 2) {
             return this;
@@ -103,7 +103,7 @@ public class ActionCommandPolice extends ExtCommandAction {
         return this;
     }
 
-    public ActionCommandPolice updateInfo(MessageManager messageManager){
+    public ExtCommandAction updateInfo(MessageManager messageManager){
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
             return this;
@@ -152,7 +152,7 @@ public class ActionCommandPolice extends ExtCommandAction {
     }
 
     @Override
-    public ActionCommandPolice calc() {
+    public ExtCommandAction calc() {
         this.result = null;
         EntityID position = this.agentInfo.getPosition();
         switch (this.commandType) {

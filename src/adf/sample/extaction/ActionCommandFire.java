@@ -73,7 +73,7 @@ public class ActionCommandFire extends ExtCommandAction{
         }
     }
 
-    public ActionCommandFire precompute(PrecomputeData precomputeData) {
+    public ExtCommandAction precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
             return this;
@@ -84,7 +84,7 @@ public class ActionCommandFire extends ExtCommandAction{
         return this;
     }
 
-    public ActionCommandFire resume(PrecomputeData precomputeData) {
+    public ExtCommandAction resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountResume() >= 2) {
             return this;
@@ -95,7 +95,7 @@ public class ActionCommandFire extends ExtCommandAction{
         return this;
     }
 
-    public ActionCommandFire preparate() {
+    public ExtCommandAction preparate() {
         super.preparate();
         if(this.getCountPreparate() >= 2) {
             return this;
@@ -106,7 +106,7 @@ public class ActionCommandFire extends ExtCommandAction{
         return this;
     }
 
-    public ActionCommandFire updateInfo(MessageManager messageManager){
+    public ExtCommandAction updateInfo(MessageManager messageManager){
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
             return this;

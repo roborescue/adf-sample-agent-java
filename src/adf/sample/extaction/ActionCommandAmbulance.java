@@ -74,7 +74,7 @@ public class ActionCommandAmbulance extends ExtCommandAction {
         }
     }
 
-    public ActionCommandAmbulance precompute(PrecomputeData precomputeData) {
+    public ExtCommandAction precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
             return this;
@@ -85,7 +85,7 @@ public class ActionCommandAmbulance extends ExtCommandAction {
         return this;
     }
 
-    public ActionCommandAmbulance resume(PrecomputeData precomputeData) {
+    public ExtCommandAction resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountResume() >= 2) {
             return this;
@@ -96,7 +96,7 @@ public class ActionCommandAmbulance extends ExtCommandAction {
         return this;
     }
 
-    public ActionCommandAmbulance preparate() {
+    public ExtCommandAction preparate() {
         super.preparate();
         if(this.getCountPreparate() >= 2) {
             return this;
@@ -107,7 +107,7 @@ public class ActionCommandAmbulance extends ExtCommandAction {
         return this;
     }
 
-    public ActionCommandAmbulance updateInfo(MessageManager messageManager){
+    public ExtCommandAction updateInfo(MessageManager messageManager){
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
             return this;
@@ -160,7 +160,7 @@ public class ActionCommandAmbulance extends ExtCommandAction {
     }
 
     @Override
-    public ActionCommandAmbulance calc() {
+    public ExtCommandAction calc() {
         this.result = null;
         switch (this.type) {
             case ACTION_REST:
