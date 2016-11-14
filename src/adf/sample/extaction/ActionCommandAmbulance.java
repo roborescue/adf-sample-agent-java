@@ -58,18 +58,18 @@ public class ActionCommandAmbulance extends ExtCommandAction {
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
                 this.pathPlanning = moduleManager.getModule("ActionCommandAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionTransport = moduleManager.getExtAction("TacticsCommandAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
-                this.actionExtMove = moduleManager.getExtAction("TacticsCommandAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.actionTransport = moduleManager.getExtAction("ActionCommandAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
+                this.actionExtMove = moduleManager.getExtAction("ActionCommandAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case PRECOMPUTED:
                 this.pathPlanning = moduleManager.getModule("ActionCommandAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionTransport = moduleManager.getExtAction("TacticsCommandAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
-                this.actionExtMove = moduleManager.getExtAction("TacticsCommandAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.actionTransport = moduleManager.getExtAction("ActionCommandAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
+                this.actionExtMove = moduleManager.getExtAction("ActionCommandAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case NON_PRECOMPUTE:
                 this.pathPlanning = moduleManager.getModule("ActionCommandAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionTransport = moduleManager.getExtAction("TacticsCommandAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
-                this.actionExtMove = moduleManager.getExtAction("TacticsCommandAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.actionTransport = moduleManager.getExtAction("ActionCommandAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
+                this.actionExtMove = moduleManager.getExtAction("ActionCommandAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
         }
     }

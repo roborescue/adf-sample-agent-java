@@ -1,4 +1,4 @@
-package adf.sample.control;
+package adf.sample.tactics.center;
 
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.MessageUtil;
@@ -37,9 +37,9 @@ public class SampleFireCenter extends TacticsFireCenter {
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         this.extinguishBuildingIDs = new ArrayList<>();
         this.commandMap = new HashMap<>();
-        this.resetTime = developData.getInteger("sample.control.SampleFireCenter.resetTime", 5);
+        this.resetTime = developData.getInteger("sample.center.SampleFireCenter.resetTime", 5);
         int maxWater = scenarioInfo.getFireTankMaximum();
-        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("sample.control.SampleFireCenter.refill", 7);
+        this.thresholdCompleted = (maxWater / 10) * developData.getInteger("sample.center.SampleFireCenter.refill", 7);
         for(EntityID id : worldInfo.getEntityIDsOfType(StandardEntityURN.FIRE_BRIGADE)) {
             commandMap.put(id, new Command(0, ACTION_UNKNOWN, null));
         }

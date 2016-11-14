@@ -1,4 +1,4 @@
-package adf.sample.control;
+package adf.sample.tactics.center;
 
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.information.MessagePoliceForce;

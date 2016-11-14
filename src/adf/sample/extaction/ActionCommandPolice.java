@@ -53,19 +53,19 @@ public class ActionCommandPolice extends ExtCommandAction {
 
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionExtClear = moduleManager.getExtAction("TacticsPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
-                this.actionExtMove = moduleManager.getExtAction("TacticsPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.pathPlanning = moduleManager.getModule("ActionCommandPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.actionExtClear = moduleManager.getExtAction("ActionCommandPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.actionExtMove = moduleManager.getExtAction("ActionCommandPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionExtClear = moduleManager.getExtAction("TacticsPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
-                this.actionExtMove = moduleManager.getExtAction("TacticsPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.pathPlanning = moduleManager.getModule("ActionCommandPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.actionExtClear = moduleManager.getExtAction("ActionCommandPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.actionExtMove = moduleManager.getExtAction("ActionCommandPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("TacticsPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionExtClear = moduleManager.getExtAction("TacticsPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
-                this.actionExtMove = moduleManager.getExtAction("TacticsPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.pathPlanning = moduleManager.getModule("ActionCommandPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.actionExtClear = moduleManager.getExtAction("ActionCommandPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.actionExtMove = moduleManager.getExtAction("ActionCommandPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
         }
     }
