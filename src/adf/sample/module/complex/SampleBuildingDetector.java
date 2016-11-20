@@ -2,13 +2,16 @@ package adf.sample.module.complex;
 
 
 import adf.agent.communication.MessageManager;
-import adf.agent.communication.standard.bundle.topdown.CommandPolice;
+import adf.agent.communication.standard.bundle.MessageUtil;
+import adf.agent.communication.standard.bundle.centralized.CommandPolice;
+import adf.agent.communication.standard.bundle.information.*;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.component.communication.CommunicationMessage;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingDetector;
@@ -19,6 +22,8 @@ import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
 
+import static rescuecore2.standard.entities.StandardEntityURN.*;
+
 public class SampleBuildingDetector extends BuildingDetector {
     private EntityID result;
 
@@ -27,6 +32,16 @@ public class SampleBuildingDetector extends BuildingDetector {
 
     private int sendTime;
     private int commandInterval;
+
+    private boolean isSendBuildingMessage;
+    private Collection<EntityID> agentPositions;
+    private Map<EntityID, Integer> sentTimeMap;
+    private int receivedEntityInterval;
+    private int sentEntityInterval;
+
+    private int moveDistance;
+    private EntityID lastPosition;
+    private int positionCount;
 
     public SampleBuildingDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
@@ -45,8 +60,15 @@ public class SampleBuildingDetector extends BuildingDetector {
                 break;
         }
         this.sendTime = 0;
-        this.commandInterval = developData.getInteger("SampleBuildingDetector.command.clear.interval", 5);
+        this.commandInterval = developData.getInteger("SampleBuildingDetector.clearCommandInterval", 5);
 
+        this.isSendBuildingMessage = true;
+        this.agentPositions = new HashSet<>();
+        this.sentTimeMap = new HashMap<>();
+        this.receivedEntityInterval = developData.getInteger("SampleBuildingDetector.receivedEntityInterval", 3);
+        this.sentEntityInterval = developData.getInteger("SampleBuildingDetector.sentEntityInterval", 5);
+
+        this.moveDistance = developData.getInteger("SampleBuildingDetector.moveDistance", 40000);
     }
 
     @Override
@@ -57,6 +79,17 @@ public class SampleBuildingDetector extends BuildingDetector {
         }
         this.pathPlanning.updateInfo(messageManager);
         this.clustering.updateInfo(messageManager);
+
+        this.reflectMessage(messageManager);
+        this.checkSendFlags();
+        this.sendMessage(messageManager);
+
+        if(this.result != null) {
+            Building building = (Building)this.worldInfo.getEntity(this.result);
+            if(building.getFieryness() >= 4) {
+                messageManager.addMessage(new MessageBuilding(true, building));
+            }
+        }
 
         int currentTime = this.agentInfo.getTime();
         Human agent = (Human)this.agentInfo.me();
@@ -85,6 +118,25 @@ public class SampleBuildingDetector extends BuildingDetector {
                         }
                     }
                 }
+            }
+            if(this.lastPosition != null && this.lastPosition.getValue() == road.getID().getValue()) {
+                this.positionCount++;
+                if(this.positionCount > this.getMaxTravelTime(road)) {
+                    if ((this.sendTime + this.commandInterval) <= currentTime) {
+                        this.sendTime = currentTime;
+                        messageManager.addMessage(
+                                new CommandPolice(
+                                        true,
+                                        null,
+                                        agent.getPosition(),
+                                        CommandPolice.ACTION_CLEAR
+                                )
+                        );
+                    }
+                }
+            } else {
+                this.lastPosition = road.getID();
+                this.positionCount = 0;
             }
         }
         return this;
@@ -257,5 +309,151 @@ public class SampleBuildingDetector extends BuildingDetector {
             int d2 = this.worldInfo.getDistance(this.reference, b);
             return d1 - d2;
         }
+    }
+
+    private void reflectMessage(MessageManager messageManager) {
+        Set<EntityID> changedEntities = this.worldInfo.getChanged().getChangedEntities();
+        changedEntities.add(this.agentInfo.getID());
+        int time = this.agentInfo.getTime();
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageBuilding.class)) {
+            MessageBuilding mb = (MessageBuilding)message;
+            if(!changedEntities.contains(mb.getBuildingID())) {
+                MessageUtil.reflectMessage(this.worldInfo, mb);
+            }
+            this.sentTimeMap.put(mb.getBuildingID(), time + this.receivedEntityInterval);
+        }
+    }
+
+    private void checkSendFlags(){
+        this.isSendBuildingMessage = true;
+
+        Human agent = (Human)this.agentInfo.me();
+        EntityID agentID = agent.getID();
+        EntityID position = agent.getPosition();
+        StandardEntityURN agentURN = agent.getStandardURN();
+        EnumSet<StandardEntityURN> agentTypes = EnumSet.of(AMBULANCE_TEAM, FIRE_BRIGADE, POLICE_FORCE);
+        agentTypes.remove(agentURN);
+
+        this.agentPositions.clear();
+        for(StandardEntity entity : this.worldInfo.getEntitiesOfType(agentURN)) {
+            Human other = (Human)entity;
+            if(other.getPosition().getValue() == position.getValue()) {
+                if(other.getID().getValue() > agentID.getValue()) {
+                    this.isSendBuildingMessage = false;
+                }
+            }
+            this.agentPositions.add(other.getPosition());
+        }
+
+        for(StandardEntityURN urn : agentTypes) {
+            for(StandardEntity entity : this.worldInfo.getEntitiesOfType(urn)) {
+                Human other = (Human)entity;
+                if(other.getPosition().getValue() == position.getValue()) {
+                    if(urn == AMBULANCE_TEAM) {
+                        if(other.getID().getValue() > agentID.getValue()) {
+                            if(agentURN == POLICE_FORCE) {
+                                this.isSendBuildingMessage = false;
+                            }
+                        }
+                    } else if(urn == FIRE_BRIGADE) {
+                        this.isSendBuildingMessage = false;
+                    } else if(urn == POLICE_FORCE) {
+                        if(other.getID().getValue() > agentID.getValue()) {
+                            if (agentURN == AMBULANCE_TEAM) {
+                                this.isSendBuildingMessage = false;
+                            }
+                        }
+                    }
+                }
+                this.agentPositions.add(other.getPosition());
+            }
+        }
+    }
+
+    private void sendMessage(MessageManager messageManager) {
+        if(this.isSendBuildingMessage) {
+            Building building = null;
+            int currentTime = this.agentInfo.getTime();
+            Human agent = (Human) this.agentInfo.me();
+            for (EntityID id : this.worldInfo.getChanged().getChangedEntities()) {
+                StandardEntity entity = this.worldInfo.getEntity(id);
+                if (entity instanceof Building) {
+                    Integer time = this.sentTimeMap.get(id);
+                    if (time != null && time > currentTime) {
+                        continue;
+                    }
+                    Building target = (Building) entity;
+                    if (!this.agentPositions.contains(target.getID())) {
+                        building = this.selectBuilding(building, target);
+                    } else if (target.getID().getValue() == agent.getPosition().getValue()) {
+                        building = this.selectBuilding(building, target);
+                    }
+                }
+            }
+            if (building != null) {
+                messageManager.addMessage(new MessageBuilding(true, building));
+                this.sentTimeMap.put(building.getID(), currentTime + this.sentEntityInterval);
+            }
+        }
+    }
+
+    private Building selectBuilding(Building building1, Building building2) {
+        if(building1 != null) {
+            if(building2 != null) {
+                if(building1.isOnFire() && building2.isOnFire()) {
+                    if (building1.getFieryness() < building2.getFieryness()) {
+                        return building2;
+                    } else if (building1.getFieryness() > building2.getFieryness()) {
+                        return building1;
+                    }
+                    if(building1.isTemperatureDefined() && building2.isTemperatureDefined()) {
+                        return building1.getTemperature() < building2.getTemperature() ? building2 : building1;
+                    }
+                } else if (!building1.isOnFire() && building2.isOnFire()) {
+                    return building2;
+                }
+            }
+            return building1;
+        }
+        return building2 != null ? building2 : null;
+    }
+
+    private int getMaxTravelTime(Area area) {
+        int distance = 0;
+        List<Edge> edges = new ArrayList<>();
+        for(Edge edge : area.getEdges()) {
+            if(edge.isPassable()) {
+                edges.add(edge);
+            }
+        }
+        if(edges.size() <= 1) {
+            return Integer.MAX_VALUE;
+        }
+        for(int i = 0; i < edges.size(); i++) {
+            for(int j = 0; j < edges.size(); j++) {
+                if(i != j) {
+                    Edge edge1 = edges.get(i);
+                    double midX1 = (edge1.getStartX() + edge1.getEndX()) / 2;
+                    double midY1 = (edge1.getStartY() + edge1.getEndY()) / 2;
+                    Edge edge2 = edges.get(j);
+                    double midX2 = (edge2.getStartX() + edge2.getEndX()) / 2;
+                    double midY2 = (edge2.getStartY() + edge2.getEndY()) / 2;
+                    int d = this.getDistance(midX1, midY1, midX2, midY2);
+                    if(distance < d) {
+                        distance = d;
+                    }
+                }
+            }
+        }
+        if(distance > 0) {
+            return (distance / this.moveDistance) + ((distance % this.moveDistance) > 0 ? 1 : 0) + 1;
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private int getDistance(double fromX, double fromY, double toX, double toY) {
+        double dx = toX - fromX;
+        double dy = toY - fromY;
+        return (int)Math.hypot(dx, dy);
     }
 }

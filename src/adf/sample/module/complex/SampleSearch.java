@@ -21,13 +21,19 @@ import java.util.*;
 import static rescuecore2.standard.entities.StandardEntityURN.*;
 
 public class SampleSearch extends Search {
-
-    private EntityID result;
-
     private PathPlanning pathPlanning;
     private Clustering clustering;
 
+    private EntityID result;
     private Collection<EntityID> unsearchedBuildingIDs;
+
+    private boolean isSendBuildingMessage;
+    private boolean isSendCivilianMessage;
+    private boolean isSendRoadMessage;
+    private Collection<EntityID> agentPositions;
+    private Map<EntityID, Integer> sentTimeMap;
+    private int receivedEntityInterval;
+    private int sentEntityInterval;
 
     public SampleSearch(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
@@ -71,6 +77,14 @@ public class SampleSearch extends Search {
                 break;
         }
         this.unsearchedBuildingIDs = new HashSet<>();
+
+        this.isSendBuildingMessage = true;
+        this.isSendCivilianMessage = true;
+        this.isSendRoadMessage = true;
+        this.agentPositions = new HashSet<>();
+        this.sentTimeMap = new HashMap<>();
+        this.receivedEntityInterval = developData.getInteger("SampleSearch.receivedEntityInterval", 3);
+        this.sentEntityInterval = developData.getInteger("SampleSearch.sentEntityInterval", 5);
     }
 
     @Override
@@ -99,6 +113,7 @@ public class SampleSearch extends Search {
         this.clustering.updateInfo(messageManager);
 
         this.reflectMessage(messageManager);
+        this.checkSendFlags();
         this.sendMessage(messageManager);
 
         if(this.unsearchedBuildingIDs.isEmpty()) {
@@ -137,15 +152,13 @@ public class SampleSearch extends Search {
                 }
             }
         } else {
-            this.unsearchedBuildingIDs.addAll(
-                    this.worldInfo.getEntityIDsOfType(
-                            BUILDING,
-                            GAS_STATION,
-                            AMBULANCE_CENTRE,
-                            FIRE_STATION,
-                            POLICE_OFFICE
-                    )
-            );
+            this.unsearchedBuildingIDs.addAll(this.worldInfo.getEntityIDsOfType(
+                    BUILDING,
+                    GAS_STATION,
+                    AMBULANCE_CENTRE,
+                    FIRE_STATION,
+                    POLICE_OFFICE
+            ));
         }
     }
 
@@ -154,6 +167,7 @@ public class SampleSearch extends Search {
     private void reflectMessage(MessageManager messageManager) {
         Set<EntityID> changedEntities = this.worldInfo.getChanged().getChangedEntities();
         changedEntities.add(this.agentInfo.getID());
+        int time = this.agentInfo.getTime();
         for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
             Class<? extends CommunicationMessage> messageClass = message.getClass();
             if(messageClass == MessageBuilding.class) {
@@ -161,81 +175,285 @@ public class SampleSearch extends Search {
                 if(!changedEntities.contains(mb.getBuildingID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mb);
                 }
+                this.sentTimeMap.put(mb.getBuildingID(), time + this.receivedEntityInterval);
             } else if(messageClass == MessageRoad.class) {
                 MessageRoad mr = (MessageRoad)message;
                 if(mr.isBlockadeDefined() && !changedEntities.contains(mr.getBlockadeID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mr);
+                    this.sentTimeMap.put(mr.getBlockadeID(), time + this.receivedEntityInterval);
                 }
+                this.sentTimeMap.put(mr.getRoadID(), time + this.receivedEntityInterval);
             } else if(messageClass == MessageCivilian.class) {
                 MessageCivilian mc = (MessageCivilian) message;
                 if(!changedEntities.contains(mc.getAgentID())){
                     MessageUtil.reflectMessage(this.worldInfo, mc);
                 }
+                this.sentTimeMap.put(mc.getAgentID(), time + this.receivedEntityInterval);
             } else if(messageClass == MessageAmbulanceTeam.class) {
                 MessageAmbulanceTeam mat = (MessageAmbulanceTeam)message;
                 if(!changedEntities.contains(mat.getAgentID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mat);
                 }
+                this.sentTimeMap.put(mat.getAgentID(), time + this.receivedEntityInterval);
             } else if(messageClass == MessageFireBrigade.class) {
                 MessageFireBrigade mfb = (MessageFireBrigade) message;
                 if(!changedEntities.contains(mfb.getAgentID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mfb);
                 }
+                this.sentTimeMap.put(mfb.getAgentID(), time + this.receivedEntityInterval);
             } else if(messageClass == MessagePoliceForce.class) {
                 MessagePoliceForce mpf = (MessagePoliceForce) message;
                 if(!changedEntities.contains(mpf.getAgentID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mpf);
                 }
+                this.sentTimeMap.put(mpf.getAgentID(), time + this.receivedEntityInterval);
+            }
+        }
+    }
+
+    private void checkSendFlags(){
+        this.isSendBuildingMessage = true;
+        this.isSendCivilianMessage = true;
+        this.isSendRoadMessage = true;
+
+        Human agent = (Human)this.agentInfo.me();
+        EntityID agentID = agent.getID();
+        EntityID position = agent.getPosition();
+        StandardEntityURN agentURN = agent.getStandardURN();
+        EnumSet<StandardEntityURN> agentTypes = EnumSet.of(AMBULANCE_TEAM, FIRE_BRIGADE, POLICE_FORCE);
+        agentTypes.remove(agentURN);
+
+        this.agentPositions.clear();
+        for(StandardEntity entity : this.worldInfo.getEntitiesOfType(agentURN)) {
+            Human other = (Human)entity;
+            if(other.getPosition().getValue() == position.getValue()) {
+                if(other.getID().getValue() > agentID.getValue()) {
+                    this.isSendBuildingMessage = false;
+                    this.isSendCivilianMessage = false;
+                    this.isSendRoadMessage = false;
+                }
+            }
+            this.agentPositions.add(other.getPosition());
+        }
+
+        for(StandardEntityURN urn : agentTypes) {
+            for(StandardEntity entity : this.worldInfo.getEntitiesOfType(urn)) {
+                Human other = (Human)entity;
+                if(other.getPosition().getValue() == position.getValue()) {
+                    if(urn == AMBULANCE_TEAM) {
+                        this.isSendCivilianMessage = false;
+                        if(other.getID().getValue() > agentID.getValue()) {
+                            if (agentURN == FIRE_BRIGADE) {
+                                this.isSendRoadMessage = false;
+                            } else if(agentURN == POLICE_FORCE) {
+                                this.isSendBuildingMessage = false;
+                            }
+                        }
+                    } else if(urn == FIRE_BRIGADE) {
+                        this.isSendBuildingMessage = false;
+                        if(other.getID().getValue() > agentID.getValue()) {
+                            if (agentURN == AMBULANCE_TEAM) {
+                                this.isSendRoadMessage = false;
+                            } else if(agentURN == POLICE_FORCE) {
+                                this.isSendCivilianMessage = false;
+                            }
+                        }
+                    } else if(urn == POLICE_FORCE) {
+                        this.isSendRoadMessage = false;
+                        if(other.getID().getValue() > agentID.getValue()) {
+                            if (agentURN == AMBULANCE_TEAM) {
+                                this.isSendBuildingMessage = false;
+                            } else if(agentURN == FIRE_BRIGADE) {
+                                this.isSendCivilianMessage = false;
+                            }
+                        }
+                    }
+                }
+                this.agentPositions.add(other.getPosition());
             }
         }
     }
 
     private void sendMessage(MessageManager messageManager) {
+        Building building = null;
+        Civilian civilian = null;
+        Road road = null;
+
+        int currentTime = this.agentInfo.getTime();
+        Human agent = (Human) this.agentInfo.me();
         for(EntityID id : this.worldInfo.getChanged().getChangedEntities()) {
+            Integer time = this.sentTimeMap.get(id);
+            if(time != null && time > currentTime) {
+                continue;
+            }
             StandardEntity entity = this.worldInfo.getEntity(id);
-            if(entity instanceof Building) {
-                Building building = (Building)entity;
-                if(building.isFierynessDefined() && building.isOnFire()) {
-                    messageManager.addMessage(new MessageBuilding(true, building));
+            if(entity instanceof Building && this.isSendBuildingMessage) {
+                Building target = (Building) entity;
+                if(!this.agentPositions.contains(target.getID())) {
+                    building = this.selectBuilding(building, target);
+                } else if(target.getID().getValue() == agent.getPosition().getValue()) {
+                    building = this.selectBuilding(building, target);
                 }
-            } else if(entity instanceof Road) {
-                Road road = (Road)entity;
-                List<EntityID> blockades = road.getBlockades();
-                if(blockades == null || blockades.isEmpty()) {
-                    messageManager.addMessage(new MessageRoad(true, road, null, true));
+            } else if(entity instanceof Road && this.isSendRoadMessage) {
+                Road target = (Road) entity;
+                if(!this.agentPositions.contains(target.getID())) {
+                    road = this.selectRoad(road, target);
+                } else if(target.getID().getValue() == agent.getPosition().getValue()) {
+                    road = this.selectRoad(road, target);
                 }
-            } else if(entity.getStandardURN() == CIVILIAN) {
-                Civilian civilian = (Civilian)entity;
-                if(this.needSend(civilian)) {
-                    messageManager.addMessage(new MessageCivilian(true, civilian));
+            } else if(entity.getStandardURN() == CIVILIAN && this.isSendCivilianMessage) {
+                Civilian target = (Civilian) entity;
+                if(!this.agentPositions.contains(target.getPosition())) {
+                    civilian = this.selectCivilian(civilian, target);
+                } else if(target.getPosition().getValue() == agent.getPosition().getValue()) {
+                    civilian = this.selectCivilian(civilian, target);
                 }
-            } else if(entity.getStandardURN() == BLOCKADE) {
-                Blockade blockade = (Blockade)entity;
-                Road road = (Road)this.worldInfo.getEntity(blockade.getPosition());
-                StandardEntity rollbackEntity = this.worldInfo.getEntity(-1, id);
-                if(rollbackEntity == null) {
-                    messageManager.addMessage(new MessageRoad(true, road, blockade, false));
-                } else {
-                    Blockade rollbackBlockade = (Blockade) rollbackEntity;
-                    if(blockade.isRepairCostDefined() && rollbackBlockade.isRepairCostDefined()) {
-                        if (blockade.getRepairCost() != rollbackBlockade.getRepairCost()) {
-                            messageManager.addMessage(new MessageRoad(true, road, blockade, false));
-                        }
+            } else if(entity.getStandardURN() == BLOCKADE && this.isSendRoadMessage) {
+                Blockade blockade = (Blockade) entity;
+                if(blockade.isPositionDefined()) {
+                    Road target = (Road) this.worldInfo.getEntity(blockade.getPosition());
+                    if (!this.agentPositions.contains(target.getID())) {
+                        road = this.selectRoad(road, target);
+                    } else if (target.getID().getValue() == agent.getPosition().getValue()) {
+                        road = this.selectRoad(road, target);
                     }
                 }
             }
         }
+
+        if(this.isSendBuildingMessage && building != null) {
+            messageManager.addMessage(new MessageBuilding(true, building));
+            this.sentTimeMap.put(building.getID(), currentTime + this.sentEntityInterval);
+        }
+        if(this.isSendCivilianMessage && civilian != null) {
+            messageManager.addMessage(new MessageCivilian(true, civilian));
+            this.sentTimeMap.put(civilian.getID(), currentTime + this.sentEntityInterval);
+        }
+        if(this.isSendRoadMessage && road != null) {
+            if(road.isBlockadesDefined() && road.getBlockades().size() > 0) {
+                Blockade blockade = (Blockade) this.worldInfo.getEntity(road.getBlockades().get(0));
+                messageManager.addMessage(new MessageRoad(true, road, blockade, false));
+                this.sentTimeMap.put(road.getID(), currentTime + this.sentEntityInterval);
+            }
+        }
     }
 
-    private boolean needSend(Civilian civilian) {
-        if(civilian.isBuriednessDefined() && civilian.getBuriedness() > 0) {
-            return true;
+    private Building selectBuilding(Building building1, Building building2) {
+        if(building1 != null) {
+            if(building2 != null) {
+                if(building1.isOnFire() && building2.isOnFire()) {
+                    if (building1.getFieryness() < building2.getFieryness()) {
+                        return building2;
+                    } else if (building1.getFieryness() > building2.getFieryness()) {
+                        return building1;
+                    }
+                    if(building1.isTemperatureDefined() && building2.isTemperatureDefined()) {
+                        return building1.getTemperature() < building2.getTemperature() ? building2 : building1;
+                    }
+                } else if (!building1.isOnFire() && building2.isOnFire()) {
+                    return building2;
+                }
+            }
+            return building1;
         }
-        else if(civilian.isDamageDefined() && civilian.getDamage() > 0
-                && civilian.isPositionDefined() && this.worldInfo.getEntity(civilian.getPosition()) instanceof Road){
+        return building2 != null ? building2 : null;
+    }
+
+    private Civilian selectCivilian(Civilian civilian1, Civilian civilian2) {
+        if(this.checkCivilian(civilian1, true)) {
+            if(this.checkCivilian(civilian2, true)) {
+                if(civilian1.getHP() > civilian2.getHP()) {
+                    return civilian1;
+                } else if(civilian1.getHP() < civilian2.getHP()) {
+                    return civilian2;
+                }else {
+                    if(civilian1.isBuriednessDefined() && civilian2.isBuriednessDefined()) {
+                        if(civilian1.getBuriedness() > 0 && civilian2.getBuriedness() == 0) {
+                            return civilian1;
+                        }else if(civilian1.getBuriedness() == 0 && civilian2.getBuriedness() > 0) {
+                            return civilian2;
+                        } else {
+                            if (civilian1.getBuriedness() < civilian2.getBuriedness()) {
+                                return civilian1;
+                            } else if (civilian1.getBuriedness() > civilian2.getBuriedness()) {
+                                return civilian2;
+                            }
+                        }
+                    }
+                    if(civilian1.isDamageDefined() && civilian2.isDamageDefined()) {
+                        if(civilian1.getDamage() < civilian2.getDamage()) {
+                            return civilian1;
+                        } else if(civilian1.getDamage() > civilian2.getDamage()) {
+                            return civilian2;
+                        }
+                    }
+                }
+            }
+            return civilian1;
+        }
+        if(this.checkCivilian(civilian2, true)) {
+            return civilian2;
+        } else if(this.checkCivilian(civilian1, false)) {
+            return civilian1;
+        } else if(this.checkCivilian(civilian2, false)) {
+            return civilian2;
+        }
+        return null;
+    }
+
+    private boolean checkCivilian(Civilian c, boolean checkOtherValues) {
+        if(c != null && c.isHPDefined() && c.isPositionDefined()) {
+            if(checkOtherValues && (!c.isDamageDefined() && !c.isBuriednessDefined())) {
+                return false;
+            }
             return true;
         }
         return false;
+    }
+
+    private Road selectRoad(Road road1, Road road2) {
+        if(road1 != null && road1.isBlockadesDefined()) {
+            if(road2 != null && road2.isBlockadesDefined()) {
+                if(road1.getID().getValue() == road2.getID().getValue()) {
+                    return road1;
+                }
+                int cost1 = this.getRepairCost(road1);
+                int cost2 = this.getRepairCost(road2);
+                if(cost1 > cost2) {
+                    return road1;
+                } else if(cost1 < cost2) {
+                    return road2;
+                } else {
+                    if((cost1 + cost2) > 0) {
+                        if (road1.getNeighbours().size() > road2.getNeighbours().size()) {
+                            return road1;
+                        } else if (road1.getNeighbours().size() < road2.getNeighbours().size()) {
+                            return road2;
+                        }
+                    }
+                }
+            }
+            if(road1.getBlockades().size() > 0) {
+                return road1;
+            }
+        }
+        if(road2 != null && road2.isBlockadesDefined() && road2.getBlockades().size() > 0) {
+            return road2;
+        }
+        return null;
+    }
+
+    private int getRepairCost(Road road) {
+        int cost = 0;
+        if(road.isBlockadesDefined()) {
+            for(EntityID id : road.getBlockades()) {
+                Blockade blockade = (Blockade) this.worldInfo.getEntity(id);
+                if(blockade.isRepairCostDefined()) {
+                    cost += blockade.getRepairCost();
+                }
+            }
+        }
+        return cost;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

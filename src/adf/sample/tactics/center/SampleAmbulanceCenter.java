@@ -4,7 +4,7 @@ import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.MessageUtil;
 import adf.agent.communication.standard.bundle.information.MessageAmbulanceTeam;
 import adf.agent.communication.standard.bundle.information.MessageCivilian;
-import adf.agent.communication.standard.bundle.topdown.CommandAmbulance;
+import adf.agent.communication.standard.bundle.centralized.CommandAmbulance;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;

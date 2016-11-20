@@ -3,7 +3,7 @@ package adf.sample.tactics.center;
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.MessageUtil;
 import adf.agent.communication.standard.bundle.information.MessageFireBrigade;
-import adf.agent.communication.standard.bundle.topdown.CommandFire;
+import adf.agent.communication.standard.bundle.centralized.CommandFire;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;

@@ -1,5 +1,4 @@
 {
-
 "ActionFireFighting.refill.completed":10,
 "ActionFireFighting.refill.request":1,
 "ActionFireFighting.rest":100,
@@ -7,6 +6,12 @@
 "ActionExtClear.rest":100,
 "ActionTransport.rest":100,
 "ActionExtMove.rest":100,
-"SampleBuildingSelector.command.clear.interval":5,
-"SampleVictimSelector.command.clear.interval":5
+"SampleBuildingSelector.clearCommandInterval":5,
+"SampleBuildingDetector.receivedEntityInterval":3,
+"SampleBuildingDetector.sentEntityInterval":5,
+"SampleBuildingDetector.moveDistance":40000,
+"SampleVictimDetector.clearCommandInterval":5,
+"SampleVictimDetector.receivedEntityInterval":3,
+"SampleVictimDetector.sentEntityInterval":5,
+"SampleVictimDetector.moveDistance":40000
 }
