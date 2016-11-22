@@ -348,7 +348,7 @@ public class SampleSearch extends Search {
                         return building1;
                     }
                     if(building1.isTemperatureDefined() && building2.isTemperatureDefined()) {
-                        return building1.getTemperature() < building2.getTemperature() ? building2 : building1;
+                        return (building1.getTemperature() < building2.getTemperature()) ? building2 : building1;
                     }
                 } else if (!building1.isOnFire() && building2.isOnFire()) {
                     return building2;
@@ -356,7 +356,7 @@ public class SampleSearch extends Search {
             }
             return building1;
         }
-        return building2 != null ? building2 : null;
+        return (building2 != null) ? building2 : null;
     }
 
     private Civilian selectCivilian(Civilian civilian1, Civilian civilian2) {
@@ -367,25 +367,31 @@ public class SampleSearch extends Search {
                 } else if(civilian1.getHP() < civilian2.getHP()) {
                     return civilian2;
                 }else {
-                    if(civilian1.isBuriednessDefined() && civilian2.isBuriednessDefined()) {
-                        if(civilian1.getBuriedness() > 0 && civilian2.getBuriedness() == 0) {
-                            return civilian1;
-                        }else if(civilian1.getBuriedness() == 0 && civilian2.getBuriedness() > 0) {
-                            return civilian2;
-                        } else {
+                    if(civilian1.isBuriednessDefined()) {
+                        if(civilian2.isBuriednessDefined()) {
                             if (civilian1.getBuriedness() < civilian2.getBuriedness()) {
                                 return civilian1;
                             } else if (civilian1.getBuriedness() > civilian2.getBuriedness()) {
                                 return civilian2;
                             }
-                        }
-                    }
-                    if(civilian1.isDamageDefined() && civilian2.isDamageDefined()) {
-                        if(civilian1.getDamage() < civilian2.getDamage()) {
+                        } else {
                             return civilian1;
-                        } else if(civilian1.getDamage() > civilian2.getDamage()) {
-                            return civilian2;
                         }
+                    } else if(civilian2.isBuriednessDefined()) {
+                        return civilian2;
+                    }
+                    if(civilian1.isDamageDefined()) {
+                        if(civilian2.isDamageDefined()) {
+                            if(civilian1.getDamage() < civilian2.getDamage()) {
+                                return civilian1;
+                            } else if(civilian1.getDamage() > civilian2.getDamage()) {
+                                return civilian2;
+                            }
+                        } else {
+                            return civilian1;
+                        }
+                    } else if(civilian2.isDamageDefined()) {
+                        return civilian2;
                     }
                 }
             }
@@ -423,7 +429,7 @@ public class SampleSearch extends Search {
                     return road1;
                 } else if(cost1 < cost2) {
                     return road2;
-                } else {
+                } else { // cost1 == cost2
                     if((cost1 + cost2) > 0) {
                         if (road1.getNeighbours().size() > road2.getNeighbours().size()) {
                             return road1;
