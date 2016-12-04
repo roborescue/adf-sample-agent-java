@@ -12,16 +12,15 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
-import adf.component.tactics.center.TacticsAmbulanceCenter;
+import adf.component.tactics.center.TacticsAmbulanceCentre;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
 
-public class SampleAmbulanceCenter extends TacticsAmbulanceCenter {
+public class SampleTacticsAmbulanceCentre extends TacticsAmbulanceCentre {
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData) {
-
     }
 
     @Override

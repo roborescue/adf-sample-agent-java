@@ -6,6 +6,7 @@ import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.centralized.CommandPolice;
 import adf.agent.communication.standard.bundle.centralized.CommandScout;
+import adf.agent.communication.standard.bundle.centralized.MessageCommand;
 import adf.agent.communication.standard.bundle.centralized.MessageReport;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
@@ -13,9 +14,8 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.communication.CommunicationMessage;
+import adf.component.extaction.CommandExecutor;
 import adf.component.extaction.ExtAction;
-import adf.component.extaction.ExtCommandAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.AbstractEntity;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import static rescuecore2.standard.entities.StandardEntityURN.BLOCKADE;
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
-public class ActionCommandPolice extends ExtCommandAction {
+public class CommandExecutorPolice extends CommandExecutor {
     private static final int ACTION_UNKNOWN = -1;
     private static final int ACTION_REST = CommandPolice.ACTION_REST;
     private static final int ACTION_MOVE = CommandPolice.ACTION_MOVE;
@@ -47,30 +47,63 @@ public class ActionCommandPolice extends ExtCommandAction {
     private ExtAction actionExtClear;
     private ExtAction actionExtMove;
 
-    public ActionCommandPolice(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+    public CommandExecutorPolice(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         this.commandType = ACTION_UNKNOWN;
 
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("ActionCommandPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionExtClear = moduleManager.getExtAction("ActionCommandPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
-                this.actionExtMove = moduleManager.getExtAction("ActionCommandPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.pathPlanning = moduleManager.getModule("CommandExecutorPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.actionExtClear = moduleManager.getExtAction("CommandExecutorPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.actionExtMove = moduleManager.getExtAction("CommandExecutorPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("ActionCommandPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionExtClear = moduleManager.getExtAction("ActionCommandPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
-                this.actionExtMove = moduleManager.getExtAction("ActionCommandPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.pathPlanning = moduleManager.getModule("CommandExecutorPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.actionExtClear = moduleManager.getExtAction("CommandExecutorPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.actionExtMove = moduleManager.getExtAction("CommandExecutorPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("ActionCommandPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionExtClear = moduleManager.getExtAction("ActionCommandPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
-                this.actionExtMove = moduleManager.getExtAction("ActionCommandPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.pathPlanning = moduleManager.getModule("CommandExecutorPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.actionExtClear = moduleManager.getExtAction("CommandExecutorPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.actionExtMove = moduleManager.getExtAction("CommandExecutorPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 break;
         }
     }
 
-    public ExtCommandAction precompute(PrecomputeData precomputeData) {
+    @Override
+    public CommandExecutor setCommand(MessageCommand command) {
+        EntityID agentID = this.agentInfo.getID();
+        Class<? extends MessageCommand> commandClass = command.getClass();
+        if(commandClass == CommandScout.class) {
+            CommandScout commandScout = (CommandScout) command;
+            if(commandScout.isToIDDefined() && (commandScout.getToID().getValue() == agentID.getValue())) {
+                EntityID target = commandScout.getTargetID();
+                if(target == null) {
+                    target = this.agentInfo.getPosition();
+                }
+                this.commandType = ACTION_SCOUT;
+                this.commanderID = commandScout.getSenderID();
+                this.scoutTargets = new HashSet<>();
+                this.scoutTargets.addAll(
+                        worldInfo.getObjectsInRange(target, commandScout.getRange())
+                                .stream()
+                                .filter(e -> e instanceof Area && e.getStandardURN() != REFUGE)
+                                .map(AbstractEntity::getID)
+                                .collect(Collectors.toList())
+                );
+            }
+        } else if(commandClass == CommandPolice.class) {
+            CommandPolice commandAmbulance = (CommandPolice) command;
+            if(commandAmbulance.isToIDDefined() && commandAmbulance.getToID().getValue() == agentID.getValue()) {
+                this.commandType = commandAmbulance.getAction();
+                this.target = commandAmbulance.getTargetID();
+                this.commanderID = commandAmbulance.getSenderID();
+            }
+        }
+        return this;
+    }
+
+    public CommandExecutor precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
             return this;
@@ -81,7 +114,7 @@ public class ActionCommandPolice extends ExtCommandAction {
         return this;
     }
 
-    public ExtCommandAction resume(PrecomputeData precomputeData) {
+    public CommandExecutor resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountResume() >= 2) {
             return this;
@@ -92,7 +125,7 @@ public class ActionCommandPolice extends ExtCommandAction {
         return this;
     }
 
-    public ExtCommandAction preparate() {
+    public CommandExecutor preparate() {
         super.preparate();
         if(this.getCountPreparate() >= 2) {
             return this;
@@ -103,7 +136,7 @@ public class ActionCommandPolice extends ExtCommandAction {
         return this;
     }
 
-    public ExtCommandAction updateInfo(MessageManager messageManager){
+    public CommandExecutor updateInfo(MessageManager messageManager){
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
             return this;
@@ -121,38 +154,11 @@ public class ActionCommandPolice extends ExtCommandAction {
                 this.commanderID = null;
             }
         }
-        EntityID agentID = this.agentInfo.getID();
-        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
-            CommandScout command = (CommandScout) message;
-            if(command.isToIDDefined() && command.getToID().getValue() != agentID.getValue()) {
-                continue;
-            }
-            this.commandType = ACTION_SCOUT;
-            this.commanderID = command.getSenderID();
-            this.scoutTargets = new HashSet<>();
-            this.scoutTargets.addAll(
-                    worldInfo.getObjectsInRange(command.getTargetID(), command.getRange())
-                            .stream()
-                            .filter(e -> e instanceof Area && e.getStandardURN() != REFUGE)
-                            .map(AbstractEntity::getID)
-                            .collect(Collectors.toList())
-            );
-            break;
-        }
-        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
-            CommandPolice command = (CommandPolice) message;
-            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
-                this.commandType = command.getAction();
-                this.target = command.getTargetID();
-                this.commanderID = command.getSenderID();
-                break;
-            }
-        }
         return this;
     }
 
     @Override
-    public ExtCommandAction calc() {
+    public CommandExecutor calc() {
         this.result = null;
         EntityID position = this.agentInfo.getPosition();
         switch (this.commandType) {

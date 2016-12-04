@@ -5,6 +5,9 @@ import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.action.police.ActionClear;
 import adf.agent.communication.MessageManager;
+import adf.agent.communication.standard.bundle.centralized.CommandPolice;
+import adf.agent.communication.standard.bundle.centralized.CommandScout;
+import adf.agent.communication.standard.bundle.centralized.MessageCommand;
 import adf.agent.communication.standard.bundle.information.MessagePoliceForce;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
@@ -12,17 +15,18 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.component.communication.CommunicationMessage;
+import adf.component.extaction.CommandExecutor;
 import adf.component.extaction.ExtAction;
-import adf.component.extaction.ExtCommandAction;
 import adf.component.module.complex.RoadDetector;
 import adf.component.module.complex.Search;
-import adf.component.tactics.TacticsPolice;
+import adf.component.tactics.TacticsPoliceForce;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
 
-public class SamplePolice extends TacticsPolice {
+public class SampleTacticsPoliceForce extends TacticsPoliceForce {
     private int clearDistance;
 
     private RoadDetector roadDetector;
@@ -30,7 +34,7 @@ public class SamplePolice extends TacticsPolice {
 
     private ExtAction actionExtClear;
     private ExtAction actionExtMove;
-    private ExtCommandAction actionCommandPolice;
+    private CommandExecutor actionCommandPolice;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -46,25 +50,25 @@ public class SamplePolice extends TacticsPolice {
         // init Algorithm Module & ExtAction
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
-                this.roadDetector = moduleManager.getModule("TacticsPolice.RoadDetector", "adf.sample.module.complex.SampleRoadDetector");
-                this.actionExtClear = moduleManager.getExtAction("TacticsPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
-                this.actionExtMove = moduleManager.getExtAction("TacticsPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandPolice = moduleManager.getExtAction("TacticsPolice.ActionCommandPolice", "adf.sample.extaction.ActionCommandPolice");
+                this.search = moduleManager.getModule("TacticsPoliceForce.Search", "adf.sample.module.complex.SampleSearch");
+                this.roadDetector = moduleManager.getModule("TacticsPoliceForce.RoadDetector", "adf.sample.module.complex.SampleRoadDetector");
+                this.actionExtClear = moduleManager.getExtAction("TacticsPoliceForce.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.actionExtMove = moduleManager.getExtAction("TacticsPoliceForce.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.actionCommandPolice = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorPolice", "adf.sample.extaction.CommandExecutorPolice");
                 break;
             case PRECOMPUTED:
-                this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
-                this.roadDetector = moduleManager.getModule("TacticsPolice.RoadDetector", "adf.sample.module.complex.SampleRoadDetector");
-                this.actionExtClear = moduleManager.getExtAction("TacticsPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
-                this.actionExtMove = moduleManager.getExtAction("TacticsPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandPolice = moduleManager.getExtAction("TacticsPolice.ActionCommandPolice", "adf.sample.extaction.ActionCommandPolice");
+                this.search = moduleManager.getModule("TacticsPoliceForce.Search", "adf.sample.module.complex.SampleSearch");
+                this.roadDetector = moduleManager.getModule("TacticsPoliceForce.RoadDetector", "adf.sample.module.complex.SampleRoadDetector");
+                this.actionExtClear = moduleManager.getExtAction("TacticsPoliceForce.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.actionExtMove = moduleManager.getExtAction("TacticsPoliceForce.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.actionCommandPolice = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorPolice", "adf.sample.extaction.CommandExecutorPolice");
                 break;
             case NON_PRECOMPUTE:
-                this.search = moduleManager.getModule("TacticsPolice.Search", "adf.sample.module.complex.SampleSearch");
-                this.roadDetector = moduleManager.getModule("TacticsPolice.RoadDetector", "adf.sample.module.complex.SampleRoadDetector");
-                this.actionExtClear = moduleManager.getExtAction("TacticsPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
-                this.actionExtMove = moduleManager.getExtAction("TacticsPolice.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandPolice = moduleManager.getExtAction("TacticsPolice.ActionCommandPolice", "adf.sample.extaction.ActionCommandPolice");
+                this.search = moduleManager.getModule("TacticsPoliceForce.Search", "adf.sample.module.complex.SampleSearch");
+                this.roadDetector = moduleManager.getModule("TacticsPoliceForce.RoadDetector", "adf.sample.module.complex.SampleRoadDetector");
+                this.actionExtClear = moduleManager.getExtAction("TacticsPoliceForce.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.actionExtMove = moduleManager.getExtAction("TacticsPoliceForce.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.actionCommandPolice = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorPolice", "adf.sample.extaction.CommandExecutorPolice");
                 break;
         }
     }
@@ -106,14 +110,17 @@ public class SamplePolice extends TacticsPolice {
 
         PoliceForce agent = (PoliceForce) agentInfo.me();
         // command
-        Action action = this.actionCommandPolice.calc().getAction();
-        if(action != null) {
-            this.sendActionMessage(worldInfo, messageManager, agent, action);
-            return action;
+        MessageCommand command = this.getCommand(agentInfo, messageManager);
+        if(command != null) {
+            Action action = this.actionCommandPolice.setCommand(command).calc().getAction();
+            if (action != null) {
+                this.sendActionMessage(worldInfo, messageManager, agent, action);
+                return action;
+            }
         }
         // autonomous
         EntityID target = this.roadDetector.calc().getTarget();
-        action = this.actionExtClear.setTarget(target).calc().getAction();
+        Action action = this.actionExtClear.setTarget(target).calc().getAction();
         if(action != null) {
             this.sendActionMessage(worldInfo, messageManager, agent, action);
             return action;
@@ -161,5 +168,25 @@ public class SamplePolice extends TacticsPolice {
         if(actionIndex != -1) {
             messageManager.addMessage(new MessagePoliceForce(true, policeForce, actionIndex, target));
         }
+    }
+
+    private MessageCommand getCommand(AgentInfo agentInfo, MessageManager messageManager) {
+        MessageCommand result = null;
+        EntityID agentID = agentInfo.getID();
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
+            CommandScout command = (CommandScout) message;
+            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
+                result = command;
+                break;
+            }
+        }
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
+            CommandPolice command = (CommandPolice) message;
+            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
+                result = command;
+                break;
+            }
+        }
+        return result;
     }
 }

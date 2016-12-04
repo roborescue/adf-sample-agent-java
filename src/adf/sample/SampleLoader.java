@@ -1,18 +1,18 @@
 package adf.sample;
 
 import adf.component.AbstractLoader;
-import adf.component.tactics.TacticsAmbulance;
-import adf.component.tactics.TacticsFire;
-import adf.component.tactics.TacticsPolice;
-import adf.component.tactics.center.TacticsAmbulanceCenter;
-import adf.component.tactics.center.TacticsFireCenter;
-import adf.component.tactics.center.TacticsPoliceCenter;
-import adf.sample.tactics.center.SampleAmbulanceCenter;
-import adf.sample.tactics.center.SampleFireCenter;
-import adf.sample.tactics.center.SamplePoliceCenter;
-import adf.sample.tactics.SampleAmbulance;
-import adf.sample.tactics.SampleFire;
-import adf.sample.tactics.SamplePolice;
+import adf.component.tactics.TacticsAmbulanceTeam;
+import adf.component.tactics.TacticsFireBrigade;
+import adf.component.tactics.TacticsPoliceForce;
+import adf.component.tactics.center.TacticsAmbulanceCentre;
+import adf.component.tactics.center.TacticsFireStation;
+import adf.component.tactics.center.TacticsPoliceOffice;
+import adf.sample.tactics.center.SampleTacticsAmbulanceCentre;
+import adf.sample.tactics.center.SampleTacticsFireStation;
+import adf.sample.tactics.center.SampleTacticsPoliceOffice;
+import adf.sample.tactics.SampleTacticsAmbulanceTeam;
+import adf.sample.tactics.SampleTacticsFireBrigade;
+import adf.sample.tactics.SampleTacticsPoliceForce;
 
 public class SampleLoader extends AbstractLoader {
     @Override
@@ -21,32 +21,32 @@ public class SampleLoader extends AbstractLoader {
     }
 
     @Override
-    public TacticsAmbulance getTacticsAmbulance() {
-        return new SampleAmbulance();
+    public TacticsAmbulanceTeam getTacticsAmbulanceTeam() {
+        return new SampleTacticsAmbulanceTeam();
     }
 
     @Override
-    public TacticsFire getTacticsFire() {
-        return new SampleFire();
+    public TacticsFireBrigade getTacticsFireBrigade() {
+        return new SampleTacticsFireBrigade();
     }
 
     @Override
-    public TacticsPolice getTacticsPolice() {
-        return new SamplePolice();
+    public TacticsPoliceForce getTacticsPoliceForce() {
+        return new SampleTacticsPoliceForce();
     }
 
     @Override
-    public TacticsAmbulanceCenter getTacticsAmbulanceCenter() {
-        return new SampleAmbulanceCenter();
+    public TacticsAmbulanceCentre getTacticsAmbulanceCentre() {
+        return new SampleTacticsAmbulanceCentre();
     }
 
     @Override
-    public TacticsFireCenter getTacticsFireCenter() {
-        return new SampleFireCenter();
+    public TacticsFireStation getTacticsFireStation() {
+        return new SampleTacticsFireStation();
     }
 
     @Override
-    public TacticsPoliceCenter getTacticsPoliceCenter() {
-        return new SamplePoliceCenter();
+    public TacticsPoliceOffice getTacticsPoliceOffice() {
+        return new SampleTacticsPoliceOffice();
     }
 }

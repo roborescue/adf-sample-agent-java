@@ -25,11 +25,11 @@ public class ActionExtMove extends ExtAction {
     private int thresholdRest;
     private int kernelTime;
 
-    private List<EntityID> searchTargets;
+    private EntityID target;
 
     public ActionExtMove(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
-        this.searchTargets = new ArrayList<>();
+        this.target = null;
         this.thresholdRest = developData.getInteger("ActionExtMove.rest", 100);
         this.kernelTime = scenarioInfo.getKernelTimesteps();
 
@@ -46,6 +46,7 @@ public class ActionExtMove extends ExtAction {
         }
     }
 
+    @Override
     public ExtAction precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
@@ -55,6 +56,7 @@ public class ActionExtMove extends ExtAction {
         return this;
     }
 
+    @Override
     public ExtAction resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountResume() >= 2) {
@@ -64,6 +66,7 @@ public class ActionExtMove extends ExtAction {
         return this;
     }
 
+    @Override
     public ExtAction preparate() {
         super.preparate();
         if(this.getCountPreparate() >= 2) {
@@ -73,6 +76,7 @@ public class ActionExtMove extends ExtAction {
         return this;
     }
 
+    @Override
     public ExtAction updateInfo(MessageManager messageManager){
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
@@ -83,20 +87,17 @@ public class ActionExtMove extends ExtAction {
     }
 
     @Override
-    public ExtAction setTarget(EntityID... targets) {
-        this.searchTargets.clear();
-        if(targets == null) {
-            return this;
-        }
-        for(EntityID entityID : targets) {
-            StandardEntity entity = this.worldInfo.getEntity(entityID);
-            if(entity.getStandardURN().equals(StandardEntityURN.BLOCKADE)) {
-                entity = this.worldInfo.getEntity(((Blockade)entity).getPosition());
-            } else if(entity instanceof Human) {
-                entity = this.worldInfo.getPosition((Human)entity);
+    public ExtAction setTarget(EntityID target) {
+        this.target = null;
+        StandardEntity entity = this.worldInfo.getEntity(target);
+        if(entity != null) {
+            if (entity.getStandardURN().equals(StandardEntityURN.BLOCKADE)) {
+                entity = this.worldInfo.getEntity(((Blockade) entity).getPosition());
+            } else if (entity instanceof Human) {
+                entity = this.worldInfo.getPosition((Human) entity);
             }
-            if(entity instanceof Area) {
-                this.searchTargets.add(entityID);
+            if (entity != null && entity instanceof Area) {
+                this.target = entity.getID();
             }
         }
         return this;
@@ -108,17 +109,16 @@ public class ActionExtMove extends ExtAction {
         Human agent = (Human)this.agentInfo.me();
 
         if(this.needRest(agent)) {
-            this.result = this.calcRest(agent, this.pathPlanning, this.searchTargets);
+            this.result = this.calcRest(agent, this.pathPlanning, this.target);
             if(this.result != null) {
                 return this;
             }
         }
-
-        if(this.searchTargets == null || this.searchTargets.isEmpty()) {
+        if(this.target == null) {
             return this;
         }
         this.pathPlanning.setFrom(agent.getPosition());
-        this.pathPlanning.setDestination(this.searchTargets);
+        this.pathPlanning.setDestination(this.target);
         List<EntityID> path = this.pathPlanning.calc().getResult();
         if (path != null && path.size() > 0) {
             this.result = new ActionMove(path);
@@ -136,7 +136,7 @@ public class ActionExtMove extends ExtAction {
         return damage >= this.thresholdRest || (activeTime + this.agentInfo.getTime()) < this.kernelTime;
     }
 
-    private Action calcRest(Human human, PathPlanning pathPlanning, Collection<EntityID> targets) {
+    private Action calcRest(Human human, PathPlanning pathPlanning, EntityID target) {
         EntityID position = human.getPosition();
         Collection<EntityID> refuges = this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE);
         int currentSize = refuges.size();
@@ -151,13 +151,13 @@ public class ActionExtMove extends ExtAction {
             if (path != null && path.size() > 0) {
                 if (firstResult == null) {
                     firstResult = new ArrayList<>(path);
-                    if(targets == null || targets.isEmpty()) {
+                    if(target == null) {
                         break;
                     }
                 }
                 EntityID refugeID = path.get(path.size() - 1);
                 pathPlanning.setFrom(refugeID);
-                pathPlanning.setDestination(targets);
+                pathPlanning.setDestination(target);
                 List<EntityID> fromRefugeToTarget = pathPlanning.calc().getResult();
                 if (fromRefugeToTarget != null && fromRefugeToTarget.size() > 0) {
                     return new ActionMove(path);

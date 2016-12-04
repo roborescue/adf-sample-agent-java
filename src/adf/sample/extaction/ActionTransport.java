@@ -91,15 +91,13 @@ public class ActionTransport extends ExtAction {
     }
 
     @Override
-    public ExtAction setTarget(EntityID... targets) {
+    public ExtAction setTarget(EntityID target) {
         this.target = null;
-        if(targets != null) {
-            for(EntityID id : targets) {
-                StandardEntity entity = this.worldInfo.getEntity(id);
-                if(entity instanceof Human || entity instanceof Area) {
-                    this.target = id;
-                    return this;
-                }
+        if(target != null) {
+            StandardEntity entity = this.worldInfo.getEntity(target);
+            if(entity instanceof Human || entity instanceof Area) {
+                this.target = target;
+                return this;
             }
         }
         return this;
@@ -136,6 +134,9 @@ public class ActionTransport extends ExtAction {
 
     private Action calcRescue(AmbulanceTeam agent, PathPlanning pathPlanning, EntityID targetID) {
         StandardEntity targetEntity = this.worldInfo.getEntity(targetID);
+        if(targetEntity == null) {
+            return null;
+        }
         EntityID agentPosition = agent.getPosition();
         if(targetEntity instanceof Human) {
             Human human = (Human) targetEntity;
@@ -184,7 +185,8 @@ public class ActionTransport extends ExtAction {
         }
         EntityID agentPosition = agent.getPosition();
         if(targetID == null || transportHuman.getID().getValue() == targetID.getValue()) {
-            if (this.worldInfo.getEntity(agentPosition).getStandardURN() == REFUGE) {
+            StandardEntity position = this.worldInfo.getEntity(agentPosition);
+            if (position != null && position.getStandardURN() == REFUGE) {
                 return new ActionUnload();
             } else {
                 pathPlanning.setFrom(agentPosition);
@@ -199,7 +201,7 @@ public class ActionTransport extends ExtAction {
             return null;
         }
         StandardEntity targetEntity = this.worldInfo.getEntity(targetID);
-        if(targetEntity.getStandardURN() == BLOCKADE) {
+        if(targetEntity != null && targetEntity.getStandardURN() == BLOCKADE) {
             Blockade blockade = (Blockade)targetEntity;
             if(blockade.isPositionDefined()) {
                 targetEntity = this.worldInfo.getEntity(blockade.getPosition());
@@ -243,6 +245,9 @@ public class ActionTransport extends ExtAction {
 
     private EntityID convertArea(EntityID targetID) {
         StandardEntity entity = this.worldInfo.getEntity(targetID);
+        if(entity == null) {
+            return null;
+        }
         if(entity instanceof Human) {
             Human human = (Human) entity;
             if(human.isPositionDefined()) {

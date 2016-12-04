@@ -18,10 +18,7 @@ import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import static rescuecore2.standard.entities.StandardEntityURN.HYDRANT;
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
@@ -37,7 +34,7 @@ public class ActionFireFighting extends ExtAction {
     private int refillRequest;
     private boolean refillFlag;
 
-    private Collection<EntityID> targets;
+    private EntityID target;
 
     public ActionFireFighting(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
@@ -50,7 +47,7 @@ public class ActionFireFighting extends ExtAction {
         this.refillRequest = this.maxExtinguishPower * developData.getInteger("ActionFireFighting.refill.request", 1);
         this.refillFlag = false;
 
-        this.targets = new ArrayList<>();
+        this.target = null;
 
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
@@ -65,6 +62,7 @@ public class ActionFireFighting extends ExtAction {
         }
     }
 
+    @Override
     public ExtAction precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
@@ -74,6 +72,7 @@ public class ActionFireFighting extends ExtAction {
         return this;
     }
 
+    @Override
     public ExtAction resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountResume() >= 2) {
@@ -83,6 +82,7 @@ public class ActionFireFighting extends ExtAction {
         return this;
     }
 
+    @Override
     public ExtAction preparate() {
         super.preparate();
         if(this.getCountPreparate() >= 2) {
@@ -92,6 +92,7 @@ public class ActionFireFighting extends ExtAction {
         return this;
     }
 
+    @Override
     public ExtAction updateInfo(MessageManager messageManager){
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
@@ -102,14 +103,12 @@ public class ActionFireFighting extends ExtAction {
     }
 
     @Override
-    public ExtAction setTarget(EntityID... targets) {
-        this.targets.clear();
-        if(targets != null) {
-            for(EntityID id : targets) {
-                StandardEntity entity = this.worldInfo.getEntity(id);
-                if(entity instanceof Building) {
-                    this.targets.add(id);
-                }
+    public ExtAction setTarget(EntityID target) {
+        this.target = null;
+        if(target != null) {
+            StandardEntity entity = this.worldInfo.getEntity(target);
+            if(entity instanceof Building) {
+                this.target = target;
             }
         }
         return this;
@@ -122,43 +121,41 @@ public class ActionFireFighting extends ExtAction {
 
         this.refillFlag = this.needRefill(agent, this.refillFlag);
         if(this.refillFlag) {
-            this.result = this.calcRefill(agent, this.pathPlanning, this.targets);
+            this.result = this.calcRefill(agent, this.pathPlanning, this.target);
             if(this.result != null) {
                 return this;
             }
         }
 
         if(this.needRest(agent)) {
-            this.result = this.calcRefugeAction(agent, this.pathPlanning, this.targets, false);
+            this.result = this.calcRefugeAction(agent, this.pathPlanning, this.target, false);
             if(this.result != null) {
                 return this;
             }
         }
 
-        if(this.targets == null || this.targets.isEmpty()) {
+        if(this.target == null) {
             return this;
         }
-        this.result = this.calcExtinguish(agent, this.pathPlanning, this.targets);
+        this.result = this.calcExtinguish(agent, this.pathPlanning, this.target);
         return this;
     }
 
-    private Action calcExtinguish(FireBrigade agent, PathPlanning pathPlanning, Collection<EntityID> targets) {
+    private Action calcExtinguish(FireBrigade agent, PathPlanning pathPlanning, EntityID target) {
         EntityID agentPosition = agent.getPosition();
-        StandardEntity positionEntity = this.worldInfo.getPosition(agent);
+        StandardEntity positionEntity = Objects.requireNonNull(this.worldInfo.getPosition(agent));
         if(StandardEntityURN.REFUGE == positionEntity.getStandardURN()) {
-            Action action = this.getMoveAction(pathPlanning, agentPosition, targets);
+            Action action = this.getMoveAction(pathPlanning, agentPosition, target);
             if(action != null) {
                 return action;
             }
         }
 
         List<StandardEntity> neighbourBuilding = new ArrayList<>();
-        for(EntityID target : targets) {
-            StandardEntity entity = this.worldInfo.getEntity(target);
-            if(entity instanceof Building) {
-                if (this.worldInfo.getDistance(positionEntity, entity) < this.maxExtinguishDistance) {
-                    neighbourBuilding.add(entity);
-                }
+        StandardEntity entity = this.worldInfo.getEntity(target);
+        if(entity instanceof Building) {
+            if (this.worldInfo.getDistance(positionEntity, entity) < this.maxExtinguishDistance) {
+                neighbourBuilding.add(entity);
             }
         }
 
@@ -166,12 +163,12 @@ public class ActionFireFighting extends ExtAction {
             neighbourBuilding.sort(new DistanceSorter(this.worldInfo, agent));
             return new ActionExtinguish(neighbourBuilding.get(0).getID(), this.maxExtinguishPower);
         }
-        return this.getMoveAction(pathPlanning, agentPosition, targets);
+        return this.getMoveAction(pathPlanning, agentPosition, target);
     }
 
-    private Action getMoveAction(PathPlanning pathPlanning, EntityID from, Collection<EntityID> targets) {
+    private Action getMoveAction(PathPlanning pathPlanning, EntityID from, EntityID target) {
         pathPlanning.setFrom(from);
-        pathPlanning.setDestination(targets);
+        pathPlanning.setDestination(target);
         List<EntityID> path = pathPlanning.calc().getResult();
         if(path != null && path.size() > 0) {
             StandardEntity entity = this.worldInfo.getEntity(path.get(path.size() - 1));
@@ -187,8 +184,8 @@ public class ActionFireFighting extends ExtAction {
 
     private boolean needRefill(FireBrigade agent, boolean refillFlag) {
         if(refillFlag) {
-            StandardEntityURN position = this.worldInfo.getEntity(agent.getPosition()).getStandardURN();
-            return !(position == REFUGE || position == HYDRANT) || agent.getWater() < this.refillCompleted;
+            StandardEntityURN positionURN = Objects.requireNonNull(this.worldInfo.getPosition(agent)).getStandardURN();
+            return !(positionURN == REFUGE || positionURN == HYDRANT) || agent.getWater() < this.refillCompleted;
         }
         return  agent.getWater() <= this.refillRequest;
     }
@@ -203,25 +200,25 @@ public class ActionFireFighting extends ExtAction {
         return damage >= this.thresholdRest || (activeTime + this.agentInfo.getTime()) < this.kernelTime;
     }
 
-    private Action calcRefill(FireBrigade agent, PathPlanning pathPlanning, Collection<EntityID> targets) {
+    private Action calcRefill(FireBrigade agent, PathPlanning pathPlanning, EntityID target) {
         EntityID position = agent.getPosition();
-        StandardEntityURN positionURN = this.worldInfo.getPosition(position).getStandardURN();
+        StandardEntityURN positionURN = Objects.requireNonNull(this.worldInfo.getPosition(position)).getStandardURN();
         if(positionURN == REFUGE) {
             return new ActionRefill();
         }
-        Action action = this.calcRefugeAction(agent, pathPlanning, targets, true);
+        Action action = this.calcRefugeAction(agent, pathPlanning, target, true);
         if(action != null) {
             return action;
         }
-        action = this.calcHydrantAction(agent, pathPlanning, targets);
+        action = this.calcHydrantAction(agent, pathPlanning, target);
         if(action != null) {
             if(positionURN == HYDRANT && action.getClass().equals(ActionMove.class)) {
                 pathPlanning.setFrom(position);
-                pathPlanning.setDestination(targets);
+                pathPlanning.setDestination(target);
                 double currentDistance = pathPlanning.calc().getDistance();
                 List<EntityID> path = ((ActionMove)action).getPath();
                 pathPlanning.setFrom(path.get(path.size() - 1));
-                pathPlanning.setDestination(targets);
+                pathPlanning.setDestination(target);
                 double newHydrantDistance = pathPlanning.calc().getDistance();
                 if(currentDistance <= newHydrantDistance) {
                     return new ActionRefill();
@@ -232,17 +229,29 @@ public class ActionFireFighting extends ExtAction {
         return null;
     }
 
-    private Action calcRefugeAction(Human human, PathPlanning pathPlanning, Collection<EntityID> targets, boolean isRefill) {
-        return this.calcSupplyAction(human, pathPlanning, this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE), targets, isRefill);
+    private Action calcRefugeAction(Human human, PathPlanning pathPlanning, EntityID target, boolean isRefill) {
+        return this.calcSupplyAction(
+                human,
+                pathPlanning,
+                this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE),
+                target,
+                isRefill
+        );
     }
 
-    private Action calcHydrantAction(Human human, PathPlanning pathPlanning, Collection<EntityID> targets) {
+    private Action calcHydrantAction(Human human, PathPlanning pathPlanning, EntityID target) {
         Collection<EntityID> hydrants = this.worldInfo.getEntityIDsOfType(HYDRANT);
         hydrants.remove(human.getPosition());
-        return this.calcSupplyAction(human, pathPlanning, hydrants, targets, true);
+        return this.calcSupplyAction(
+                human,
+                pathPlanning,
+                hydrants,
+                target,
+                true
+        );
     }
 
-    private Action calcSupplyAction(Human human, PathPlanning pathPlanning, Collection<EntityID> supplyPositions, Collection<EntityID> targets, boolean isRefill) {
+    private Action calcSupplyAction(Human human, PathPlanning pathPlanning, Collection<EntityID> supplyPositions, EntityID target, boolean isRefill) {
         EntityID position = human.getPosition();
         int size = supplyPositions.size();
         if(supplyPositions.contains(position)) {
@@ -256,13 +265,13 @@ public class ActionFireFighting extends ExtAction {
             if (path != null && path.size() > 0) {
                 if (firstResult == null) {
                     firstResult = new ArrayList<>(path);
-                    if(targets == null || targets.isEmpty()) {
+                    if(target == null) {
                         break;
                     }
                 }
                 EntityID supplyPositionID = path.get(path.size() - 1);
                 pathPlanning.setFrom(supplyPositionID);
-                pathPlanning.setDestination(targets);
+                pathPlanning.setDestination(target);
                 List<EntityID> fromRefugeToTarget = pathPlanning.calc().getResult();
                 if (fromRefugeToTarget != null && fromRefugeToTarget.size() > 0) {
                     return new ActionMove(path);

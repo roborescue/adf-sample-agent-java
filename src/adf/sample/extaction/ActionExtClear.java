@@ -64,6 +64,7 @@ public class ActionExtClear extends ExtAction {
         }
     }
 
+    @Override
     public ExtAction precompute(PrecomputeData precomputeData) {
         super.precompute(precomputeData);
         if(this.getCountPrecompute() >= 2) {
@@ -73,6 +74,7 @@ public class ActionExtClear extends ExtAction {
         return this;
     }
 
+    @Override
     public ExtAction resume(PrecomputeData precomputeData) {
         super.resume(precomputeData);
         if(this.getCountResume() >= 2) {
@@ -82,6 +84,7 @@ public class ActionExtClear extends ExtAction {
         return this;
     }
 
+    @Override
     public ExtAction preparate() {
         super.preparate();
         if(this.getCountPreparate() >= 2) {
@@ -91,6 +94,7 @@ public class ActionExtClear extends ExtAction {
         return this;
     }
 
+    @Override
     public ExtAction updateInfo(MessageManager messageManager){
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
@@ -101,24 +105,16 @@ public class ActionExtClear extends ExtAction {
     }
 
     @Override
-    public ExtAction setTarget(EntityID... targets) {
+    public ExtAction setTarget(EntityID target) {
         this.target = null;
-        if(targets != null) {
-            for (EntityID entityID : targets) {
-                StandardEntity entity = this.worldInfo.getEntity(entityID);
-                if(entity == null) {
-                    continue;
-                }
-                if (entity instanceof Road) {
-                    this.target = entityID;
-                    return this;
-                } else if (entity.getStandardURN().equals(StandardEntityURN.BLOCKADE)) {
-                    this.target = ((Blockade) entity).getPosition();
-                    return this;
-                } else if (entity instanceof Building) {
-                    this.target = entityID;
-                    return this;
-                }
+        StandardEntity entity = this.worldInfo.getEntity(target);
+        if(entity != null) {
+            if (entity instanceof Road) {
+                this.target = target;
+            } else if (entity.getStandardURN().equals(StandardEntityURN.BLOCKADE)) {
+                this.target = ((Blockade) entity).getPosition();
+            } else if (entity instanceof Building) {
+                this.target = target;
             }
         }
         return this;
@@ -145,7 +141,7 @@ public class ActionExtClear extends ExtAction {
         }
         EntityID agentPosition = policeForce.getPosition();
         StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
-        StandardEntity positionEntity = this.worldInfo.getEntity(agentPosition);
+        StandardEntity positionEntity = Objects.requireNonNull(this.worldInfo.getEntity(agentPosition));
         if(targetEntity == null || !(targetEntity instanceof Area)) {
             return this;
         }
@@ -233,7 +229,7 @@ public class ActionExtClear extends ExtAction {
                         }
                         if(actionClear.getTarget() != null) {
                             Blockade another = (Blockade)this.worldInfo.getEntity(actionClear.getTarget());
-                            if(this.intersect(blockade, another)) {
+                            if(another != null && this.intersect(blockade, another)) {
                                 return new ActionClear(another);
                             }
                             int anotherDistance = this.worldInfo.getDistance(police, another);
@@ -260,7 +256,7 @@ public class ActionExtClear extends ExtAction {
                         } else {
                             if(actionClear.getTarget() != null) {
                                 Blockade another = (Blockade)this.worldInfo.getEntity(actionClear.getTarget());
-                                if(this.intersect(blockade, another)) {
+                                if(another != null && this.intersect(blockade, another)) {
                                     return new ActionClear(another);
                                 }
                                 int distance1 = this.worldInfo.getDistance(police, another);
@@ -357,7 +353,7 @@ public class ActionExtClear extends ExtAction {
     private Action getNeighbourPositionAction(PoliceForce police, Area target) {
         double agentX = police.getX();
         double agentY = police.getY();
-        StandardEntity position = this.worldInfo.getEntity(police.getPosition());
+        StandardEntity position = Objects.requireNonNull(this.worldInfo.getPosition(police));
         Edge edge = target.getEdgeTo(position.getID());
         if(edge == null) {
             return null;
@@ -398,7 +394,7 @@ public class ActionExtClear extends ExtAction {
                             } else {
                                 if(actionClear.getTarget() != null) {
                                     Blockade another = (Blockade)this.worldInfo.getEntity(actionClear.getTarget());
-                                    if(this.intersect(blockade, another)) {
+                                    if(another != null && this.intersect(blockade, another)) {
                                         return new ActionClear(another);
                                     }
                                 }
@@ -427,7 +423,7 @@ public class ActionExtClear extends ExtAction {
             int clearY = 0;
             for (EntityID id : road.getBlockades()) {
                 Blockade blockade = (Blockade) this.worldInfo.getEntity(id);
-                if (blockade.isApexesDefined()) {
+                if (blockade != null && blockade.isApexesDefined()) {
                     int[] apexes = blockade.getApexes();
                     for (int i = 0; i < (apexes.length - 2); i += 2) {
                         double distance = this.getDistance(agentX, agentY, apexes[i], apexes[i + 1]);
@@ -502,7 +498,7 @@ public class ActionExtClear extends ExtAction {
                         } else {
                             if(actionClear.getTarget() != null) {
                                 Blockade another = (Blockade)this.worldInfo.getEntity(actionClear.getTarget());
-                                if(this.intersect(blockade, another)) {
+                                if(another != null && this.intersect(blockade, another)) {
                                     return new ActionClear(another);
                                 }
                             }

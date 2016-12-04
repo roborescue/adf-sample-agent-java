@@ -6,6 +6,9 @@ import adf.agent.action.common.ActionRest;
 import adf.agent.action.fire.ActionExtinguish;
 import adf.agent.action.fire.ActionRefill;
 import adf.agent.communication.MessageManager;
+import adf.agent.communication.standard.bundle.centralized.CommandFire;
+import adf.agent.communication.standard.bundle.centralized.CommandScout;
+import adf.agent.communication.standard.bundle.centralized.MessageCommand;
 import adf.agent.communication.standard.bundle.information.MessageFireBrigade;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
@@ -13,23 +16,24 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.component.communication.CommunicationMessage;
+import adf.component.extaction.CommandExecutor;
 import adf.component.extaction.ExtAction;
-import adf.component.extaction.ExtCommandAction;
 import adf.component.module.complex.BuildingDetector;
 import adf.component.module.complex.Search;
-import adf.component.tactics.TacticsFire;
+import adf.component.tactics.TacticsFireBrigade;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
 
-public class SampleFire extends TacticsFire {
+public class SampleTacticsFireBrigade extends TacticsFireBrigade {
     private BuildingDetector buildingDetector;
     private Search search;
 
     private ExtAction actionFireFighting;
     private ExtAction actionExtMove;
-    private ExtCommandAction actionCommandFire;
+    private CommandExecutor commandExecutorFire;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -46,25 +50,25 @@ public class SampleFire extends TacticsFire {
         // init Algorithm Module & ExtAction
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
-                this.buildingDetector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
-                this.actionFireFighting = moduleManager.getExtAction("TacticsFire.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
-                this.actionExtMove = moduleManager.getExtAction("TacticsFire.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandFire = moduleManager.getExtAction("TacticsFire.ActionCommandFire", "adf.sample.extaction.ActionCommandFire");
+                this.search = moduleManager.getModule("TacticsFireBrigade.Search", "adf.sample.module.complex.SampleSearch");
+                this.buildingDetector = moduleManager.getModule("TacticsFireBrigade.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                this.actionFireFighting = moduleManager.getExtAction("TacticsFireBrigade.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
+                this.actionExtMove = moduleManager.getExtAction("TacticsFireBrigade.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.commandExecutorFire = moduleManager.getCommandExecutor("TacticsFireBrigade.CommandExecutorFire", "adf.sample.extaction.CommandExecutorFire");
                 break;
             case PRECOMPUTED:
-                this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
-                this.buildingDetector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
-                this.actionFireFighting = moduleManager.getExtAction("TacticsFire.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
-                this.actionExtMove = moduleManager.getExtAction("TacticsFire.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandFire = moduleManager.getExtAction("TacticsFire.ActionCommandFire", "adf.sample.extaction.ActionCommandFire");
+                this.search = moduleManager.getModule("TacticsFireBrigade.Search", "adf.sample.module.complex.SampleSearch");
+                this.buildingDetector = moduleManager.getModule("TacticsFireBrigade.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                this.actionFireFighting = moduleManager.getExtAction("TacticsFireBrigade.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
+                this.actionExtMove = moduleManager.getExtAction("TacticsFireBrigade.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.commandExecutorFire = moduleManager.getCommandExecutor("TacticsFireBrigade.CommandExecutorFire", "adf.sample.extaction.CommandExecutorFire");
                 break;
             case NON_PRECOMPUTE:
-                this.search = moduleManager.getModule("TacticsFire.Search", "adf.sample.module.complex.SampleSearch");
-                this.buildingDetector = moduleManager.getModule("TacticsFire.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
-                this.actionFireFighting = moduleManager.getExtAction("TacticsFire.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
-                this.actionExtMove = moduleManager.getExtAction("TacticsFire.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandFire = moduleManager.getExtAction("TacticsFire.ActionCommandFire", "adf.sample.extaction.ActionCommandFire");
+                this.search = moduleManager.getModule("TacticsFireBrigade.Search", "adf.sample.module.complex.SampleSearch");
+                this.buildingDetector = moduleManager.getModule("TacticsFireBrigade.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                this.actionFireFighting = moduleManager.getExtAction("TacticsFireBrigade.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
+                this.actionExtMove = moduleManager.getExtAction("TacticsFireBrigade.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.commandExecutorFire = moduleManager.getCommandExecutor("TacticsFireBrigade.CommandExecutorFire", "adf.sample.extaction.CommandExecutorFire");
                 break;
         }
     }
@@ -75,7 +79,7 @@ public class SampleFire extends TacticsFire {
         this.buildingDetector.precompute(precomputeData);
         this.actionFireFighting.precompute(precomputeData);
         this.actionExtMove.precompute(precomputeData);
-        this.actionCommandFire.precompute(precomputeData);
+        this.commandExecutorFire.precompute(precomputeData);
     }
 
     @Override
@@ -84,7 +88,7 @@ public class SampleFire extends TacticsFire {
         this.buildingDetector.resume(precomputeData);
         this.actionFireFighting.resume(precomputeData);
         this.actionExtMove.resume(precomputeData);
-        this.actionCommandFire.resume(precomputeData);
+        this.commandExecutorFire.resume(precomputeData);
     }
 
     @Override
@@ -93,7 +97,7 @@ public class SampleFire extends TacticsFire {
         this.buildingDetector.preparate();
         this.actionFireFighting.preparate();
         this.actionExtMove.preparate();
-        this.actionCommandFire.preparate();
+        this.commandExecutorFire.preparate();
     }
 
     @Override
@@ -102,18 +106,21 @@ public class SampleFire extends TacticsFire {
         this.buildingDetector.updateInfo(messageManager);
         this.actionFireFighting.updateInfo(messageManager);
         this.actionExtMove.updateInfo(messageManager);
-        this.actionCommandFire.updateInfo(messageManager);
+        this.commandExecutorFire.updateInfo(messageManager);
 
         FireBrigade agent = (FireBrigade) agentInfo.me();
         // command
-        Action action = this.actionCommandFire.calc().getAction();
-        if(action != null) {
-            this.sendActionMessage(messageManager, agent, action);
-            return action;
+        MessageCommand command = this.getCommand(agentInfo, messageManager);
+        if(command != null) {
+            Action action = this.commandExecutorFire.setCommand(command).calc().getAction();
+            if (action != null) {
+                this.sendActionMessage(messageManager, agent, action);
+                return action;
+            }
         }
         // autonomous
         EntityID target = this.buildingDetector.calc().getTarget();
-        action = this.actionFireFighting.setTarget(target).calc().getAction();
+        Action action = this.actionFireFighting.setTarget(target).calc().getAction();
         if(action != null) {
             this.sendActionMessage(messageManager, agent, action);
             return action;
@@ -154,5 +161,25 @@ public class SampleFire extends TacticsFire {
         if(actionIndex != -1) {
             messageManager.addMessage(new MessageFireBrigade(true, agent, actionIndex, target));
         }
+    }
+
+    private MessageCommand getCommand(AgentInfo agentInfo, MessageManager messageManager) {
+        MessageCommand result = null;
+        EntityID agentID = agentInfo.getID();
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
+            CommandScout command = (CommandScout) message;
+            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
+                result = command;
+                break;
+            }
+        }
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
+            CommandFire command = (CommandFire) message;
+            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
+                result = command;
+                break;
+            }
+        }
+        return result;
     }
 }

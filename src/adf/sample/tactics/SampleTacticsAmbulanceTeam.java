@@ -7,6 +7,9 @@ import adf.agent.action.ambulance.ActionUnload;
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
+import adf.agent.communication.standard.bundle.centralized.CommandAmbulance;
+import adf.agent.communication.standard.bundle.centralized.CommandScout;
+import adf.agent.communication.standard.bundle.centralized.MessageCommand;
 import adf.agent.communication.standard.bundle.information.MessageAmbulanceTeam;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
@@ -14,24 +17,25 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.component.communication.CommunicationMessage;
+import adf.component.extaction.CommandExecutor;
 import adf.component.extaction.ExtAction;
-import adf.component.extaction.ExtCommandAction;
 import adf.component.module.complex.HumanDetector;
 import adf.component.module.complex.Search;
-import adf.component.tactics.TacticsAmbulance;
+import adf.component.tactics.TacticsAmbulanceTeam;
 import rescuecore2.standard.entities.AmbulanceTeam;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
 
-public class SampleAmbulance extends TacticsAmbulance {
+public class SampleTacticsAmbulanceTeam extends TacticsAmbulanceTeam {
     private HumanDetector humanDetector;
     private Search search;
 
     private ExtAction actionTransport;
     private ExtAction actionExtMove;
-    private ExtCommandAction actionCommandAmbulance;
+    private CommandExecutor commandExecutorAmbulance;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -52,25 +56,25 @@ public class SampleAmbulance extends TacticsAmbulance {
         // init Algorithm Module & ExtAction
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.humanDetector = moduleManager.getModule("TacticsAmbulance.HumanDetector", "adf.sample.module.complex.SampleVictimDetector");
-                this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
-                this.actionTransport = moduleManager.getExtAction("TacticsAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
-                this.actionExtMove = moduleManager.getExtAction("TacticsAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandAmbulance = moduleManager.getExtAction("TacticsAmbulance.ActionCommandAmbulance", "adf.sample.extaction.ActionCommandAmbulance");
+                this.humanDetector = moduleManager.getModule("TacticsAmbulanceTeam.HumanDetector", "adf.sample.module.complex.SampleVictimDetector");
+                this.search = moduleManager.getModule("TacticsAmbulanceTeam.Search", "adf.sample.module.complex.SampleSearch");
+                this.actionTransport = moduleManager.getExtAction("TacticsAmbulanceTeam.ActionTransport", "adf.sample.extaction.ActionTransport");
+                this.actionExtMove = moduleManager.getExtAction("TacticsAmbulanceTeam.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.commandExecutorAmbulance = moduleManager.getCommandExecutor("TacticsAmbulanceTeam.CommandExecutorAmbulance", "adf.sample.extaction.CommandExecutorAmbulance");
                 break;
             case PRECOMPUTED:
-                this.humanDetector = moduleManager.getModule("TacticsAmbulance.HumanDetector", "adf.sample.module.complex.SampleVictimDetector");
-                this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
-                this.actionTransport = moduleManager.getExtAction("TacticsAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
-                this.actionExtMove = moduleManager.getExtAction("TacticsAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandAmbulance = moduleManager.getExtAction("TacticsAmbulance.ActionCommandAmbulance", "adf.sample.extaction.ActionCommandAmbulance");
+                this.humanDetector = moduleManager.getModule("TacticsAmbulanceTeam.HumanDetector", "adf.sample.module.complex.SampleVictimDetector");
+                this.search = moduleManager.getModule("TacticsAmbulanceTeam.Search", "adf.sample.module.complex.SampleSearch");
+                this.actionTransport = moduleManager.getExtAction("TacticsAmbulanceTeam.ActionTransport", "adf.sample.extaction.ActionTransport");
+                this.actionExtMove = moduleManager.getExtAction("TacticsAmbulanceTeam.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.commandExecutorAmbulance = moduleManager.getCommandExecutor("TacticsAmbulanceTeam.CommandExecutorAmbulance", "adf.sample.extaction.CommandExecutorAmbulance");
                 break;
             case NON_PRECOMPUTE:
-                this.humanDetector = moduleManager.getModule("TacticsAmbulance.HumanDetector", "adf.sample.module.complex.SampleVictimDetector");
-                this.search = moduleManager.getModule("TacticsAmbulance.Search", "adf.sample.module.complex.SampleSearch");
-                this.actionTransport = moduleManager.getExtAction("TacticsAmbulance.ActionTransport", "adf.sample.extaction.ActionTransport");
-                this.actionExtMove = moduleManager.getExtAction("TacticsAmbulance.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandAmbulance = moduleManager.getExtAction("TacticsAmbulance.ActionCommandAmbulance", "adf.sample.extaction.ActionCommandAmbulance");
+                this.humanDetector = moduleManager.getModule("TacticsAmbulanceTeam.HumanDetector", "adf.sample.module.complex.SampleVictimDetector");
+                this.search = moduleManager.getModule("TacticsAmbulanceTeam.Search", "adf.sample.module.complex.SampleSearch");
+                this.actionTransport = moduleManager.getExtAction("TacticsAmbulanceTeam.ActionTransport", "adf.sample.extaction.ActionTransport");
+                this.actionExtMove = moduleManager.getExtAction("TacticsAmbulanceTeam.ActionExtMove", "adf.sample.extaction.ActionExtMove");
+                this.commandExecutorAmbulance = moduleManager.getCommandExecutor("TacticsAmbulanceTeam.CommandExecutorAmbulance", "adf.sample.extaction.CommandExecutorAmbulance");
                 break;
         }
     }
@@ -81,7 +85,7 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.search.precompute(precomputeData);
         this.actionTransport.precompute(precomputeData);
         this.actionExtMove.precompute(precomputeData);
-        this.actionCommandAmbulance.precompute(precomputeData);
+        this.commandExecutorAmbulance.precompute(precomputeData);
     }
 
     @Override
@@ -90,7 +94,7 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.search.resume(precomputeData);
         this.actionTransport.resume(precomputeData);
         this.actionExtMove.resume(precomputeData);
-        this.actionCommandAmbulance.resume(precomputeData);
+        this.commandExecutorAmbulance.resume(precomputeData);
     }
 
     @Override
@@ -99,7 +103,7 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.search.preparate();
         this.actionTransport.preparate();
         this.actionExtMove.preparate();
-        this.actionCommandAmbulance.preparate();
+        this.commandExecutorAmbulance.preparate();
     }
 
     @Override
@@ -108,18 +112,21 @@ public class SampleAmbulance extends TacticsAmbulance {
         this.humanDetector.updateInfo(messageManager);
         this.actionTransport.updateInfo(messageManager);
         this.actionExtMove.updateInfo(messageManager);
-        this.actionCommandAmbulance.updateInfo(messageManager);
+        this.commandExecutorAmbulance.updateInfo(messageManager);
 
         AmbulanceTeam agent = (AmbulanceTeam)agentInfo.me();
         // command
-        Action action = this.actionCommandAmbulance.calc().getAction();
-        if(action != null) {
-            this.sendActionMessage(messageManager, agent, action);
-            return action;
+        MessageCommand command = this.getCommand(agentInfo, messageManager);
+        if(command != null) {
+            Action action = this.commandExecutorAmbulance.calc().getAction();
+            if (action != null) {
+                this.sendActionMessage(messageManager, agent, action);
+                return action;
+            }
         }
         // autonomous
         EntityID target = this.humanDetector.calc().getTarget();
-        action = this.actionTransport.setTarget(target).calc().getAction();
+        Action action = this.actionTransport.setTarget(target).calc().getAction();
         if(action != null) {
             this.sendActionMessage(messageManager, agent, action);
             return action;
@@ -163,5 +170,25 @@ public class SampleAmbulance extends TacticsAmbulance {
         if(actionIndex != -1) {
             messageManager.addMessage(new MessageAmbulanceTeam(true, ambulance, actionIndex, target));
         }
+    }
+
+    private MessageCommand getCommand(AgentInfo agentInfo, MessageManager messageManager) {
+        MessageCommand result = null;
+        EntityID agentID = agentInfo.getID();
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
+            CommandScout command = (CommandScout) message;
+            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
+                result = command;
+                break;
+            }
+        }
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandAmbulance.class)) {
+            CommandAmbulance command = (CommandAmbulance) message;
+            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
+                result = command;
+                break;
+            }
+        }
+        return result;
     }
 }

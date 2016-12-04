@@ -31,7 +31,6 @@ public class SampleVictimDetector extends HumanDetector {
     private int sendTime;
     private int commandInterval;
 
-    private boolean isSendCivilianMessage;
     private Collection<EntityID> agentPositions;
     private Map<EntityID, Integer> sentTimeMap;
     private int receivedEntityInterval;
@@ -43,6 +42,18 @@ public class SampleVictimDetector extends HumanDetector {
 
     public SampleVictimDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
+
+        this.result = null;
+        this.sendTime = 0;
+        this.commandInterval = developData.getInteger("SampleVictimDetector.clearCommandInterval", 5);
+
+        this.agentPositions = new HashSet<>();
+        this.sentTimeMap = new HashMap<>();
+        this.receivedEntityInterval = developData.getInteger("SampleVictimDetector.receivedEntityInterval", 3);
+        this.sentEntityInterval = developData.getInteger("SampleVictimDetector.sentEntityInterval", 5);
+
+        this.moveDistance = developData.getInteger("SampleVictimDetector.moveDistance", 40000);
+
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
                 this.clustering = moduleManager.getModule("SampleVictimDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
@@ -54,29 +65,18 @@ public class SampleVictimDetector extends HumanDetector {
                 this.clustering = moduleManager.getModule("SampleVictimDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
-        this.result = null;
-        this.sendTime = 0;
-        this.commandInterval = developData.getInteger("SampleVictimDetector.clearCommandInterval", 5);
-
-        this.isSendCivilianMessage = true;
-        this.agentPositions = new HashSet<>();
-        this.sentTimeMap = new HashMap<>();
-        this.receivedEntityInterval = developData.getInteger("SampleVictimDetector.receivedEntityInterval", 3);
-        this.sentEntityInterval = developData.getInteger("SampleVictimDetector.sentEntityInterval", 5);
-
-        this.moveDistance = developData.getInteger("SampleVictimDetector.moveDistance", 40000);
     }
 
     @Override
     public HumanDetector updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
         this.clustering.updateInfo(messageManager);
 
         this.reflectMessage(messageManager);
-        this.checkSendFlags();
-        this.sendMessage(messageManager);
+        this.sendEntityInfo(messageManager);
 
         int currentTime = this.agentInfo.getTime();
         Human agent = (Human)this.agentInfo.me();
@@ -133,12 +133,24 @@ public class SampleVictimDetector extends HumanDetector {
                 Human h = (Human)entity;
                 if(h.isPositionDefined()) {
                     StandardEntity humanPosition = this.worldInfo.getPosition(h);
-                    if(humanPosition instanceof Building && ((Building)humanPosition).isOnFire()) {
-                        messageManager.addMessage(
-                                new CommandFire(true, null, humanPosition.getID(), CommandFire.ACTION_EXTINGUISH)
-                        );
-                    } else if(humanPosition.getStandardURN() == AMBULANCE_TEAM && h.getStandardURN() == CIVILIAN) {
-                        messageManager.addMessage(new MessageCivilian(true, (Civilian)h));
+                    if(humanPosition != null) {
+                        if (humanPosition instanceof Building && ((Building) humanPosition).isOnFire()) {
+                            messageManager.addMessage(
+                                    new CommandFire(
+                                            true,
+                                            null,
+                                            humanPosition.getID(),
+                                            CommandFire.ACTION_EXTINGUISH
+                                    )
+                            );
+                        } else if (humanPosition.getStandardURN() == AMBULANCE_TEAM && h.getStandardURN() == CIVILIAN) {
+                            messageManager.addMessage(
+                                    new MessageCivilian(
+                                            true,
+                                            (Civilian) h
+                                    )
+                            );
+                        }
                     }
                 }
             }
@@ -155,15 +167,19 @@ public class SampleVictimDetector extends HumanDetector {
         }
         if(this.result != null) {
             Human target = (Human) this.worldInfo.getEntity(this.result);
-            if (!target.isHPDefined() || target.getHP() == 0) {
-                this.result = null;
-            } else if(!target.isPositionDefined()) {
-                this.result = null;
-            } else {
-                StandardEntity position = this.worldInfo.getPosition(target);
-                StandardEntityURN positionURN = position.getStandardURN();
-                if (positionURN == REFUGE || positionURN == AMBULANCE_TEAM) {
+            if(target != null) {
+                if (!target.isHPDefined() || target.getHP() == 0) {
                     this.result = null;
+                } else if (!target.isPositionDefined()) {
+                    this.result = null;
+                } else {
+                    StandardEntity position = this.worldInfo.getPosition(target);
+                    if(position != null) {
+                        StandardEntityURN positionURN = position.getStandardURN();
+                        if (positionURN == REFUGE || positionURN == AMBULANCE_TEAM) {
+                            this.result = null;
+                        }
+                    }
                 }
             }
         }
@@ -338,10 +354,14 @@ public class SampleVictimDetector extends HumanDetector {
         }
     }
 
-    private void checkSendFlags(){
-        this.isSendCivilianMessage = true;
+    private boolean checkSendFlags(){
+        boolean isSendCivilianMessage = true;
 
-        Human agent = (Human)this.agentInfo.me();
+        StandardEntity me = this.agentInfo.me();
+        if(!(me instanceof Human)){
+            return false;
+        }
+        Human agent = (Human)me;
         EntityID agentID = agent.getID();
         EntityID position = agent.getPosition();
         StandardEntityURN agentURN = agent.getStandardURN();
@@ -351,9 +371,11 @@ public class SampleVictimDetector extends HumanDetector {
         this.agentPositions.clear();
         for(StandardEntity entity : this.worldInfo.getEntitiesOfType(agentURN)) {
             Human other = (Human)entity;
-            if(other.getPosition().getValue() == position.getValue()) {
-                if(other.getID().getValue() > agentID.getValue()) {
-                    this.isSendCivilianMessage = false;
+            if(isSendCivilianMessage) {
+                if (other.getPosition().getValue() == position.getValue()) {
+                    if (other.getID().getValue() > agentID.getValue()) {
+                        isSendCivilianMessage = false;
+                    }
                 }
             }
             this.agentPositions.add(other.getPosition());
@@ -362,19 +384,21 @@ public class SampleVictimDetector extends HumanDetector {
         for(StandardEntityURN urn : agentTypes) {
             for(StandardEntity entity : this.worldInfo.getEntitiesOfType(urn)) {
                 Human other = (Human)entity;
-                if(other.getPosition().getValue() == position.getValue()) {
-                    if(urn == AMBULANCE_TEAM) {
-                        this.isSendCivilianMessage = false;
-                    } else if(urn == FIRE_BRIGADE) {
-                        if(other.getID().getValue() > agentID.getValue()) {
-                            if(agentURN == POLICE_FORCE) {
-                                this.isSendCivilianMessage = false;
+                if(isSendCivilianMessage) {
+                    if (other.getPosition().getValue() == position.getValue()) {
+                        if (urn == AMBULANCE_TEAM) {
+                            isSendCivilianMessage = false;
+                        } else if(urn == FIRE_BRIGADE) {
+                            if(other.getID().getValue() > agentID.getValue()) {
+                                if(agentURN == POLICE_FORCE) {
+                                    isSendCivilianMessage = false;
+                                }
                             }
-                        }
-                    } else if(urn == POLICE_FORCE) {
-                        if(other.getID().getValue() > agentID.getValue()) {
-                            if(agentURN == FIRE_BRIGADE) {
-                                this.isSendCivilianMessage = false;
+                        } else if(urn == POLICE_FORCE) {
+                            if(other.getID().getValue() > agentID.getValue()) {
+                                if(agentURN == FIRE_BRIGADE) {
+                                    isSendCivilianMessage = false;
+                                }
                             }
                         }
                     }
@@ -382,15 +406,16 @@ public class SampleVictimDetector extends HumanDetector {
                 this.agentPositions.add(other.getPosition());
             }
         }
+        return isSendCivilianMessage;
     }
 
-    private void sendMessage(MessageManager messageManager) {
-        if(this.isSendCivilianMessage) {
+    private void sendEntityInfo(MessageManager messageManager) {
+        if(this.checkSendFlags()) {
             Civilian civilian = null;
             int currentTime = this.agentInfo.getTime();
             Human agent = (Human) this.agentInfo.me();
             for (EntityID id : this.worldInfo.getChanged().getChangedEntities()) {
-                StandardEntity entity = this.worldInfo.getEntity(id);
+                StandardEntity entity = Objects.requireNonNull(this.worldInfo.getEntity(id));
                 if (entity.getStandardURN() == CIVILIAN) {
                     Integer time = this.sentTimeMap.get(id);
                     if (time != null && time > currentTime) {
