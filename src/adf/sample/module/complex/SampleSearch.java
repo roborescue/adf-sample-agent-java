@@ -99,7 +99,7 @@ public class SampleSearch extends Search {
         this.clustering.updateInfo(messageManager);
 
         this.reflectMessage(messageManager);
-        this.sendMessage(messageManager);
+        this.sendEntityInfo(messageManager);
 
         if(this.unsearchedBuildingIDs.isEmpty()) {
             this.reset();
@@ -199,7 +199,7 @@ public class SampleSearch extends Search {
         }
     }
 
-    private void sendMessage(MessageManager messageManager) {
+    private void sendEntityInfo(MessageManager messageManager) {
         Human agent = (Human) this.agentInfo.me();
         this.checkSendFlags(agent);
         Building building = null;

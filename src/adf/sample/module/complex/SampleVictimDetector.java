@@ -388,18 +388,8 @@ public class SampleVictimDetector extends HumanDetector {
                     if (other.getPosition().getValue() == position.getValue()) {
                         if (urn == AMBULANCE_TEAM) {
                             isSendCivilianMessage = false;
-                        } else if(urn == FIRE_BRIGADE) {
-                            if(other.getID().getValue() > agentID.getValue()) {
-                                if(agentURN == POLICE_FORCE) {
-                                    isSendCivilianMessage = false;
-                                }
-                            }
-                        } else if(urn == POLICE_FORCE) {
-                            if(other.getID().getValue() > agentID.getValue()) {
-                                if(agentURN == FIRE_BRIGADE) {
-                                    isSendCivilianMessage = false;
-                                }
-                            }
+                        } else if(other.getID().getValue() > agentID.getValue()) {
+                            isSendCivilianMessage = false;
                         }
                     }
                 }

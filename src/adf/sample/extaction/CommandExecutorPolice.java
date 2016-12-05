@@ -316,11 +316,6 @@ public class CommandExecutorPolice extends CommandExecutor {
                     }
                 }
                 return true;
-            case ACTION_SCOUT:
-                if(this.scoutTargets != null) {
-                    this.scoutTargets.removeAll(this.worldInfo.getChanged().getChangedEntities());
-                }
-                return (this.scoutTargets == null || this.scoutTargets.isEmpty());
         }
         return true;
     }
