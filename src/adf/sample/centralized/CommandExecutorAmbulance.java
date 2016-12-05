@@ -1,11 +1,9 @@
-package adf.sample.extaction;
+package adf.sample.centralized;
 
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.centralized.CommandAmbulance;
-import adf.agent.communication.standard.bundle.centralized.CommandScout;
-import adf.agent.communication.standard.bundle.centralized.MessageCommand;
 import adf.agent.communication.standard.bundle.centralized.MessageReport;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
@@ -13,27 +11,20 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.extaction.CommandExecutor;
+import adf.component.centralized.CommandExecutor;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
-import rescuecore2.standard.entities.AmbulanceTeam;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
-import rescuecore2.worldmodel.AbstractEntity;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-import static rescuecore2.standard.entities.StandardEntityURN.AMBULANCE_TEAM;
-import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
-import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
+import static rescuecore2.standard.entities.StandardEntityURN.*;
 
-public class CommandExecutorAmbulance extends CommandExecutor {
+public class CommandExecutorAmbulance extends CommandExecutor<CommandAmbulance> {
     private static final int ACTION_UNKNOWN = -1;
     private static final int ACTION_REST = CommandAmbulance.ACTION_REST;
     private static final int ACTION_MOVE = CommandAmbulance.ACTION_MOVE;
@@ -41,7 +32,6 @@ public class CommandExecutorAmbulance extends CommandExecutor {
     private static final int ACTION_LOAD = CommandAmbulance.ACTION_LOAD;
     private static final int ACTION_UNLOAD = CommandAmbulance.ACTION_UNLOAD;
     private static final int ACTION_AUTONOMY = CommandAmbulance.ACTION_AUTONOMY;
-    private static final int ACTION_SCOUT = 6;
 
     private PathPlanning pathPlanning;
 
@@ -50,7 +40,6 @@ public class CommandExecutorAmbulance extends CommandExecutor {
 
     private int type;
     private EntityID target;
-    private Collection<EntityID> scoutTargets;
     private EntityID commanderID;
 
     public CommandExecutorAmbulance(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
@@ -76,34 +65,12 @@ public class CommandExecutorAmbulance extends CommandExecutor {
     }
 
     @Override
-    public CommandExecutor setCommand(MessageCommand command) {
+    public CommandExecutor setCommand(CommandAmbulance command) {
         EntityID agentID = this.agentInfo.getID();
-        Class<? extends MessageCommand> commandClass = command.getClass();
-        if(commandClass == CommandScout.class) {
-            CommandScout commandScout = (CommandScout) command;
-            if(commandScout.isToIDDefined() && (commandScout.getToID().getValue() == agentID.getValue())) {
-                EntityID target = commandScout.getTargetID();
-                if(target == null) {
-                    target = this.agentInfo.getPosition();
-                }
-                this.type = ACTION_SCOUT;
-                this.commanderID = commandScout.getSenderID();
-                this.scoutTargets = new HashSet<>();
-                this.scoutTargets.addAll(
-                        worldInfo.getObjectsInRange(target, commandScout.getRange())
-                                .stream()
-                                .filter(e -> e instanceof Area && e.getStandardURN() != REFUGE)
-                                .map(AbstractEntity::getID)
-                                .collect(Collectors.toList())
-                );
-            }
-        } else if(commandClass == CommandAmbulance.class) {
-            CommandAmbulance commandAmbulance = (CommandAmbulance) command;
-            if(commandAmbulance.isToIDDefined() && commandAmbulance.getToID().getValue() == agentID.getValue()) {
-                this.type = commandAmbulance.getAction();
-                this.target = commandAmbulance.getTargetID();
-                this.commanderID = commandAmbulance.getSenderID();
-            }
+        if(command.isToIDDefined() && Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue()) {
+            this.type = command.getAction();
+            this.target = command.getTargetID();
+            this.commanderID = command.getSenderID();
         }
         return this;
     }
@@ -118,7 +85,6 @@ public class CommandExecutorAmbulance extends CommandExecutor {
         this.actionTransport.updateInfo(messageManager);
         this.actionExtMove.updateInfo(messageManager);
 
-        AmbulanceTeam agent = (AmbulanceTeam)agentInfo.me();
         if(this.isCommandCompleted()) {
             if(this.type != ACTION_UNKNOWN) {
                 messageManager.addMessage(new MessageReport(true, true, false, this.commanderID));
@@ -128,7 +94,6 @@ public class CommandExecutorAmbulance extends CommandExecutor {
                 } else {
                     this.type = ACTION_UNKNOWN;
                     this.target = null;
-                    this.scoutTargets = null;
                     this.commanderID = null;
                 }
             }
@@ -213,16 +178,6 @@ public class CommandExecutorAmbulance extends CommandExecutor {
                     }
                 }
                 return this;
-            case ACTION_SCOUT:
-                if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
-                    return this;
-                }
-                this.pathPlanning.setFrom(this.agentInfo.getPosition());
-                this.pathPlanning.setDestination(this.scoutTargets);
-                List<EntityID> path = this.pathPlanning.calc().getResult();
-                if(path != null) {
-                    this.result = new ActionMove(path);
-                }
         }
         return this;
     }
@@ -295,11 +250,6 @@ public class CommandExecutorAmbulance extends CommandExecutor {
                     }
                 }
                 return true;
-            case ACTION_SCOUT:
-                if(this.scoutTargets != null) {
-                    this.scoutTargets.removeAll(this.worldInfo.getChanged().getChangedEntities());
-                }
-                return (this.scoutTargets == null || this.scoutTargets.isEmpty());
         }
         return true;
     }

@@ -1,4 +1,4 @@
-package adf.sample.tactics.center;
+package adf.sample.tactics;
 
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.information.MessagePoliceForce;
@@ -12,7 +12,7 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
-import adf.component.tactics.center.TacticsPoliceOffice;
+import adf.component.tactics.TacticsPoliceOffice;
 import rescuecore2.standard.entities.Blockade;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.StandardEntity;

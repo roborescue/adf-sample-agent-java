@@ -1,10 +1,9 @@
-package adf.sample.extaction;
+package adf.sample.centralized;
 
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.centralized.CommandScout;
-import adf.agent.communication.standard.bundle.centralized.MessageCommand;
 import adf.agent.communication.standard.bundle.centralized.MessageReport;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
@@ -12,7 +11,7 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.extaction.CommandExecutor;
+import adf.component.centralized.CommandExecutor;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.Area;
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
 
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
-public class CommandExecutorScoutPolice extends CommandExecutor {
+public class CommandExecutorScoutPolice extends CommandExecutor<CommandScout> {
 
     private static final int ACTION_UNKNOWN = -1;
     private static final int ACTION_SCOUT = 1;
@@ -60,27 +59,23 @@ public class CommandExecutorScoutPolice extends CommandExecutor {
     }
 
     @Override
-    public CommandExecutor setCommand(MessageCommand command) {
+    public CommandExecutor<CommandScout> setCommand(CommandScout command) {
         EntityID agentID = this.agentInfo.getID();
-        Class<? extends MessageCommand> commandClass = command.getClass();
-        if(commandClass == CommandScout.class) {
-            CommandScout commandScout = (CommandScout) command;
-            if(commandScout.isToIDDefined() && (commandScout.getToID().getValue() == agentID.getValue())) {
-                EntityID target = commandScout.getTargetID();
-                if(target == null) {
-                    target = this.agentInfo.getPosition();
-                }
-                this.commandType = ACTION_SCOUT;
-                this.commanderID = commandScout.getSenderID();
-                this.scoutTargets = new HashSet<>();
-                this.scoutTargets.addAll(
-                        worldInfo.getObjectsInRange(target, commandScout.getRange())
-                                .stream()
-                                .filter(e -> e instanceof Area && e.getStandardURN() != REFUGE)
-                                .map(AbstractEntity::getID)
-                                .collect(Collectors.toList())
-                );
+        if(command.isToIDDefined() && (command.getToID().getValue() == agentID.getValue())) {
+            EntityID target = command.getTargetID();
+            if(target == null) {
+                target = this.agentInfo.getPosition();
             }
+            this.commandType = ACTION_SCOUT;
+            this.commanderID = command.getSenderID();
+            this.scoutTargets = new HashSet<>();
+            this.scoutTargets.addAll(
+                    worldInfo.getObjectsInRange(target, command.getRange())
+                            .stream()
+                            .filter(e -> e instanceof Area && e.getStandardURN() != REFUGE)
+                            .map(AbstractEntity::getID)
+                            .collect(Collectors.toList())
+            );
         }
         return this;
     }

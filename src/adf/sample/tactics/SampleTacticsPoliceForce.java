@@ -7,7 +7,6 @@ import adf.agent.action.police.ActionClear;
 import adf.agent.communication.MessageManager;
 import adf.agent.communication.standard.bundle.centralized.CommandPolice;
 import adf.agent.communication.standard.bundle.centralized.CommandScout;
-import adf.agent.communication.standard.bundle.centralized.MessageCommand;
 import adf.agent.communication.standard.bundle.information.MessagePoliceForce;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
@@ -15,8 +14,8 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.component.centralized.CommandExecutor;
 import adf.component.communication.CommunicationMessage;
-import adf.component.extaction.CommandExecutor;
 import adf.component.extaction.ExtAction;
 import adf.component.module.complex.RoadDetector;
 import adf.component.module.complex.Search;
@@ -25,6 +24,7 @@ import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
+import java.util.Objects;
 
 public class SampleTacticsPoliceForce extends TacticsPoliceForce {
     private int clearDistance;
@@ -34,7 +34,8 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
 
     private ExtAction actionExtClear;
     private ExtAction actionExtMove;
-    private CommandExecutor actionCommandPolice;
+    private CommandExecutor<CommandPolice> commandExecutorPolice;
+    private CommandExecutor<CommandScout> commandExecutorScout;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -54,21 +55,24 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
                 this.roadDetector = moduleManager.getModule("TacticsPoliceForce.RoadDetector", "adf.sample.module.complex.SampleRoadDetector");
                 this.actionExtClear = moduleManager.getExtAction("TacticsPoliceForce.ActionExtClear", "adf.sample.extaction.ActionExtClear");
                 this.actionExtMove = moduleManager.getExtAction("TacticsPoliceForce.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandPolice = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorPolice", "adf.sample.extaction.CommandExecutorPolice");
+                this.commandExecutorPolice = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorPolice", "adf.sample.centralized.CommandExecutorPolice");
+                this.commandExecutorScout = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorScout", "adf.sample.centralized.CommandExecutorScoutPolice");
                 break;
             case PRECOMPUTED:
                 this.search = moduleManager.getModule("TacticsPoliceForce.Search", "adf.sample.module.complex.SampleSearch");
                 this.roadDetector = moduleManager.getModule("TacticsPoliceForce.RoadDetector", "adf.sample.module.complex.SampleRoadDetector");
                 this.actionExtClear = moduleManager.getExtAction("TacticsPoliceForce.ActionExtClear", "adf.sample.extaction.ActionExtClear");
                 this.actionExtMove = moduleManager.getExtAction("TacticsPoliceForce.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandPolice = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorPolice", "adf.sample.extaction.CommandExecutorPolice");
+                this.commandExecutorPolice = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorPolice", "adf.sample.centralized.CommandExecutorPolice");
+                this.commandExecutorScout = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorScout", "adf.sample.centralized.CommandExecutorScoutPolice");
                 break;
             case NON_PRECOMPUTE:
                 this.search = moduleManager.getModule("TacticsPoliceForce.Search", "adf.sample.module.complex.SampleSearch");
                 this.roadDetector = moduleManager.getModule("TacticsPoliceForce.RoadDetector", "adf.sample.module.complex.SampleRoadDetector");
                 this.actionExtClear = moduleManager.getExtAction("TacticsPoliceForce.ActionExtClear", "adf.sample.extaction.ActionExtClear");
                 this.actionExtMove = moduleManager.getExtAction("TacticsPoliceForce.ActionExtMove", "adf.sample.extaction.ActionExtMove");
-                this.actionCommandPolice = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorPolice", "adf.sample.extaction.CommandExecutorPolice");
+                this.commandExecutorPolice = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorPolice", "adf.sample.centralized.CommandExecutorPolice");
+                this.commandExecutorScout = moduleManager.getCommandExecutor("TacticsPoliceForce.CommandExecutorScout", "adf.sample.centralized.CommandExecutorScoutPolice");
                 break;
         }
     }
@@ -79,7 +83,8 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         this.roadDetector.precompute(precomputeData);
         this.actionExtClear.precompute(precomputeData);
         this.actionExtMove.precompute(precomputeData);
-        this.actionCommandPolice.precompute(precomputeData);
+        this.commandExecutorPolice.precompute(precomputeData);
+        this.commandExecutorScout.precompute(precomputeData);
     }
 
     @Override
@@ -88,7 +93,8 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         this.roadDetector.resume(precomputeData);
         this.actionExtClear.resume(precomputeData);
         this.actionExtMove.resume(precomputeData);
-        this.actionCommandPolice.resume(precomputeData);
+        this.commandExecutorPolice.resume(precomputeData);
+        this.commandExecutorScout.resume(precomputeData);
     }
 
     @Override
@@ -97,7 +103,8 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         this.roadDetector.preparate();
         this.actionExtClear.preparate();
         this.actionExtMove.preparate();
-        this.actionCommandPolice.preparate();
+        this.commandExecutorPolice.preparate();
+        this.commandExecutorScout.preparate();
     }
 
     @Override
@@ -106,21 +113,45 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         this.roadDetector.updateInfo(messageManager);
         this.actionExtClear.updateInfo(messageManager);
         this.actionExtMove.updateInfo(messageManager);
-        this.actionCommandPolice.updateInfo(messageManager);
+        this.commandExecutorPolice.updateInfo(messageManager);
+        this.commandExecutorScout.updateInfo(messageManager);
 
         PoliceForce agent = (PoliceForce) agentInfo.me();
+        EntityID agentID = agent.getID();
         // command
-        MessageCommand command = this.getCommand(agentInfo, messageManager);
-        if(command != null) {
-            Action action = this.actionCommandPolice.setCommand(command).calc().getAction();
-            if (action != null) {
-                this.sendActionMessage(worldInfo, messageManager, agent, action);
-                return action;
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
+            CommandPolice command = (CommandPolice) message;
+            if(command.isToIDDefined() && Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue()) {
+                Action action = this.commandExecutorPolice.setCommand(command).calc().getAction();
+                if (action != null) {
+                    this.sendActionMessage(worldInfo, messageManager, agent, action);
+                    return action;
+                }
             }
+        }
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
+            CommandScout command = (CommandScout) message;
+            if(command.isToIDDefined() && Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue()) {
+                Action action = this.commandExecutorScout.setCommand(command).calc().getAction();
+                if (action != null) {
+                    this.sendActionMessage(worldInfo, messageManager, agent, action);
+                    return action;
+                }
+            }
+        }
+        Action action = this.commandExecutorPolice.calc().getAction();
+        if (action != null) {
+            this.sendActionMessage(worldInfo, messageManager, agent, action);
+            return action;
+        }
+        action = this.commandExecutorScout.calc().getAction();
+        if (action != null) {
+            this.sendActionMessage(worldInfo, messageManager, agent, action);
+            return action;
         }
         // autonomous
         EntityID target = this.roadDetector.calc().getTarget();
-        Action action = this.actionExtClear.setTarget(target).calc().getAction();
+        action = this.actionExtClear.setTarget(target).calc().getAction();
         if(action != null) {
             this.sendActionMessage(worldInfo, messageManager, agent, action);
             return action;
@@ -168,25 +199,5 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         if(actionIndex != -1) {
             messageManager.addMessage(new MessagePoliceForce(true, policeForce, actionIndex, target));
         }
-    }
-
-    private MessageCommand getCommand(AgentInfo agentInfo, MessageManager messageManager) {
-        MessageCommand result = null;
-        EntityID agentID = agentInfo.getID();
-        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
-            CommandScout command = (CommandScout) message;
-            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
-                result = command;
-                break;
-            }
-        }
-        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
-            CommandPolice command = (CommandPolice) message;
-            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
-                result = command;
-                break;
-            }
-        }
-        return result;
     }
 }

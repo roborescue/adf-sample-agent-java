@@ -1,39 +1,36 @@
-package adf.sample.extaction;
+package adf.sample.centralized;
 
 import adf.agent.action.common.ActionMove;
 import adf.agent.action.common.ActionRest;
 import adf.agent.action.fire.ActionRefill;
 import adf.agent.communication.MessageManager;
-import adf.agent.communication.standard.bundle.centralized.*;
+import adf.agent.communication.standard.bundle.centralized.CommandFire;
+import adf.agent.communication.standard.bundle.centralized.MessageReport;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.component.extaction.CommandExecutor;
+import adf.component.centralized.CommandExecutor;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.*;
-import rescuecore2.worldmodel.AbstractEntity;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 import static rescuecore2.standard.entities.StandardEntityURN.HYDRANT;
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
-public class CommandExecutorFire extends CommandExecutor{
+public class CommandExecutorFire extends CommandExecutor<CommandFire> {
     private static final int ACTION_UNKNOWN = -1;
     private static final int ACTION_REST = CommandFire.ACTION_REST;
     private static final int ACTION_MOVE = CommandFire.ACTION_MOVE;
     private static final int ACTION_EXTINGUISH = CommandFire.ACTION_EXTINGUISH;
     private static final int ACTION_REFILL = CommandFire.ACTION_REFILL;
     private static final int ACTION_AUTONOMY = CommandFire.ACTION_AUTONOMY;
-    private static final int ACTION_SCOUT = 6;
 
     private PathPlanning pathPlanning;
 
@@ -44,7 +41,6 @@ public class CommandExecutorFire extends CommandExecutor{
 
     private int commandType;
     private EntityID target;
-    private Collection<EntityID> scoutTargets;
     private EntityID commanderID;
     
     public CommandExecutorFire(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
@@ -71,34 +67,12 @@ public class CommandExecutorFire extends CommandExecutor{
     }
 
     @Override
-    public CommandExecutor setCommand(MessageCommand command) {
+    public CommandExecutor setCommand(CommandFire command) {
         EntityID agentID = this.agentInfo.getID();
-        Class<? extends MessageCommand> commandClass = command.getClass();
-        if(commandClass == CommandScout.class) {
-            CommandScout commandScout = (CommandScout) command;
-            if(commandScout.isToIDDefined() && (commandScout.getToID().getValue() == agentID.getValue())) {
-                EntityID target = commandScout.getTargetID();
-                if(target == null) {
-                    target = this.agentInfo.getPosition();
-                }
-                this.commandType = ACTION_SCOUT;
-                this.commanderID = commandScout.getSenderID();
-                this.scoutTargets = new HashSet<>();
-                this.scoutTargets.addAll(
-                        worldInfo.getObjectsInRange(target, commandScout.getRange())
-                                .stream()
-                                .filter(e -> e instanceof Area && e.getStandardURN() != REFUGE)
-                                .map(AbstractEntity::getID)
-                                .collect(Collectors.toList())
-                );
-            }
-        } else if(commandClass == CommandFire.class) {
-            CommandFire commandAmbulance = (CommandFire) command;
-            if(commandAmbulance.isToIDDefined() && commandAmbulance.getToID().getValue() == agentID.getValue()) {
-                this.commandType = commandAmbulance.getAction();
-                this.target = commandAmbulance.getTargetID();
-                this.commanderID = commandAmbulance.getSenderID();
-            }
+        if(command.isToIDDefined() && Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue()) {
+            this.commandType = command.getAction();
+            this.target = command.getTargetID();
+            this.commanderID = command.getSenderID();
         }
         return this;
     }
@@ -150,7 +124,6 @@ public class CommandExecutorFire extends CommandExecutor{
                 messageManager.addMessage(new MessageReport(true, true, false, this.commanderID));
                 this.commandType = ACTION_UNKNOWN;
                 this.target = null;
-                this.scoutTargets = null;
                 this.commanderID = null;
             }
         }
@@ -236,16 +209,6 @@ public class CommandExecutorFire extends CommandExecutor{
                     }
                 }
                 return this;
-            case ACTION_SCOUT:
-                if(this.scoutTargets == null || this.scoutTargets.isEmpty()) {
-                    return this;
-                }
-                this.pathPlanning.setFrom(position);
-                this.pathPlanning.setDestination(this.scoutTargets);
-                List<EntityID> path = this.pathPlanning.calc().getResult();
-                if(path != null) {
-                    this.result = new ActionMove(path);
-                }
         }
         return this;
     }
@@ -291,11 +254,6 @@ public class CommandExecutorFire extends CommandExecutor{
                     }
                 }
                 return true;
-            case ACTION_SCOUT:
-                if(this.scoutTargets != null) {
-                    this.scoutTargets.removeAll(this.worldInfo.getChanged().getChangedEntities());
-                }
-                return (this.scoutTargets == null || this.scoutTargets.isEmpty());
         }
         return true;
     }
