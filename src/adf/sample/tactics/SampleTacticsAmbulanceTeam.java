@@ -143,18 +143,15 @@ public class SampleTacticsAmbulanceTeam extends TacticsAmbulanceTeam {
             }
         }
         if(this.recentCommand != null) {
+            Action action = null;
             if(this.recentCommand.getClass() == CommandAmbulance.class) {
-                Action action = this.commandExecutorAmbulance.calc().getAction();
-                if (action != null) {
-                    this.sendActionMessage(messageManager, agent, action);
-                    return action;
-                }
+                action = this.commandExecutorAmbulance.calc().getAction();
             } else if(this.recentCommand.getClass() == CommandScout.class){
-                Action action = this.commandExecutorScout.calc().getAction();
-                if (action != null) {
-                    this.sendActionMessage(messageManager, agent, action);
-                    return action;
-                }
+                action = this.commandExecutorScout.calc().getAction();
+            }
+            if (action != null) {
+                this.sendActionMessage(messageManager, agent, action);
+                return action;
             }
         }
         // autonomous

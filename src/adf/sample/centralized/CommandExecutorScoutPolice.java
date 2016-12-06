@@ -21,6 +21,7 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
@@ -30,17 +31,19 @@ public class CommandExecutorScoutPolice extends CommandExecutor<CommandScout> {
     private static final int ACTION_UNKNOWN = -1;
     private static final int ACTION_SCOUT = 1;
 
-    private int commandType;
-    private Collection<EntityID> scoutTargets;
-    private EntityID commanderID;
-
     private PathPlanning pathPlanning;
 
     private ExtAction actionExtClear;
 
+    private int commandType;
+    private Collection<EntityID> scoutTargets;
+    private EntityID commanderID;
+
     public CommandExecutorScoutPolice(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         this.commandType = ACTION_UNKNOWN;
+        this.scoutTargets = new HashSet<>();
+        this.commanderID = null;
 
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
@@ -61,7 +64,7 @@ public class CommandExecutorScoutPolice extends CommandExecutor<CommandScout> {
     @Override
     public CommandExecutor<CommandScout> setCommand(CommandScout command) {
         EntityID agentID = this.agentInfo.getID();
-        if(command.isToIDDefined() && (command.getToID().getValue() == agentID.getValue())) {
+        if(command.isToIDDefined() && (Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue())) {
             EntityID target = command.getTargetID();
             if(target == null) {
                 target = this.agentInfo.getPosition();

@@ -19,10 +19,7 @@ import adf.component.module.complex.RoadDetector;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static rescuecore2.standard.entities.StandardEntityURN.*;
 
@@ -182,93 +179,13 @@ public class SampleRoadDetector extends RoadDetector {
         for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
             Class<? extends CommunicationMessage> messageClass = message.getClass();
             if(messageClass == MessageAmbulanceTeam.class) {
-                MessageAmbulanceTeam mat = (MessageAmbulanceTeam)message;
-                if(mat.getAction() == MessageAmbulanceTeam.ACTION_RESCUE) {
-                    StandardEntity position = this.worldInfo.getEntity(mat.getPosition());
-                    if(position != null && position instanceof Building) {
-                        this.targetAreas.removeAll(((Building)position).getNeighbours());
-                    }
-                } else if(mat.getAction() == MessageAmbulanceTeam.ACTION_LOAD) {
-                    StandardEntity position = this.worldInfo.getEntity(mat.getPosition());
-                    if (position != null && position instanceof Building) {
-                        this.targetAreas.removeAll(((Building) position).getNeighbours());
-                    }
-                } else if(mat.getAction() == MessageAmbulanceTeam.ACTION_MOVE) {
-                    StandardEntity target = this.worldInfo.getEntity(mat.getTargetID());
-                    if(target instanceof Building) {
-                        for (EntityID id : ((Building)target).getNeighbours()) {
-                            StandardEntity neighbour = this.worldInfo.getEntity(id);
-                            if (neighbour instanceof Road) {
-                                this.priorityRoads.add(id);
-                            }
-                        }
-                    } else if(target instanceof Human) {
-                        Human human = (Human)target;
-                        if(human.isPositionDefined()) {
-                            StandardEntity position = this.worldInfo.getPosition(human);
-                            if(position instanceof Building) {
-                                for (EntityID id : ((Building)position).getNeighbours()) {
-                                    StandardEntity neighbour = this.worldInfo.getEntity(id);
-                                    if (neighbour instanceof Road) {
-                                        this.priorityRoads.add(id);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                this.reflectMessage((MessageAmbulanceTeam)message);
             } else if(messageClass == MessageFireBrigade.class) {
-                MessageFireBrigade mfb = (MessageFireBrigade)message;
-                if(mfb.getAction() == MessageFireBrigade.ACTION_REFILL) {
-                    StandardEntity target = this.worldInfo.getEntity(mfb.getTargetID());
-                    if(target instanceof Building) {
-                        for (EntityID id : ((Building)target).getNeighbours()) {
-                            StandardEntity neighbour = this.worldInfo.getEntity(id);
-                            if (neighbour instanceof Road) {
-                                this.priorityRoads.add(id);
-                            }
-                        }
-                    } else if(target.getStandardURN() == HYDRANT) {
-                        this.priorityRoads.add(target.getID());
-                        this.targetAreas.add(target.getID());
-                    }
-                }
+                this.reflectMessage((MessageFireBrigade)message);
             } else if(messageClass == MessageRoad.class) {
-                MessageRoad messageRoad = (MessageRoad)message;
-                if(messageRoad.isBlockadeDefined() && !changedEntities.contains(messageRoad.getBlockadeID())) {
-                    MessageUtil.reflectMessage(this.worldInfo, messageRoad);
-                }
-                if(messageRoad.isPassable()) {
-                    this.targetAreas.remove(messageRoad.getRoadID());
-                }
+                this.reflectMessage((MessageRoad)message, changedEntities);
             } else if(messageClass == MessagePoliceForce.class) {
-                MessagePoliceForce mpf = (MessagePoliceForce)message;
-                if(mpf.getAction() == MessagePoliceForce.ACTION_CLEAR) {
-                    if(mpf.getAgentID().getValue() != this.agentInfo.getID().getValue()) {
-                        if (mpf.isTargetDefined()) {
-                            EntityID targetID = mpf.getTargetID();
-                            StandardEntity entity = this.worldInfo.getEntity(targetID);
-                            if (entity != null) {
-                                if (entity instanceof Area) {
-                                    this.targetAreas.remove(targetID);
-                                    if(this.result != null && this.result.getValue() == targetID.getValue()) {
-                                        if(this.agentInfo.getID().getValue() < mpf.getAgentID().getValue()) {
-                                            this.result = null;
-                                        }
-                                    }
-                                } else if (entity.getStandardURN() == BLOCKADE) {
-                                    EntityID position = ((Blockade) entity).getPosition();
-                                    this.targetAreas.remove(position);
-                                    if(this.result != null && this.result.getValue() == position.getValue()) {
-                                        if(this.agentInfo.getID().getValue() < mpf.getAgentID().getValue()) {
-                                            this.result = null;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                this.reflectMessage((MessagePoliceForce)message);
             } else if(messageClass == CommandPolice.class) {
                 CommandPolice command = (CommandPolice)message;
                 boolean flag = false;
@@ -302,5 +219,109 @@ public class SampleRoadDetector extends RoadDetector {
             }
         }
         return this;
+    }
+
+    private void reflectMessage(MessageRoad messageRoad, Collection<EntityID> changedEntities) {
+        if(messageRoad.isBlockadeDefined() && !changedEntities.contains(messageRoad.getBlockadeID())) {
+            MessageUtil.reflectMessage(this.worldInfo, messageRoad);
+        }
+        if(messageRoad.isPassable()) {
+            this.targetAreas.remove(messageRoad.getRoadID());
+        }
+    }
+
+    private void reflectMessage(MessageAmbulanceTeam messageAmbulanceTeam) {
+        if(messageAmbulanceTeam.getPosition() == null) {
+            return;
+        }
+        if(messageAmbulanceTeam.getAction() == MessageAmbulanceTeam.ACTION_RESCUE) {
+            StandardEntity position = this.worldInfo.getEntity(messageAmbulanceTeam.getPosition());
+            if(position != null && position instanceof Building) {
+                this.targetAreas.removeAll(((Building)position).getNeighbours());
+            }
+        } else if(messageAmbulanceTeam.getAction() == MessageAmbulanceTeam.ACTION_LOAD) {
+            StandardEntity position = this.worldInfo.getEntity(messageAmbulanceTeam.getPosition());
+            if (position != null && position instanceof Building) {
+                this.targetAreas.removeAll(((Building) position).getNeighbours());
+            }
+        } else if(messageAmbulanceTeam.getAction() == MessageAmbulanceTeam.ACTION_MOVE) {
+            if(messageAmbulanceTeam.getTargetID() == null) {
+                return;
+            }
+            StandardEntity target = this.worldInfo.getEntity(messageAmbulanceTeam.getTargetID());
+            if(target instanceof Building) {
+                for (EntityID id : ((Building)target).getNeighbours()) {
+                    StandardEntity neighbour = this.worldInfo.getEntity(id);
+                    if (neighbour instanceof Road) {
+                        this.priorityRoads.add(id);
+                    }
+                }
+            } else if(target instanceof Human) {
+                Human human = (Human)target;
+                if(human.isPositionDefined()) {
+                    StandardEntity position = this.worldInfo.getPosition(human);
+                    if(position instanceof Building) {
+                        for (EntityID id : ((Building)position).getNeighbours()) {
+                            StandardEntity neighbour = this.worldInfo.getEntity(id);
+                            if (neighbour instanceof Road) {
+                                this.priorityRoads.add(id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void reflectMessage(MessageFireBrigade messageFireBrigade) {
+        if(messageFireBrigade.getTargetID() == null) {
+            return;
+        }
+        if(messageFireBrigade.getAction() == MessageFireBrigade.ACTION_REFILL) {
+            StandardEntity target = this.worldInfo.getEntity(messageFireBrigade.getTargetID());
+            if(target instanceof Building) {
+                for (EntityID id : ((Building)target).getNeighbours()) {
+                    StandardEntity neighbour = this.worldInfo.getEntity(id);
+                    if (neighbour instanceof Road) {
+                        this.priorityRoads.add(id);
+                    }
+                }
+            } else if(target.getStandardURN() == HYDRANT) {
+                this.priorityRoads.add(target.getID());
+                this.targetAreas.add(target.getID());
+            }
+        }
+    }
+
+    private void reflectMessage(MessagePoliceForce messagePoliceForce) {
+        if(messagePoliceForce.getAction() == MessagePoliceForce.ACTION_CLEAR) {
+            if(messagePoliceForce.getAgentID().getValue() != this.agentInfo.getID().getValue()) {
+                if (messagePoliceForce.isTargetDefined()) {
+                    EntityID targetID = messagePoliceForce.getTargetID();
+                    if(targetID == null) {
+                        return;
+                    }
+                    StandardEntity entity = this.worldInfo.getEntity(targetID);
+                    if (entity != null) {
+                        if (entity instanceof Area) {
+                            this.targetAreas.remove(targetID);
+                            if(this.result != null && this.result.getValue() == targetID.getValue()) {
+                                if(this.agentInfo.getID().getValue() < messagePoliceForce.getAgentID().getValue()) {
+                                    this.result = null;
+                                }
+                            }
+                        } else if (entity.getStandardURN() == BLOCKADE) {
+                            EntityID position = ((Blockade) entity).getPosition();
+                            this.targetAreas.remove(position);
+                            if(this.result != null && this.result.getValue() == position.getValue()) {
+                                if(this.agentInfo.getID().getValue() < messagePoliceForce.getAgentID().getValue()) {
+                                    this.result = null;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

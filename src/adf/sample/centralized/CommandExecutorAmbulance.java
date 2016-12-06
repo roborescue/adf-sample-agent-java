@@ -19,6 +19,7 @@ import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.worldmodel.EntityID;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -143,6 +144,22 @@ public class CommandExecutorAmbulance extends CommandExecutor<CommandAmbulance> 
         switch (this.type) {
             case ACTION_REST:
                 EntityID position = this.agentInfo.getPosition();
+                if(this.target == null) {
+                    Collection<EntityID> refuges = this.worldInfo.getEntityIDsOfType(REFUGE);
+                    if(refuges.contains(position)) {
+                        this.result = new ActionRest();
+                    }else {
+                        this.pathPlanning.setFrom(position);
+                        this.pathPlanning.setDestination(refuges);
+                        List<EntityID> path = this.pathPlanning.calc().getResult();
+                        if (path != null && path.size() > 0) {
+                            this.result = new ActionMove(path);
+                        } else {
+                            this.result = new ActionRest();
+                        }
+                    }
+                    return this;
+                }
                 if (position.getValue() != this.target.getValue()) {
                     List<EntityID> path = this.pathPlanning.getResult(position, this.target);
                     if (path != null && path.size() > 0) {
@@ -153,16 +170,24 @@ public class CommandExecutorAmbulance extends CommandExecutor<CommandAmbulance> 
                 this.result = new ActionRest();
                 return this;
             case ACTION_MOVE:
-                this.result = this.actionExtMove.setTarget(this.target).calc().getAction();
+                if(this.target != null) {
+                    this.result = this.actionExtMove.setTarget(this.target).calc().getAction();
+                }
                 return this;
             case ACTION_RESCUE:
-                this.result = this.actionTransport.setTarget(this.target).calc().getAction();
+                if(this.target != null) {
+                    this.result = this.actionTransport.setTarget(this.target).calc().getAction();
+                }
                 return this;
             case ACTION_LOAD:
-                this.result = this.actionTransport.setTarget(this.target).calc().getAction();
+                if(this.target != null) {
+                    this.result = this.actionTransport.setTarget(this.target).calc().getAction();
+                }
                 return this;
             case ACTION_UNLOAD:
-                this.result = this.actionTransport.setTarget(this.target).calc().getAction();
+                if(this.target != null) {
+                    this.result = this.actionTransport.setTarget(this.target).calc().getAction();
+                }
                 return this;
             case ACTION_AUTONOMY:
                 if (this.target == null) {

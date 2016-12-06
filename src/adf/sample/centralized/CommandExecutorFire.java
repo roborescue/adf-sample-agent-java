@@ -18,6 +18,7 @@ import adf.component.module.algorithm.PathPlanning;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -136,6 +137,22 @@ public class CommandExecutorFire extends CommandExecutor<CommandFire> {
         EntityID position = this.agentInfo.getPosition();
         switch (this.commandType) {
             case ACTION_REST:
+                if(this.target == null) {
+                    Collection<EntityID> refuges = this.worldInfo.getEntityIDsOfType(REFUGE);
+                    if(refuges.contains(position)) {
+                        this.result = new ActionRest();
+                    }else {
+                        this.pathPlanning.setFrom(position);
+                        this.pathPlanning.setDestination(refuges);
+                        List<EntityID> path = this.pathPlanning.calc().getResult();
+                        if (path != null && path.size() > 0) {
+                            this.result = new ActionMove(path);
+                        } else {
+                            this.result = new ActionRest();
+                        }
+                    }
+                    return this;
+                }
                 if (position.getValue() != this.target.getValue()) {
                     List<EntityID> path = this.pathPlanning.getResult(position, this.target);
                     if(path != null && path.size() > 0) {
@@ -146,10 +163,14 @@ public class CommandExecutorFire extends CommandExecutor<CommandFire> {
                 this.result = new ActionRest();
                 return this;
             case ACTION_MOVE:
-                this.result = this.actionExtMove.setTarget(this.target).calc().getAction();
+                if(this.target != null) {
+                    this.result = this.actionExtMove.setTarget(this.target).calc().getAction();
+                }
                 return this;
             case ACTION_EXTINGUISH:
-                this.result = this.actionFireFighting.setTarget(this.target).calc().getAction();
+                if(this.target != null) {
+                    this.result = this.actionFireFighting.setTarget(this.target).calc().getAction();
+                }
                 return this;
             case ACTION_REFILL:
                 if(this.target == null) {

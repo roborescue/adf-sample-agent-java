@@ -33,7 +33,6 @@ public class SampleBuildingDetector extends BuildingDetector {
     private int sendTime;
     private int commandInterval;
 
-    private boolean isSendBuildingMessage;
     private Collection<EntityID> agentPositions;
     private Map<EntityID, Integer> sentTimeMap;
     private int receivedEntityInterval;
@@ -62,7 +61,6 @@ public class SampleBuildingDetector extends BuildingDetector {
         this.sendTime = 0;
         this.commandInterval = developData.getInteger("SampleBuildingDetector.clearCommandInterval", 5);
 
-        this.isSendBuildingMessage = true;
         this.agentPositions = new HashSet<>();
         this.sentTimeMap = new HashMap<>();
         this.receivedEntityInterval = developData.getInteger("SampleBuildingDetector.receivedEntityInterval", 3);
@@ -81,8 +79,7 @@ public class SampleBuildingDetector extends BuildingDetector {
         this.clustering.updateInfo(messageManager);
 
         this.reflectMessage(messageManager);
-        this.checkSendFlags();
-        this.sendMessage(messageManager);
+        this.sendEntityInfo(messageManager);
 
         if(this.result != null) {
             Building building = (Building)this.worldInfo.getEntity(this.result);
@@ -150,8 +147,6 @@ public class SampleBuildingDetector extends BuildingDetector {
         }
         return this;
     }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private EntityID calcTargetInCluster() {
         int clusterIndex = this.clustering.getClusterIndex(this.agentInfo.getID());
@@ -228,8 +223,6 @@ public class SampleBuildingDetector extends BuildingDetector {
         }
         return null;
     }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public EntityID getTarget() {
@@ -324,10 +317,14 @@ public class SampleBuildingDetector extends BuildingDetector {
         }
     }
 
-    private void checkSendFlags(){
-        this.isSendBuildingMessage = true;
+    private boolean checkSendFlags(){
+        boolean isSendBuildingMessage = true;
 
-        Human agent = (Human)this.agentInfo.me();
+        StandardEntity me = this.agentInfo.me();
+        if(!(me instanceof Human)){
+            return false;
+        }
+        Human agent = (Human)me;
         EntityID agentID = agent.getID();
         EntityID position = agent.getPosition();
         StandardEntityURN agentURN = agent.getStandardURN();
@@ -337,41 +334,35 @@ public class SampleBuildingDetector extends BuildingDetector {
         this.agentPositions.clear();
         for(StandardEntity entity : this.worldInfo.getEntitiesOfType(agentURN)) {
             Human other = (Human)entity;
-            if(other.getPosition().getValue() == position.getValue()) {
-                if(other.getID().getValue() > agentID.getValue()) {
-                    this.isSendBuildingMessage = false;
+            if(isSendBuildingMessage) {
+                if (other.getPosition().getValue() == position.getValue()) {
+                    if (other.getID().getValue() > agentID.getValue()) {
+                        isSendBuildingMessage = false;
+                    }
                 }
             }
             this.agentPositions.add(other.getPosition());
         }
-
         for(StandardEntityURN urn : agentTypes) {
             for(StandardEntity entity : this.worldInfo.getEntitiesOfType(urn)) {
-                Human other = (Human)entity;
-                if(other.getPosition().getValue() == position.getValue()) {
-                    if(urn == AMBULANCE_TEAM) {
-                        if(other.getID().getValue() > agentID.getValue()) {
-                            if(agentURN == POLICE_FORCE) {
-                                this.isSendBuildingMessage = false;
-                            }
-                        }
-                    } else if(urn == FIRE_BRIGADE) {
-                        this.isSendBuildingMessage = false;
-                    } else if(urn == POLICE_FORCE) {
-                        if(other.getID().getValue() > agentID.getValue()) {
-                            if (agentURN == AMBULANCE_TEAM) {
-                                this.isSendBuildingMessage = false;
-                            }
+                Human other = (Human) entity;
+                if(isSendBuildingMessage) {
+                    if (other.getPosition().getValue() == position.getValue()) {
+                        if (urn == FIRE_BRIGADE) {
+                            isSendBuildingMessage = false;
+                        } else if (agentURN != FIRE_BRIGADE && other.getID().getValue() > agentID.getValue()) {
+                            isSendBuildingMessage = false;
                         }
                     }
                 }
                 this.agentPositions.add(other.getPosition());
             }
         }
+        return isSendBuildingMessage;
     }
 
-    private void sendMessage(MessageManager messageManager) {
-        if(this.isSendBuildingMessage) {
+    private void sendEntityInfo(MessageManager messageManager) {
+        if(this.checkSendFlags()) {
             Building building = null;
             int currentTime = this.agentInfo.getTime();
             Human agent = (Human) this.agentInfo.me();

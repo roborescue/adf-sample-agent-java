@@ -161,53 +161,57 @@ public class CommandExecutorPolice extends CommandExecutor<CommandPolice> {
                 this.result = new ActionRest();
                 return this;
             case ACTION_MOVE:
-                this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
-                return this;
-            case ACTION_CLEAR:
-                this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
-                return this;
-            case ACTION_AUTONOMY:
                 if(this.target != null) {
-                    StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
-                    if(targetEntity.getStandardURN() == REFUGE) {
-                        PoliceForce agent = (PoliceForce) this.agentInfo.me();
-                        if(agent.getDamage() > 0) {
-                            if (position.getValue() != this.target.getValue()) {
-                                List<EntityID> path = this.pathPlanning.getResult(position, this.target);
-                                if(path != null && path.size() > 0) {
-                                    Action action = this.actionExtClear.setTarget(path.get(path.size() - 1)).calc().getAction();
-                                    if (action == null) {
-                                        action = new ActionMove(path);
-                                    }
-                                    this.result = action;
-                                    return this;
-                                }
-                            }
-                            this.result = new ActionRest();
-                        } else {
-                            this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
-                        }
-                    } else if (targetEntity instanceof Area) {
-                        this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
-                        return this;
-                    }else if (targetEntity instanceof Human) {
-                        Human h = (Human) targetEntity;
-                        if((h.isHPDefined() && h.getHP() == 0)) {
-                            return this;
-                        }
-                        if(h.isPositionDefined() && this.worldInfo.getPosition(h) instanceof Area) {
-                            this.target = h.getPosition();
-                            this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
-                        }
-                    } else if(targetEntity.getStandardURN() == BLOCKADE) {
-                        Blockade blockade = (Blockade)targetEntity;
-                        if(blockade.isPositionDefined()) {
-                            this.target = blockade.getPosition();
-                            this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
-                        }
-                    }
+                    this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
                 }
                 return this;
+            case ACTION_CLEAR:
+                if(this.target != null) {
+                    this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
+                }
+                return this;
+            case ACTION_AUTONOMY:
+                if(this.target == null) {
+                    return this;
+                }
+                StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
+                if(targetEntity.getStandardURN() == REFUGE) {
+                    PoliceForce agent = (PoliceForce) this.agentInfo.me();
+                    if(agent.getDamage() > 0) {
+                        if (position.getValue() != this.target.getValue()) {
+                            List<EntityID> path = this.pathPlanning.getResult(position, this.target);
+                            if(path != null && path.size() > 0) {
+                                Action action = this.actionExtClear.setTarget(path.get(path.size() - 1)).calc().getAction();
+                                if (action == null) {
+                                    action = new ActionMove(path);
+                                }
+                                this.result = action;
+                                return this;
+                            }
+                        }
+                        this.result = new ActionRest();
+                    } else {
+                        this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
+                    }
+                } else if (targetEntity instanceof Area) {
+                    this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
+                    return this;
+                }else if (targetEntity instanceof Human) {
+                    Human h = (Human) targetEntity;
+                    if((h.isHPDefined() && h.getHP() == 0)) {
+                        return this;
+                    }
+                    if(h.isPositionDefined() && this.worldInfo.getPosition(h) instanceof Area) {
+                        this.target = h.getPosition();
+                        this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
+                    }
+                } else if(targetEntity.getStandardURN() == BLOCKADE) {
+                    Blockade blockade = (Blockade)targetEntity;
+                    if(blockade.isPositionDefined()) {
+                        this.target = blockade.getPosition();
+                        this.result = this.actionExtClear.setTarget(this.target).calc().getAction();
+                    }
+                }
         }
         return this;
     }

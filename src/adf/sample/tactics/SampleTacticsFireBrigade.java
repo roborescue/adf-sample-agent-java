@@ -138,18 +138,15 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
             }
         }
         if(this.recentCommand != null) {
+            Action action = null;
             if(this.recentCommand.getClass() == CommandFire.class) {
-                Action action = this.commandExecutorFire.calc().getAction();
-                if (action != null) {
-                    this.sendActionMessage(messageManager, agent, action);
-                    return action;
-                }
+                action = this.commandExecutorFire.calc().getAction();
             } else if(this.recentCommand.getClass() == CommandScout.class){
-                Action action = this.commandExecutorScout.calc().getAction();
-                if (action != null) {
-                    this.sendActionMessage(messageManager, agent, action);
-                    return action;
-                }
+                action = this.commandExecutorScout.calc().getAction();
+            }
+            if (action != null) {
+                this.sendActionMessage(messageManager, agent, action);
+                return action;
             }
         }
         // autonomous

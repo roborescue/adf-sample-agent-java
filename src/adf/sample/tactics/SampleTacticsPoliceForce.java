@@ -138,18 +138,15 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
             }
         }
         if(this.recentCommand != null) {
+            Action action = null;
             if(this.recentCommand.getClass() == CommandPolice.class) {
-                Action action = this.commandExecutorPolice.calc().getAction();
-                if (action != null) {
-                    this.sendActionMessage(worldInfo, messageManager, agent, action);
-                    return action;
-                }
+                action = this.commandExecutorPolice.calc().getAction();
             } else if (this.recentCommand.getClass() == CommandScout.class) {
-                Action action = this.commandExecutorScout.calc().getAction();
-                if (action != null) {
-                    this.sendActionMessage(worldInfo, messageManager, agent, action);
-                    return action;
-                }
+                action = this.commandExecutorScout.calc().getAction();
+            }
+            if (action != null) {
+                this.sendActionMessage(worldInfo, messageManager, agent, action);
+                return action;
             }
         }
         // autonomous
