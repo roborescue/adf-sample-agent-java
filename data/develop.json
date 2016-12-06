@@ -13,5 +13,7 @@
 "SampleVictimDetector.clearCommandInterval":5,
 "SampleVictimDetector.receivedEntityInterval":3,
 "SampleVictimDetector.sentEntityInterval":5,
-"SampleVictimDetector.moveDistance":40000
+"SampleVictimDetector.moveDistance":40000,
+"CommandPickerAmbulance.scoutDistance":40000,
+"CommandPickerFire.scoutDistance":40000
 }
