@@ -34,8 +34,11 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
 
     private ExtAction actionExtClear;
     private ExtAction actionExtMove;
+
     private CommandExecutor<CommandPolice> commandExecutorPolice;
     private CommandExecutor<CommandScout> commandExecutorScout;
+
+    private CommunicationMessage recentCommand;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -48,6 +51,7 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         );
         // init value
         this.clearDistance = scenarioInfo.getClearRepairDistance();
+        this.recentCommand = null;
         // init Algorithm Module & ExtAction
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
@@ -119,39 +123,38 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         PoliceForce agent = (PoliceForce) agentInfo.me();
         EntityID agentID = agent.getID();
         // command
-        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
-            CommandPolice command = (CommandPolice) message;
-            if(command.isToIDDefined() && Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue()) {
-                Action action = this.commandExecutorPolice.setCommand(command).calc().getAction();
-                if (action != null) {
-                    this.sendActionMessage(worldInfo, messageManager, agent, action);
-                    return action;
-                }
-            }
-        }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
             CommandScout command = (CommandScout) message;
             if(command.isToIDDefined() && Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue()) {
-                Action action = this.commandExecutorScout.setCommand(command).calc().getAction();
+                this.recentCommand = command;
+                this.commandExecutorScout.setCommand(command);
+            }
+        }
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
+            CommandPolice command = (CommandPolice) message;
+            if(command.isToIDDefined() && Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue()) {
+                this.recentCommand = command;
+                this.commandExecutorPolice.setCommand(command);
+            }
+        }
+        if(this.recentCommand != null) {
+            if(this.recentCommand.getClass() == CommandPolice.class) {
+                Action action = this.commandExecutorPolice.calc().getAction();
+                if (action != null) {
+                    this.sendActionMessage(worldInfo, messageManager, agent, action);
+                    return action;
+                }
+            } else if (this.recentCommand.getClass() == CommandScout.class) {
+                Action action = this.commandExecutorScout.calc().getAction();
                 if (action != null) {
                     this.sendActionMessage(worldInfo, messageManager, agent, action);
                     return action;
                 }
             }
         }
-        Action action = this.commandExecutorPolice.calc().getAction();
-        if (action != null) {
-            this.sendActionMessage(worldInfo, messageManager, agent, action);
-            return action;
-        }
-        action = this.commandExecutorScout.calc().getAction();
-        if (action != null) {
-            this.sendActionMessage(worldInfo, messageManager, agent, action);
-            return action;
-        }
         // autonomous
         EntityID target = this.roadDetector.calc().getTarget();
-        action = this.actionExtClear.setTarget(target).calc().getAction();
+        Action action = this.actionExtClear.setTarget(target).calc().getAction();
         if(action != null) {
             this.sendActionMessage(worldInfo, messageManager, agent, action);
             return action;

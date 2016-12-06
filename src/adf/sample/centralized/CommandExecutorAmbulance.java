@@ -145,7 +145,7 @@ public class CommandExecutorAmbulance extends CommandExecutor<CommandAmbulance> 
                 EntityID position = this.agentInfo.getPosition();
                 if (position.getValue() != this.target.getValue()) {
                     List<EntityID> path = this.pathPlanning.getResult(position, this.target);
-                    if(path != null && path.size() > 0) {
+                    if (path != null && path.size() > 0) {
                         this.result = new ActionMove(path);
                         return this;
                     }
@@ -165,19 +165,19 @@ public class CommandExecutorAmbulance extends CommandExecutor<CommandAmbulance> 
                 this.result = this.actionTransport.setTarget(this.target).calc().getAction();
                 return this;
             case ACTION_AUTONOMY:
-                if(this.target != null) {
-                    StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
-                    if (targetEntity instanceof Area) {
-                        if(this.agentInfo.someoneOnBoard() == null) {
-                            this.result = this.actionExtMove.setTarget(this.target).calc().getAction();
-                        } else {
-                            this.result = this.actionTransport.setTarget(this.target).calc().getAction();
-                        }
-                    }else if (targetEntity instanceof Human) {
+                if (this.target == null) {
+                    return this;
+                }
+                StandardEntity targetEntity = this.worldInfo.getEntity(this.target);
+                if (targetEntity instanceof Area) {
+                    if (this.agentInfo.someoneOnBoard() == null) {
+                        this.result = this.actionExtMove.setTarget(this.target).calc().getAction();
+                    } else {
                         this.result = this.actionTransport.setTarget(this.target).calc().getAction();
                     }
+                } else if (targetEntity instanceof Human) {
+                    this.result = this.actionTransport.setTarget(this.target).calc().getAction();
                 }
-                return this;
         }
         return this;
     }

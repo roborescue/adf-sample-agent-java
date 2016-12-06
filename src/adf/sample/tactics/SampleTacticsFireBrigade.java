@@ -25,6 +25,7 @@ import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.List;
+import java.util.Objects;
 
 public class SampleTacticsFireBrigade extends TacticsFireBrigade {
     private BuildingDetector buildingDetector;
@@ -32,8 +33,11 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
 
     private ExtAction actionFireFighting;
     private ExtAction actionExtMove;
+
     private CommandExecutor<CommandFire> commandExecutorFire;
     private CommandExecutor<CommandScout> commandExecutorScout;
+
+    private CommunicationMessage recentCommand;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -47,6 +51,7 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
+        this.recentCommand = null;
         // init Algorithm Module & ExtAction
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
@@ -118,39 +123,38 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
         FireBrigade agent = (FireBrigade) agentInfo.me();
         EntityID agentID = agentInfo.getID();
         // command
-        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
-            CommandFire command = (CommandFire) message;
-            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
-                Action action = this.commandExecutorFire.setCommand(command).calc().getAction();
-                if (action != null) {
-                    this.sendActionMessage(messageManager, agent, action);
-                    return action;
-                }
-            }
-        }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandScout.class)) {
             CommandScout command = (CommandScout) message;
-            if(command.isToIDDefined() && command.getToID().getValue() == agentID.getValue()) {
-                Action action = this.commandExecutorScout.setCommand(command).calc().getAction();
+            if(command.isToIDDefined() && Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue()) {
+                this.recentCommand = command;
+                this.commandExecutorScout.setCommand(command);
+            }
+        }
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
+            CommandFire command = (CommandFire) message;
+            if(command.isToIDDefined() && Objects.requireNonNull(command.getToID()).getValue() == agentID.getValue()) {
+                this.recentCommand = command;
+                this.commandExecutorFire.setCommand(command);
+            }
+        }
+        if(this.recentCommand != null) {
+            if(this.recentCommand.getClass() == CommandFire.class) {
+                Action action = this.commandExecutorFire.calc().getAction();
+                if (action != null) {
+                    this.sendActionMessage(messageManager, agent, action);
+                    return action;
+                }
+            } else if(this.recentCommand.getClass() == CommandScout.class){
+                Action action = this.commandExecutorScout.calc().getAction();
                 if (action != null) {
                     this.sendActionMessage(messageManager, agent, action);
                     return action;
                 }
             }
-        }
-        Action action = this.commandExecutorFire.calc().getAction();
-        if (action != null) {
-            this.sendActionMessage(messageManager, agent, action);
-            return action;
-        }
-        action = this.commandExecutorScout.calc().getAction();
-        if (action != null) {
-            this.sendActionMessage(messageManager, agent, action);
-            return action;
         }
         // autonomous
         EntityID target = this.buildingDetector.calc().getTarget();
-        action = this.actionFireFighting.setTarget(target).calc().getAction();
+        Action action = this.actionFireFighting.setTarget(target).calc().getAction();
         if(action != null) {
             this.sendActionMessage(messageManager, agent, action);
             return action;
