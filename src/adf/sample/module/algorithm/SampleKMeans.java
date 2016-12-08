@@ -220,9 +220,11 @@ public class SampleKMeans extends StaticClustering {
                     this.centerList.set(index, this.worldInfo.getEntity(((Blockade) center).getPosition()));
                 }
             }
-            System.out.printf("*");
+            if  (scenarioInfo.isDebugMode()) { System.out.print("*"); }
         }
-        System.out.println();
+
+        if  (scenarioInfo.isDebugMode()) { System.out.println(); }
+
         //set entity
         this.clusterEntitiesList.clear();
         for (int index = 0; index < this.clusterSize; index++) {
