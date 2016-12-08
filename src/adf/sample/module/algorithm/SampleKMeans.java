@@ -181,7 +181,7 @@ public class SampleKMeans extends StaticClustering {
             this.clusterEntitiesList.put(index, new ArrayList<>());
             this.centerList.add(index, entityList.get(0));
         }
-        System.out.println("Cluster : " + this.clusterSize);
+        System.out.println("[" + this.getClass().getSimpleName() + "] Cluster : " + this.clusterSize);
         //init center
         for (int index = 0; index < this.clusterSize; index++) {
             StandardEntity centerEntity;
