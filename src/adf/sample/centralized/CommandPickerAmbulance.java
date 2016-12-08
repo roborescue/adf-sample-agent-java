@@ -40,6 +40,10 @@ public class CommandPickerAmbulance extends CommandPicker {
 
     @Override
     public CommandPicker calc() {
+        this.messages.clear();
+        if(this.allocationData == null) {
+            return this;
+        }
         for(EntityID agentID : this.allocationData.keySet()) {
             StandardEntity agent = this.worldInfo.getEntity(agentID);
             if(agent != null && agent.getStandardURN() == StandardEntityURN.AMBULANCE_TEAM) {
