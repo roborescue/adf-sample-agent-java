@@ -255,6 +255,13 @@ public class ActionTransport extends ExtAction {
             return false;
         }
         int activeTime = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
+        if(this.kernelTime == -1) {
+            try {
+                this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+            }catch (NoSuchConfigOptionException e) {
+                this.kernelTime = -1;
+            }
+        }
         return damage >= this.thresholdRest || (activeTime + this.agentInfo.getTime()) < this.kernelTime;
     }
 

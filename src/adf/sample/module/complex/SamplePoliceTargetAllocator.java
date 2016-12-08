@@ -172,6 +172,7 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             if(command.getAction() == CommandPolice.ACTION_CLEAR && command.isBroadcast()) {
                 this.priorityAreas.add(command.getTargetID());
                 this.targetAreas.add(command.getTargetID());
+                System.out.println("GetMessage!!!!!!!!!!!!!!!!!!!!!!!!!!");
             }
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageReport.class)) {
