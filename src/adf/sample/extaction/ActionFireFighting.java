@@ -201,8 +201,7 @@ public class ActionFireFighting extends ExtAction {
     }
 
     private Action calcRefill(FireBrigade agent, PathPlanning pathPlanning, EntityID target) {
-        EntityID position = agent.getPosition();
-        StandardEntityURN positionURN = Objects.requireNonNull(this.worldInfo.getPosition(position)).getStandardURN();
+        StandardEntityURN positionURN = Objects.requireNonNull(this.worldInfo.getPosition(agent)).getStandardURN();
         if(positionURN == REFUGE) {
             return new ActionRefill();
         }
@@ -213,7 +212,7 @@ public class ActionFireFighting extends ExtAction {
         action = this.calcHydrantAction(agent, pathPlanning, target);
         if(action != null) {
             if(positionURN == HYDRANT && action.getClass().equals(ActionMove.class)) {
-                pathPlanning.setFrom(position);
+                pathPlanning.setFrom(agent.getPosition());
                 pathPlanning.setDestination(target);
                 double currentDistance = pathPlanning.calc().getDistance();
                 List<EntityID> path = ((ActionMove)action).getPath();
