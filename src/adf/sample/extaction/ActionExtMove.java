@@ -12,6 +12,7 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
+import rescuecore2.config.NoSuchConfigOptionException;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
@@ -31,7 +32,6 @@ public class ActionExtMove extends ExtAction {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
         this.target = null;
         this.thresholdRest = developData.getInteger("ActionExtMove.rest", 100);
-        this.kernelTime = scenarioInfo.getKernelTimesteps();
 
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
@@ -53,6 +53,11 @@ public class ActionExtMove extends ExtAction {
             return this;
         }
         this.pathPlanning.precompute(precomputeData);
+        try {
+            this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+        }catch (NoSuchConfigOptionException e) {
+            this.kernelTime = -1;
+        }
         return this;
     }
 
@@ -63,6 +68,11 @@ public class ActionExtMove extends ExtAction {
             return this;
         }
         this.pathPlanning.resume(precomputeData);
+        try {
+            this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+        }catch (NoSuchConfigOptionException e) {
+            this.kernelTime = -1;
+        }
         return this;
     }
 
@@ -73,6 +83,11 @@ public class ActionExtMove extends ExtAction {
             return this;
         }
         this.pathPlanning.preparate();
+        try {
+            this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+        }catch (NoSuchConfigOptionException e) {
+            this.kernelTime = -1;
+        }
         return this;
     }
 

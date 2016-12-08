@@ -66,7 +66,7 @@ public class SampleTacticsAmbulanceTeam extends TacticsAmbulanceTeam {
                 this.actionTransport = moduleManager.getExtAction("TacticsAmbulanceTeam.ActionTransport", "adf.sample.extaction.ActionTransport");
                 this.actionExtMove = moduleManager.getExtAction("TacticsAmbulanceTeam.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 this.commandExecutorAmbulance = moduleManager.getCommandExecutor("TacticsAmbulanceTeam.CommandExecutorAmbulance", "adf.sample.centralized.CommandExecutorAmbulance");
-                this.commandExecutorScout = moduleManager.getCommandExecutor("TacticsAmbulanceTeamCommandExecutorScout", "adf.sample.centralized.CommandExecutorScout");
+                this.commandExecutorScout = moduleManager.getCommandExecutor("TacticsAmbulanceTeam.CommandExecutorScout", "adf.sample.centralized.CommandExecutorScout");
                 break;
             case PRECOMPUTED:
                 this.humanDetector = moduleManager.getModule("TacticsAmbulanceTeam.HumanDetector", "adf.sample.module.complex.SampleVictimDetector");

@@ -260,7 +260,7 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
         List<StandardEntity> result = new ArrayList<>();
         for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE)) {
             PoliceForceInfo info = infoMap.get(entity.getID());
-            if(info != null && info.canNewAction) {
+            if(info != null && info.canNewAction && ((PoliceForce)entity).isPositionDefined()) {
                 result.add(entity);
             }
         }

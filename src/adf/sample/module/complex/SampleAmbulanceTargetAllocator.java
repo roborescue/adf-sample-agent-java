@@ -239,7 +239,7 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
         List<StandardEntity> result = new ArrayList<>();
         for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE)) {
             AmbulanceTeamInfo info = map.get(entity.getID());
-            if(info != null && info.canNewAction) {
+            if(info != null && info.canNewAction && ((AmbulanceTeam)entity).isPositionDefined()) {
                 result.add(entity);
             }
         }

@@ -14,6 +14,7 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
 import com.google.common.collect.Lists;
+import rescuecore2.config.NoSuchConfigOptionException;
 import rescuecore2.misc.geometry.GeometryTools2D;
 import rescuecore2.misc.geometry.Line2D;
 import rescuecore2.misc.geometry.Point2D;
@@ -43,7 +44,6 @@ public class ActionExtClear extends ExtAction {
         this.clearDistance = si.getClearRepairDistance();
         this.forcedMove = developData.getInteger("ActionExtClear.forcedMove", 3);
         this.thresholdRest = developData.getInteger("ActionExtClear.rest", 100);
-        this.kernelTime = si.getKernelTimesteps();
 
         this.target = null;
         this.movePointCache = new HashMap<>();
@@ -71,6 +71,11 @@ public class ActionExtClear extends ExtAction {
             return this;
         }
         this.pathPlanning.precompute(precomputeData);
+        try {
+            this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+        }catch (NoSuchConfigOptionException e) {
+            this.kernelTime = -1;
+        }
         return this;
     }
 
@@ -81,6 +86,11 @@ public class ActionExtClear extends ExtAction {
             return this;
         }
         this.pathPlanning.resume(precomputeData);
+        try {
+            this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+        }catch (NoSuchConfigOptionException e) {
+            this.kernelTime = -1;
+        }
         return this;
     }
 
@@ -91,6 +101,11 @@ public class ActionExtClear extends ExtAction {
             return this;
         }
         this.pathPlanning.preparate();
+        try {
+            this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+        }catch (NoSuchConfigOptionException e) {
+            this.kernelTime = -1;
+        }
         return this;
     }
 

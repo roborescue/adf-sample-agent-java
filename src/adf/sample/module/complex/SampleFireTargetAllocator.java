@@ -14,10 +14,7 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.complex.FireTargetAllocator;
-import rescuecore2.standard.entities.Area;
-import rescuecore2.standard.entities.Building;
-import rescuecore2.standard.entities.StandardEntity;
-import rescuecore2.standard.entities.StandardEntityURN;
+import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
 import java.util.*;
@@ -213,7 +210,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         List<StandardEntity> result = new ArrayList<>();
         for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE)) {
             FireBrigadeInfo info = map.get(entity.getID());
-            if(info != null && info.canNewAction) {
+            if(info != null && info.canNewAction && ((FireBrigade)entity).isPositionDefined()) {
                 result.add(entity);
             }
         }

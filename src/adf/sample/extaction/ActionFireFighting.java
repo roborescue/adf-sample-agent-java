@@ -15,6 +15,7 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
+import rescuecore2.config.NoSuchConfigOptionException;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 
@@ -41,7 +42,6 @@ public class ActionFireFighting extends ExtAction {
         this.maxExtinguishDistance = scenarioInfo.getFireExtinguishMaxDistance();
         this.maxExtinguishPower = scenarioInfo.getFireExtinguishMaxSum();
         this.thresholdRest = developData.getInteger("ActionFireFighting.rest", 100);
-        this.kernelTime = scenarioInfo.getKernelTimesteps();
         int maxWater = scenarioInfo.getFireTankMaximum();
         this.refillCompleted = (maxWater / 10) * developData.getInteger("ActionFireFighting.refill.completed", 10);
         this.refillRequest = this.maxExtinguishPower * developData.getInteger("ActionFireFighting.refill.request", 1);
@@ -69,6 +69,11 @@ public class ActionFireFighting extends ExtAction {
             return this;
         }
         this.pathPlanning.precompute(precomputeData);
+        try {
+            this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+        }catch (NoSuchConfigOptionException e) {
+            this.kernelTime = -1;
+        }
         return this;
     }
 
@@ -79,6 +84,11 @@ public class ActionFireFighting extends ExtAction {
             return this;
         }
         this.pathPlanning.resume(precomputeData);
+        try {
+            this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+        }catch (NoSuchConfigOptionException e) {
+            this.kernelTime = -1;
+        }
         return this;
     }
 
@@ -89,6 +99,11 @@ public class ActionFireFighting extends ExtAction {
             return this;
         }
         this.pathPlanning.preparate();
+        try {
+            this.kernelTime = this.scenarioInfo.getKernelTimesteps();
+        }catch (NoSuchConfigOptionException e) {
+            this.kernelTime = -1;
+        }
         return this;
     }
 
