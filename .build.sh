@@ -1,3 +1,4 @@
 #!/bin/sh
 
-sh ./compile.sh
+java -jar ./library/rescue/adf/adf-core.jar -compile
+
