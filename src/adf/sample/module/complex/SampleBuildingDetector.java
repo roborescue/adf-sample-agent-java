@@ -31,12 +31,12 @@ public class SampleBuildingDetector extends BuildingDetector {
     private PathPlanning pathPlanning;
 
     private int sendTime;
-    private int commandInterval;
+    private int sendingAvoidTimeClearRequest;
 
     private Collection<EntityID> agentPositions;
     private Map<EntityID, Integer> sentTimeMap;
-    private int receivedEntityInterval;
-    private int sentEntityInterval;
+    private int sendingAvoidTimeReceived;
+    private int sendingAvoidTimeSent;
 
     private int moveDistance;
     private EntityID lastPosition;
@@ -59,12 +59,12 @@ public class SampleBuildingDetector extends BuildingDetector {
                 break;
         }
         this.sendTime = 0;
-        this.commandInterval = developData.getInteger("SampleBuildingDetector.clearCommandInterval", 5);
+        this.sendingAvoidTimeClearRequest = developData.getInteger("SampleBuildingDetector.sendingAvoidTimeClearRequest", 5);
 
         this.agentPositions = new HashSet<>();
         this.sentTimeMap = new HashMap<>();
-        this.receivedEntityInterval = developData.getInteger("SampleBuildingDetector.receivedEntityInterval", 3);
-        this.sentEntityInterval = developData.getInteger("SampleBuildingDetector.sentEntityInterval", 5);
+        this.sendingAvoidTimeReceived = developData.getInteger("SampleBuildingDetector.sendingAvoidTimeReceived", 3);
+        this.sendingAvoidTimeSent = developData.getInteger("SampleBuildingDetector.sendingAvoidTimeSent", 5);
 
         this.moveDistance = developData.getInteger("SampleBuildingDetector.moveDistance", 40000);
     }
@@ -101,7 +101,7 @@ public class SampleBuildingDetector extends BuildingDetector {
                         continue;
                     }
                     if(this.isInside(agentX, agentY, blockade.getApexes())) {
-                        if ((this.sendTime + this.commandInterval) <= currentTime) {
+                        if ((this.sendTime + this.sendingAvoidTimeClearRequest) <= currentTime) {
                             this.sendTime = currentTime;
                             messageManager.addMessage(
                                     new CommandPolice(
@@ -119,7 +119,7 @@ public class SampleBuildingDetector extends BuildingDetector {
             if(this.lastPosition != null && this.lastPosition.getValue() == road.getID().getValue()) {
                 this.positionCount++;
                 if(this.positionCount > this.getMaxTravelTime(road)) {
-                    if ((this.sendTime + this.commandInterval) <= currentTime) {
+                    if ((this.sendTime + this.sendingAvoidTimeClearRequest) <= currentTime) {
                         this.sendTime = currentTime;
                         messageManager.addMessage(
                                 new CommandPolice(
@@ -313,7 +313,7 @@ public class SampleBuildingDetector extends BuildingDetector {
             if(!changedEntities.contains(mb.getBuildingID())) {
                 MessageUtil.reflectMessage(this.worldInfo, mb);
             }
-            this.sentTimeMap.put(mb.getBuildingID(), time + this.receivedEntityInterval);
+            this.sentTimeMap.put(mb.getBuildingID(), time + this.sendingAvoidTimeReceived);
         }
     }
 
@@ -383,7 +383,7 @@ public class SampleBuildingDetector extends BuildingDetector {
             }
             if (building != null) {
                 messageManager.addMessage(new MessageBuilding(true, building));
-                this.sentTimeMap.put(building.getID(), currentTime + this.sentEntityInterval);
+                this.sentTimeMap.put(building.getID(), currentTime + this.sendingAvoidTimeSent);
             }
         }
     }

@@ -32,8 +32,8 @@ public class SampleSearch extends Search {
     private boolean isSendRoadMessage;
     private Collection<EntityID> agentPositions;
     private Map<EntityID, Integer> sentTimeMap;
-    private int receivedEntityInterval;
-    private int sentEntityInterval;
+    private int sendingAvoidTimeReceived;
+    private int sendingAvoidTimeSent;
 
     public SampleSearch(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
@@ -45,8 +45,8 @@ public class SampleSearch extends Search {
         this.isSendRoadMessage = true;
         this.agentPositions = new HashSet<>();
         this.sentTimeMap = new HashMap<>();
-        this.receivedEntityInterval = developData.getInteger("SampleSearch.receivedEntityInterval", 3);
-        this.sentEntityInterval = developData.getInteger("SampleSearch.sentEntityInterval", 5);
+        this.sendingAvoidTimeReceived = developData.getInteger("SampleSearch.sendingAvoidTimeReceived", 3);
+        this.sendingAvoidTimeSent = developData.getInteger("SampleSearch.sendingAvoidTimeSent", 5);
 
         StandardEntityURN agentURN = ai.me().getStandardURN();
         switch  (si.getMode()) {
@@ -163,38 +163,38 @@ public class SampleSearch extends Search {
                 if(!changedEntities.contains(mb.getBuildingID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mb);
                 }
-                this.sentTimeMap.put(mb.getBuildingID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mb.getBuildingID(), time + this.sendingAvoidTimeReceived);
             } else if(messageClass == MessageRoad.class) {
                 MessageRoad mr = (MessageRoad)message;
                 if(mr.isBlockadeDefined() && !changedEntities.contains(mr.getBlockadeID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mr);
-                    this.sentTimeMap.put(mr.getBlockadeID(), time + this.receivedEntityInterval);
+                    this.sentTimeMap.put(mr.getBlockadeID(), time + this.sendingAvoidTimeReceived);
                 }
-                this.sentTimeMap.put(mr.getRoadID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mr.getRoadID(), time + this.sendingAvoidTimeReceived);
             } else if(messageClass == MessageCivilian.class) {
                 MessageCivilian mc = (MessageCivilian) message;
                 if(!changedEntities.contains(mc.getAgentID())){
                     MessageUtil.reflectMessage(this.worldInfo, mc);
                 }
-                this.sentTimeMap.put(mc.getAgentID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mc.getAgentID(), time + this.sendingAvoidTimeReceived);
             } else if(messageClass == MessageAmbulanceTeam.class) {
                 MessageAmbulanceTeam mat = (MessageAmbulanceTeam)message;
                 if(!changedEntities.contains(mat.getAgentID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mat);
                 }
-                this.sentTimeMap.put(mat.getAgentID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mat.getAgentID(), time + this.sendingAvoidTimeReceived);
             } else if(messageClass == MessageFireBrigade.class) {
                 MessageFireBrigade mfb = (MessageFireBrigade) message;
                 if(!changedEntities.contains(mfb.getAgentID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mfb);
                 }
-                this.sentTimeMap.put(mfb.getAgentID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mfb.getAgentID(), time + this.sendingAvoidTimeReceived);
             } else if(messageClass == MessagePoliceForce.class) {
                 MessagePoliceForce mpf = (MessagePoliceForce) message;
                 if(!changedEntities.contains(mpf.getAgentID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mpf);
                 }
-                this.sentTimeMap.put(mpf.getAgentID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mpf.getAgentID(), time + this.sendingAvoidTimeReceived);
             }
         }
     }
@@ -252,17 +252,17 @@ public class SampleSearch extends Search {
 
         /*if(this.isSendBuildingMessage && building != null) {
             messageManager.addMessage(new MessageBuilding(true, building));
-            this.sentTimeMap.put(building.getID(), currentTime + this.sentEntityInterval);
+            this.sentTimeMap.put(building.getID(), currentTime + this.sendingAvoidTimeSent);
         }
         if(this.isSendCivilianMessage && civilian != null) {
             messageManager.addMessage(new MessageCivilian(true, civilian));
-            this.sentTimeMap.put(civilian.getID(), currentTime + this.sentEntityInterval);
+            this.sentTimeMap.put(civilian.getID(), currentTime + this.sendingAvoidTimeSent);
         }
         if(this.isSendRoadMessage && road != null) {
             if(road.isBlockadesDefined() && road.getBlockades().size() > 0) {
                 Blockade blockade = (Blockade) this.worldInfo.getEntity(road.getBlockades().get(0));
                 messageManager.addMessage(new MessageRoad(true, road, blockade, false));
-                this.sentTimeMap.put(road.getID(), currentTime + this.sentEntityInterval);
+                this.sentTimeMap.put(road.getID(), currentTime + this.sendingAvoidTimeSent);
             }
         }*/
     }

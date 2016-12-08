@@ -29,12 +29,12 @@ public class SampleVictimDetector extends HumanDetector {
     private EntityID result;
 
     private int sendTime;
-    private int commandInterval;
+    private int sendingAvoidTimeClearRequest;
 
     private Collection<EntityID> agentPositions;
     private Map<EntityID, Integer> sentTimeMap;
-    private int receivedEntityInterval;
-    private int sentEntityInterval;
+    private int sendingAvoidTimeReceived;
+    private int sendingAvoidTimeSent;
 
     private int moveDistance;
     private EntityID lastPosition;
@@ -45,12 +45,12 @@ public class SampleVictimDetector extends HumanDetector {
 
         this.result = null;
         this.sendTime = 0;
-        this.commandInterval = developData.getInteger("SampleVictimDetector.clearCommandInterval", 5);
+        this.sendingAvoidTimeClearRequest = developData.getInteger("SampleVictimDetector.sendingAvoidTimeClearRequest", 5);
 
         this.agentPositions = new HashSet<>();
         this.sentTimeMap = new HashMap<>();
-        this.receivedEntityInterval = developData.getInteger("SampleVictimDetector.receivedEntityInterval", 3);
-        this.sentEntityInterval = developData.getInteger("SampleVictimDetector.sentEntityInterval", 5);
+        this.sendingAvoidTimeReceived = developData.getInteger("SampleVictimDetector.sendingAvoidTimeReceived", 3);
+        this.sendingAvoidTimeSent = developData.getInteger("SampleVictimDetector.sendingAvoidTimeSent", 5);
 
         this.moveDistance = developData.getInteger("SampleVictimDetector.moveDistance", 40000);
 
@@ -91,7 +91,7 @@ public class SampleVictimDetector extends HumanDetector {
                         continue;
                     }
                     if(this.isInside(agentX, agentY, blockade.getApexes())) {
-                        if ((this.sendTime + this.commandInterval) <= currentTime) {
+                        if ((this.sendTime + this.sendingAvoidTimeClearRequest) <= currentTime) {
                             this.sendTime = currentTime;
                             messageManager.addMessage(
                                     new CommandPolice(
@@ -109,7 +109,7 @@ public class SampleVictimDetector extends HumanDetector {
             if(this.lastPosition != null && this.lastPosition.getValue() == road.getID().getValue()) {
                 this.positionCount++;
                 if(this.positionCount > this.getMaxTravelTime(road)) {
-                    if ((this.sendTime + this.commandInterval) <= currentTime) {
+                    if ((this.sendTime + this.sendingAvoidTimeClearRequest) <= currentTime) {
                         this.sendTime = currentTime;
                         messageManager.addMessage(
                                 new CommandPolice(
@@ -331,25 +331,25 @@ public class SampleVictimDetector extends HumanDetector {
                 if(!changedEntities.contains(mc.getAgentID())){
                     MessageUtil.reflectMessage(this.worldInfo, mc);
                 }
-                this.sentTimeMap.put(mc.getAgentID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mc.getAgentID(), time + this.sendingAvoidTimeReceived);
             } else if(messageClass == MessageAmbulanceTeam.class) {
                 MessageAmbulanceTeam mat = (MessageAmbulanceTeam)message;
                 if(!changedEntities.contains(mat.getAgentID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mat);
                 }
-                this.sentTimeMap.put(mat.getAgentID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mat.getAgentID(), time + this.sendingAvoidTimeReceived);
             } else if(messageClass == MessageFireBrigade.class) {
                 MessageFireBrigade mfb = (MessageFireBrigade) message;
                 if(!changedEntities.contains(mfb.getAgentID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mfb);
                 }
-                this.sentTimeMap.put(mfb.getAgentID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mfb.getAgentID(), time + this.sendingAvoidTimeReceived);
             } else if(messageClass == MessagePoliceForce.class) {
                 MessagePoliceForce mpf = (MessagePoliceForce) message;
                 if(!changedEntities.contains(mpf.getAgentID())) {
                     MessageUtil.reflectMessage(this.worldInfo, mpf);
                 }
-                this.sentTimeMap.put(mpf.getAgentID(), time + this.receivedEntityInterval);
+                this.sentTimeMap.put(mpf.getAgentID(), time + this.sendingAvoidTimeReceived);
             }
         }
     }
@@ -421,7 +421,7 @@ public class SampleVictimDetector extends HumanDetector {
             }
             if (civilian != null) {
                 messageManager.addMessage(new MessageCivilian(true, civilian));
-                this.sentTimeMap.put(civilian.getID(), currentTime + this.sentEntityInterval);
+                this.sentTimeMap.put(civilian.getID(), currentTime + this.sendingAvoidTimeSent);
             }
         }
     }
