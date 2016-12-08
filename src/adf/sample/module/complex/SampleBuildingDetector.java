@@ -97,7 +97,7 @@ public class SampleBuildingDetector extends BuildingDetector {
             Road road = (Road)positionEntity;
             if(road.isBlockadesDefined() && road.getBlockades().size() > 0) {
                 for(Blockade blockade : this.worldInfo.getBlockades(road)) {
-                    if(!blockade.isApexesDefined()) {
+                    if(blockade == null || !blockade.isApexesDefined()) {
                         continue;
                     }
                     if(this.isInside(agentX, agentY, blockade.getApexes())) {

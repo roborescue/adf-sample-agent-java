@@ -390,7 +390,7 @@ public class ActionExtClear extends ExtAction {
                 int startX = (int)(agentX + vector.getX());
                 int startY = (int)(agentY + vector.getY());
                 for(Blockade blockade : this.worldInfo.getBlockades(road)) {
-                    if(!blockade.isApexesDefined()) {
+                    if(blockade == null || !blockade.isApexesDefined()) {
                         continue;
                     }
                     if(this.intersect(startX, startY, midX, midY, blockade)) {
