@@ -52,8 +52,8 @@ public class SampleTacticsAmbulanceCentre extends TacticsAmbulanceCentre {
     public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData) {
         this.allocator.updateInfo(messageManager);
         this.picker.updateInfo(messageManager);
-        Map<EntityID, EntityID> data = this.allocator.calc().getResult();
-        for(CommunicationMessage message : this.picker.setData(data).calc().getResult()) {
+        Map<EntityID, EntityID> allocatorResult = this.allocator.calc().getResult();
+        for(CommunicationMessage message : this.picker.setAllocatorResult(allocatorResult).calc().getResult()) {
             messageManager.addMessage(message);
         }
     }

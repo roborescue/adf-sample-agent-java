@@ -53,8 +53,8 @@ public class SampleTacticsPoliceOffice extends TacticsPoliceOffice {
         this.allocator.updateInfo(messageManager);
         this.picker.updateInfo(messageManager);
 
-        Map<EntityID, EntityID> data = this.allocator.calc().getResult();
-        for(CommunicationMessage message : this.picker.setData(data).calc().getResult()) {
+        Map<EntityID, EntityID> allocatorResult = this.allocator.calc().getResult();
+        for(CommunicationMessage message : this.picker.setAllocatorResult(allocatorResult).calc().getResult()) {
             messageManager.addMessage(message);
         }
     }

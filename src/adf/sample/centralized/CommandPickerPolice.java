@@ -29,7 +29,7 @@ public class CommandPickerPolice extends CommandPicker {
     }
 
     @Override
-    public CommandPicker setData(Map<EntityID, EntityID> allocationData) {
+    public CommandPicker setAllocatorResult(Map<EntityID, EntityID> allocationData) {
         this.allocationData = allocationData;
         return this;
     }
