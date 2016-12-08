@@ -69,6 +69,7 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
     public AmbulanceTargetAllocator calc() {
         List<StandardEntity> agents = this.getActionAgents(this.ambulanceTeamInfoMap);
         Collection<EntityID> removes = new ArrayList<>();
+        int currentTime = this.agentInfo.getTime();
         for(EntityID target : this.priorityHumans) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -80,6 +81,7 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
                     if (info != null) {
                         info.canNewAction = false;
                         info.target = target;
+                        info.commandTime = currentTime;
                         this.ambulanceTeamInfoMap.put(result.getID(), info);
                         removes.add(target);
                     }
@@ -99,6 +101,7 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
                     if(info != null) {
                         info.canNewAction = false;
                         info.target = target;
+                        info.commandTime = currentTime;
                         this.ambulanceTeamInfoMap.put(result.getID(), info);
                         removes.add(target);
                     }
@@ -106,46 +109,8 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
             }
         }
         this.targetHumans.removeAll(removes);
-        if(agents.size() > 0) {
-            removes.clear();
-            for(EntityID target : this.priorityHumans) {
-                if(agents.size() > 0) {
-                    StandardEntity targetEntity = this.worldInfo.getEntity(target);
-                    if (targetEntity != null && targetEntity instanceof Human && ((Human)targetEntity).isPositionDefined()) {
-                        agents.sort(new DistanceSorter(this.worldInfo, targetEntity));
-                        StandardEntity result = agents.get(0);
-                        agents.remove(0);
-                        AmbulanceTeamInfo info = this.ambulanceTeamInfoMap.get(result.getID());
-                        if(info != null) {
-                            info.canNewAction = false;
-                            info.target = target;
-                            this.ambulanceTeamInfoMap.put(result.getID(), info);
-                            removes.add(target);
-                        }
-                    }
-                }
-            }
-            this.priorityHumans.removeAll(removes);
-        }
         return this;
     }
-
-    private class DistanceSorter implements Comparator<StandardEntity> {
-        private StandardEntity reference;
-        private WorldInfo worldInfo;
-
-        DistanceSorter(WorldInfo wi, StandardEntity reference) {
-            this.reference = reference;
-            this.worldInfo = wi;
-        }
-
-        public int compare(StandardEntity a, StandardEntity b) {
-            int d1 = this.worldInfo.getDistance(this.reference, a);
-            int d2 = this.worldInfo.getDistance(this.reference, b);
-            return d1 - d2;
-        }
-    }
-
 
     @Override
     public AmbulanceTargetAllocator updateInfo(MessageManager messageManager) {
@@ -153,7 +118,7 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
-
+        int currentTime = this.agentInfo.getTime();
         for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
             Class<? extends CommunicationMessage> messageClass = message.getClass();
             if(messageClass == MessageCivilian.class) {
@@ -195,10 +160,13 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
                 this.targetHumans.remove(mat.getAgentID());
             }
             AmbulanceTeamInfo info = this.ambulanceTeamInfoMap.get(mat.getAgentID());
-            if(info != null) {
+            if(info == null) {
+                info = new AmbulanceTeamInfo(mat.getAgentID());
+                this.ambulanceTeamInfoMap.put(mat.getAgentID(), info);
+            }
+            if(currentTime >= info.commandTime + 2) {
                 this.ambulanceTeamInfoMap.put(mat.getAgentID(), this.update(info, mat));
             }
-
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandAmbulance.class)) {
             CommandAmbulance command = (CommandAmbulance)message;
@@ -336,11 +304,29 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
         EntityID agentID;
         EntityID target;
         boolean canNewAction;
+        int commandTime;
 
         AmbulanceTeamInfo(EntityID id) {
             agentID = id;
             target = null;
             canNewAction = true;
+            commandTime = -1;
+        }
+    }
+
+    private class DistanceSorter implements Comparator<StandardEntity> {
+        private StandardEntity reference;
+        private WorldInfo worldInfo;
+
+        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+            this.reference = reference;
+            this.worldInfo = wi;
+        }
+
+        public int compare(StandardEntity a, StandardEntity b) {
+            int d1 = this.worldInfo.getDistance(this.reference, a);
+            int d2 = this.worldInfo.getDistance(this.reference, b);
+            return d1 - d2;
         }
     }
 }

@@ -69,6 +69,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
 
     @Override
     public FireTargetAllocator calc() {
+        int currentTime = this.agentInfo.getTime();
         List<StandardEntity> agents = this.getActionAgents(this.agentInfoMap);
         Collection<EntityID> removes = new ArrayList<>();
         for(EntityID target : this.priorityBuildings) {
@@ -82,6 +83,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
                     if(info != null) {
                         info.canNewAction = false;
                         info.target = target;
+                        info.commandTime = currentTime;
                         this.agentInfoMap.put(result.getID(), info);
                         removes.add(target);
                     }
@@ -101,6 +103,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
                     if(info != null) {
                         info.canNewAction = false;
                         info.target = target;
+                        info.commandTime = currentTime;
                         this.agentInfoMap.put(result.getID(), info);
                         removes.add(target);
                     }
@@ -108,46 +111,8 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
             }
         }
         this.targetBuildings.removeAll(removes);
-        if(agents.size() > 0) {
-            removes.clear();
-            for(EntityID target : this.priorityBuildings) {
-                if(agents.size() > 0) {
-                    StandardEntity targetEntity = this.worldInfo.getEntity(target);
-                    if (targetEntity != null) {
-                        agents.sort(new DistanceSorter(this.worldInfo, targetEntity));
-                        StandardEntity result = agents.get(0);
-                        agents.remove(0);
-                        FireBrigadeInfo info = this.agentInfoMap.get(result.getID());
-                        if(info != null) {
-                            info.canNewAction = false;
-                            info.target = target;
-                            this.agentInfoMap.put(result.getID(), info);
-                            removes.add(target);
-                        }
-                    }
-                }
-            }
-            this.priorityBuildings.removeAll(removes);
-        }
         return this;
     }
-
-    private class DistanceSorter implements Comparator<StandardEntity> {
-        private StandardEntity reference;
-        private WorldInfo worldInfo;
-
-        DistanceSorter(WorldInfo wi, StandardEntity reference) {
-            this.reference = reference;
-            this.worldInfo = wi;
-        }
-
-        public int compare(StandardEntity a, StandardEntity b) {
-            int d1 = this.worldInfo.getDistance(this.reference, a);
-            int d2 = this.worldInfo.getDistance(this.reference, b);
-            return d1 - d2;
-        }
-    }
-
 
     @Override
     public FireTargetAllocator updateInfo(MessageManager messageManager) {
@@ -155,7 +120,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
-
+        int currentTime = this.agentInfo.getTime();
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageBuilding.class)) {
             MessageBuilding mb = (MessageBuilding)message;
             Building building = MessageUtil.reflectMessage(this.worldInfo, mb);
@@ -170,7 +135,11 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
             MessageFireBrigade mfb = (MessageFireBrigade) message;
             MessageUtil.reflectMessage(this.worldInfo, mfb);
             FireBrigadeInfo info = this.agentInfoMap.get(mfb.getAgentID());
-            if(info != null) {
+            if(info == null) {
+                info = new FireBrigadeInfo(mfb.getAgentID());
+                this.agentInfoMap.put(mfb.getAgentID(), info);
+            }
+            if(currentTime >= info.commandTime + 2) {
                 this.agentInfoMap.put(mfb.getAgentID(), this.update(info, mfb));
             }
         }
@@ -189,16 +158,16 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
                 this.priorityBuildings.remove(info.target);
                 this.targetBuildings.remove(info.target);
                 info.target = null;
-                this.agentInfoMap.put(info.agentID, info);
+                this.agentInfoMap.put(report.getSenderID(), info);
             }
         }
         return this;
     }
 
-    private Map<EntityID, EntityID> convert(Map<EntityID, FireBrigadeInfo> map) {
+    private Map<EntityID, EntityID> convert(Map<EntityID, FireBrigadeInfo> infoMap) {
         Map<EntityID, EntityID> result = new HashMap<>();
-        for(EntityID id : map.keySet()) {
-            FireBrigadeInfo info = map.get(id);
+        for(EntityID id : infoMap.keySet()) {
+            FireBrigadeInfo info = infoMap.get(id);
             if(info != null && info.target != null) {
                 result.put(id, info.target);
             }
@@ -206,10 +175,10 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         return result;
     }
 
-    private List<StandardEntity> getActionAgents(Map<EntityID, FireBrigadeInfo> map) {
+    private List<StandardEntity> getActionAgents(Map<EntityID, FireBrigadeInfo> infoMap) {
         List<StandardEntity> result = new ArrayList<>();
         for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE)) {
-            FireBrigadeInfo info = map.get(entity.getID());
+            FireBrigadeInfo info = infoMap.get(entity.getID());
             if(info != null && info.canNewAction && ((FireBrigade)entity).isPositionDefined()) {
                 result.add(entity);
             }
@@ -282,16 +251,33 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         return info;
     }
 
-
     private class FireBrigadeInfo {
         EntityID agentID;
         EntityID target;
         boolean canNewAction;
+        int commandTime;
 
         FireBrigadeInfo(EntityID id) {
             agentID = id;
             target = null;
             canNewAction = true;
+            commandTime = -1;
+        }
+    }
+
+    private class DistanceSorter implements Comparator<StandardEntity> {
+        private StandardEntity reference;
+        private WorldInfo worldInfo;
+
+        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+            this.reference = reference;
+            this.worldInfo = wi;
+        }
+
+        public int compare(StandardEntity a, StandardEntity b) {
+            int d1 = this.worldInfo.getDistance(this.reference, a);
+            int d2 = this.worldInfo.getDistance(this.reference, b);
+            return d1 - d2;
         }
     }
 }

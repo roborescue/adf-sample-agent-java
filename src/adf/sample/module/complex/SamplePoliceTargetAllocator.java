@@ -100,6 +100,7 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
     public PoliceTargetAllocator calc() {
         List<StandardEntity> agents = this.getActionAgents(this.agentInfoMap);
         Collection<EntityID> removes = new ArrayList<>();
+        int currentTime = this.agentInfo.getTime();
         for(EntityID target : this.priorityAreas) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -111,6 +112,7 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
                     if(info != null) {
                         info.canNewAction = false;
                         info.target = target;
+                        info.commandTime = currentTime;
                         this.agentInfoMap.put(result.getID(), info);
                         removes.add(target);
                     }
@@ -118,44 +120,27 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             }
         }
         this.priorityAreas.removeAll(removes);
-        removes.clear();
+        List<StandardEntity> areas = new ArrayList<>();
         for(EntityID target : this.targetAreas) {
-            if(agents.size() > 0) {
-                StandardEntity targetEntity = this.worldInfo.getEntity(target);
-                if (targetEntity != null) {
-                    agents.sort(new DistanceSorter(this.worldInfo, targetEntity));
-                    StandardEntity result = agents.get(0);
-                    agents.remove(0);
-                    PoliceForceInfo info = this.agentInfoMap.get(result.getID());
-                    if(info != null) {
-                        info.canNewAction = false;
-                        info.target = target;
-                        this.agentInfoMap.put(result.getID(), info);
-                    }
-                }
+            StandardEntity targetEntity = this.worldInfo.getEntity(target);
+            if (targetEntity != null) {
+                areas.add(targetEntity);
             }
         }
-        this.targetAreas.removeAll(removes);
-        if(agents.size() > 0) {
-            removes.clear();
-            for(EntityID target : this.priorityAreas) {
-                if(agents.size() > 0) {
-                    StandardEntity targetEntity = this.worldInfo.getEntity(target);
-                    if (targetEntity != null) {
-                        agents.sort(new DistanceSorter(this.worldInfo, targetEntity));
-                        StandardEntity result = agents.get(0);
-                        agents.remove(0);
-                        PoliceForceInfo info = this.agentInfoMap.get(result.getID());
-                        if(info != null) {
-                            info.canNewAction = false;
-                            info.target = target;
-                            this.agentInfoMap.put(result.getID(), info);
-                            removes.add(target);
-                        }
-                    }
+        for(StandardEntity agent : agents) {
+            if(areas.size() > 0) {
+                areas.sort(new DistanceSorter(this.worldInfo, agent));
+                StandardEntity result = areas.get(0);
+                areas.remove(0);
+                this.targetAreas.remove(result.getID());
+                PoliceForceInfo info = this.agentInfoMap.get(agent.getID());
+                if(info != null) {
+                    info.canNewAction = false;
+                    info.target = result.getID();
+                    info.commandTime = currentTime;
+                    this.agentInfoMap.put(agent.getID(), info);
                 }
             }
-            this.priorityAreas.removeAll(removes);
         }
         return this;
     }
@@ -166,7 +151,7 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
-
+        int currentTime = this.agentInfo.getTime();
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageRoad.class)) {
             MessageRoad mpf = (MessageRoad) message;
             MessageUtil.reflectMessage(this.worldInfo, mpf);
@@ -175,7 +160,11 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             MessagePoliceForce mpf = (MessagePoliceForce) message;
             MessageUtil.reflectMessage(this.worldInfo, mpf);
             PoliceForceInfo info = this.agentInfoMap.get(mpf.getAgentID());
-            if(info != null) {
+            if(info == null) {
+                info = new PoliceForceInfo(mpf.getAgentID());
+                this.agentInfoMap.put(mpf.getAgentID(), info);
+            }
+            if(currentTime >= info.commandTime + 2) {
                 this.agentInfoMap.put(mpf.getAgentID(), this.update(info, mpf));
             }
         }
@@ -282,11 +271,13 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
         EntityID agentID;
         EntityID target;
         boolean canNewAction;
+        int commandTime;
 
         PoliceForceInfo(EntityID id) {
             agentID = id;
             target = null;
             canNewAction = true;
+            commandTime = -1;
         }
     }
 
