@@ -162,7 +162,6 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
             AmbulanceTeamInfo info = this.ambulanceTeamInfoMap.get(mat.getAgentID());
             if(info == null) {
                 info = new AmbulanceTeamInfo(mat.getAgentID());
-                this.ambulanceTeamInfoMap.put(mat.getAgentID(), info);
             }
             if(currentTime >= info.commandTime + 2) {
                 this.ambulanceTeamInfoMap.put(mat.getAgentID(), this.update(info, mat));

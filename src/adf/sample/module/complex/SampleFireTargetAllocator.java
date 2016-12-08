@@ -137,7 +137,6 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
             FireBrigadeInfo info = this.agentInfoMap.get(mfb.getAgentID());
             if(info == null) {
                 info = new FireBrigadeInfo(mfb.getAgentID());
-                this.agentInfoMap.put(mfb.getAgentID(), info);
             }
             if(currentTime >= info.commandTime + 2) {
                 this.agentInfoMap.put(mfb.getAgentID(), this.update(info, mfb));

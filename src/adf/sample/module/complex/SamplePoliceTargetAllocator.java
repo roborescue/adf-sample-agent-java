@@ -162,7 +162,6 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             PoliceForceInfo info = this.agentInfoMap.get(mpf.getAgentID());
             if(info == null) {
                 info = new PoliceForceInfo(mpf.getAgentID());
-                this.agentInfoMap.put(mpf.getAgentID(), info);
             }
             if(currentTime >= info.commandTime + 2) {
                 this.agentInfoMap.put(mpf.getAgentID(), this.update(info, mpf));
