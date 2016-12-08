@@ -68,6 +68,7 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
     @Override
     public AmbulanceTargetAllocator calc() {
         List<StandardEntity> agents = this.getActionAgents(this.ambulanceTeamInfoMap);
+        Collection<EntityID> removes = new ArrayList<>();
         for(EntityID target : this.priorityHumans) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -80,10 +81,13 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
                         info.canNewAction = false;
                         info.target = target;
                         this.ambulanceTeamInfoMap.put(result.getID(), info);
+                        removes.add(target);
                     }
                 }
             }
         }
+        this.priorityHumans.removeAll(removes);
+        removes.clear();
         for(EntityID target : this.targetHumans) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -96,11 +100,14 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
                         info.canNewAction = false;
                         info.target = target;
                         this.ambulanceTeamInfoMap.put(result.getID(), info);
+                        removes.add(target);
                     }
                 }
             }
         }
+        this.targetHumans.removeAll(removes);
         if(agents.size() > 0) {
+            removes.clear();
             for(EntityID target : this.priorityHumans) {
                 if(agents.size() > 0) {
                     StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -113,10 +120,12 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
                             info.canNewAction = false;
                             info.target = target;
                             this.ambulanceTeamInfoMap.put(result.getID(), info);
+                            removes.add(target);
                         }
                     }
                 }
             }
+            this.priorityHumans.removeAll(removes);
         }
         return this;
     }

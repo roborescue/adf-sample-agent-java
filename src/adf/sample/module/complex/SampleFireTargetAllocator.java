@@ -73,6 +73,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
     @Override
     public FireTargetAllocator calc() {
         List<StandardEntity> agents = this.getActionAgents(this.agentInfoMap);
+        Collection<EntityID> removes = new ArrayList<>();
         for(EntityID target : this.priorityBuildings) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -85,10 +86,13 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
                         info.canNewAction = false;
                         info.target = target;
                         this.agentInfoMap.put(result.getID(), info);
+                        removes.add(target);
                     }
                 }
             }
         }
+        this.priorityBuildings.removeAll(removes);
+        removes.clear();
         for(EntityID target : this.targetBuildings) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -101,11 +105,14 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
                         info.canNewAction = false;
                         info.target = target;
                         this.agentInfoMap.put(result.getID(), info);
+                        removes.add(target);
                     }
                 }
             }
         }
+        this.targetBuildings.removeAll(removes);
         if(agents.size() > 0) {
+            removes.clear();
             for(EntityID target : this.priorityBuildings) {
                 if(agents.size() > 0) {
                     StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -118,10 +125,12 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
                             info.canNewAction = false;
                             info.target = target;
                             this.agentInfoMap.put(result.getID(), info);
+                            removes.add(target);
                         }
                     }
                 }
             }
+            this.priorityBuildings.removeAll(removes);
         }
         return this;
     }

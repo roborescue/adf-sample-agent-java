@@ -5,6 +5,7 @@ import adf.agent.communication.standard.bundle.MessageUtil;
 import adf.agent.communication.standard.bundle.centralized.CommandPolice;
 import adf.agent.communication.standard.bundle.centralized.MessageReport;
 import adf.agent.communication.standard.bundle.information.MessagePoliceForce;
+import adf.agent.communication.standard.bundle.information.MessageRoad;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
@@ -98,6 +99,7 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
     @Override
     public PoliceTargetAllocator calc() {
         List<StandardEntity> agents = this.getActionAgents(this.agentInfoMap);
+        Collection<EntityID> removes = new ArrayList<>();
         for(EntityID target : this.priorityAreas) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -110,10 +112,13 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
                         info.canNewAction = false;
                         info.target = target;
                         this.agentInfoMap.put(result.getID(), info);
+                        removes.add(target);
                     }
                 }
             }
         }
+        this.priorityAreas.removeAll(removes);
+        removes.clear();
         for(EntityID target : this.targetAreas) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -130,7 +135,9 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
                 }
             }
         }
+        this.targetAreas.removeAll(removes);
         if(agents.size() > 0) {
+            removes.clear();
             for(EntityID target : this.priorityAreas) {
                 if(agents.size() > 0) {
                     StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -143,30 +150,15 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
                             info.canNewAction = false;
                             info.target = target;
                             this.agentInfoMap.put(result.getID(), info);
+                            removes.add(target);
                         }
                     }
                 }
             }
+            this.priorityAreas.removeAll(removes);
         }
         return this;
     }
-
-    private class DistanceSorter implements Comparator<StandardEntity> {
-        private StandardEntity reference;
-        private WorldInfo worldInfo;
-
-        DistanceSorter(WorldInfo wi, StandardEntity reference) {
-            this.reference = reference;
-            this.worldInfo = wi;
-        }
-
-        public int compare(StandardEntity a, StandardEntity b) {
-            int d1 = this.worldInfo.getDistance(this.reference, a);
-            int d2 = this.worldInfo.getDistance(this.reference, b);
-            return d1 - d2;
-        }
-    }
-
 
     @Override
     public PoliceTargetAllocator updateInfo(MessageManager messageManager) {
@@ -175,6 +167,10 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             return this;
         }
 
+        for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageRoad.class)) {
+            MessageRoad mpf = (MessageRoad) message;
+            MessageUtil.reflectMessage(this.worldInfo, mpf);
+        }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessagePoliceForce.class)) {
             MessagePoliceForce mpf = (MessagePoliceForce) message;
             MessageUtil.reflectMessage(this.worldInfo, mpf);
@@ -202,28 +198,6 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             }
         }
         return this;
-    }
-
-    private Map<EntityID, EntityID> convert(Map<EntityID, PoliceForceInfo> map) {
-        Map<EntityID, EntityID> result = new HashMap<>();
-        for(EntityID id : map.keySet()) {
-            PoliceForceInfo info = map.get(id);
-            if(info != null && info.target != null) {
-                result.put(id, info.target);
-            }
-        }
-        return result;
-    }
-
-    private List<StandardEntity> getActionAgents(Map<EntityID, PoliceForceInfo> map) {
-        List<StandardEntity> result = new ArrayList<>();
-        for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE)) {
-            PoliceForceInfo info = map.get(entity.getID());
-            if(info != null && info.canNewAction) {
-                result.add(entity);
-            }
-        }
-        return result;
     }
 
     private PoliceForceInfo update(PoliceForceInfo info, MessagePoliceForce message) {
@@ -278,12 +252,31 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             }
         } else if(message.getAction() == MessagePoliceForce.ACTION_CLEAR) {
             info.canNewAction = false;
-            this.priorityAreas.remove(message.getTargetID());
-            this.targetAreas.remove(message.getTargetID());
         }
         return info;
     }
 
+    private List<StandardEntity> getActionAgents(Map<EntityID, PoliceForceInfo> infoMap) {
+        List<StandardEntity> result = new ArrayList<>();
+        for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE)) {
+            PoliceForceInfo info = infoMap.get(entity.getID());
+            if(info != null && info.canNewAction) {
+                result.add(entity);
+            }
+        }
+        return result;
+    }
+
+    private Map<EntityID, EntityID> convert(Map<EntityID, PoliceForceInfo> infoMap) {
+        Map<EntityID, EntityID> result = new HashMap<>();
+        for(EntityID id : infoMap.keySet()) {
+            PoliceForceInfo info = infoMap.get(id);
+            if(info != null && info.target != null) {
+                result.put(id, info.target);
+            }
+        }
+        return result;
+    }
 
     private class PoliceForceInfo {
         EntityID agentID;
@@ -294,6 +287,22 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             agentID = id;
             target = null;
             canNewAction = true;
+        }
+    }
+
+    private class DistanceSorter implements Comparator<StandardEntity> {
+        private StandardEntity reference;
+        private WorldInfo worldInfo;
+
+        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+            this.reference = reference;
+            this.worldInfo = wi;
+        }
+
+        public int compare(StandardEntity a, StandardEntity b) {
+            int d1 = this.worldInfo.getDistance(this.reference, a);
+            int d2 = this.worldInfo.getDistance(this.reference, b);
+            return d1 - d2;
         }
     }
 }
