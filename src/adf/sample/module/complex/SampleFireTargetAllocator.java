@@ -24,7 +24,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
     private Collection<EntityID> priorityBuildings;
     private Collection<EntityID> targetBuildings;
 
-    private Map<EntityID, FireBrigadeInfo> agentInfoMap;
+    private Map<EntityID, FireBrigadeInfo> fireBrigadeInfoMap;
 
     private int maxWater;
     private int maxPower;
@@ -33,7 +33,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         super(ai, wi, si, moduleManager, developData);
         this.priorityBuildings = new HashSet<>();
         this.targetBuildings = new HashSet<>();
-        this.agentInfoMap = new HashMap<>();
+        this.fireBrigadeInfoMap = new HashMap<>();
         this.maxWater = si.getFireTankMaximum();
         this.maxPower = si.getFireExtinguishMaxSum();
     }
@@ -45,7 +45,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
             return this;
         }
         for(EntityID id : this.worldInfo.getEntityIDsOfType(StandardEntityURN.FIRE_BRIGADE)) {
-            this.agentInfoMap.put(id, new FireBrigadeInfo(id));
+            this.fireBrigadeInfoMap.put(id, new FireBrigadeInfo(id));
         }
         return this;
     }
@@ -57,34 +57,34 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
             return this;
         }
         for(EntityID id : this.worldInfo.getEntityIDsOfType(StandardEntityURN.FIRE_BRIGADE)) {
-            this.agentInfoMap.put(id, new FireBrigadeInfo(id));
+            this.fireBrigadeInfoMap.put(id, new FireBrigadeInfo(id));
         }
         return this;
     }
 
     @Override
     public Map<EntityID, EntityID> getResult() {
-        return this.convert(this.agentInfoMap);
+        return this.convertToResult(this.fireBrigadeInfoMap);
     }
 
     @Override
     public FireTargetAllocator calc() {
         int currentTime = this.agentInfo.getTime();
-        List<StandardEntity> agents = this.getActionAgents(this.agentInfoMap);
+        List<StandardEntity> agents = this.getAgents(this.fireBrigadeInfoMap);
         Collection<EntityID> removes = new ArrayList<>();
+
         for(EntityID target : this.priorityBuildings) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
                 if (targetEntity != null) {
                     agents.sort(new DistanceSorter(this.worldInfo, targetEntity));
-                    StandardEntity result = agents.get(0);
-                    agents.remove(0);
-                    FireBrigadeInfo info = this.agentInfoMap.get(result.getID());
+                    StandardEntity result = agents.remove(0);
+                    FireBrigadeInfo info = this.fireBrigadeInfoMap.get(result.getID());
                     if(info != null) {
                         info.canNewAction = false;
                         info.target = target;
                         info.commandTime = currentTime;
-                        this.agentInfoMap.put(result.getID(), info);
+                        this.fireBrigadeInfoMap.put(result.getID(), info);
                         removes.add(target);
                     }
                 }
@@ -92,6 +92,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         }
         this.priorityBuildings.removeAll(removes);
         removes.clear();
+
         for(EntityID target : this.targetBuildings) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -99,12 +100,12 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
                     agents.sort(new DistanceSorter(this.worldInfo, targetEntity));
                     StandardEntity result = agents.get(0);
                     agents.remove(0);
-                    FireBrigadeInfo info = this.agentInfoMap.get(result.getID());
+                    FireBrigadeInfo info = this.fireBrigadeInfoMap.get(result.getID());
                     if(info != null) {
                         info.canNewAction = false;
                         info.target = target;
                         info.commandTime = currentTime;
-                        this.agentInfoMap.put(result.getID(), info);
+                        this.fireBrigadeInfoMap.put(result.getID(), info);
                         removes.add(target);
                     }
                 }
@@ -120,6 +121,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
+
         int currentTime = this.agentInfo.getTime();
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageBuilding.class)) {
             MessageBuilding mb = (MessageBuilding)message;
@@ -134,12 +136,12 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageFireBrigade.class)) {
             MessageFireBrigade mfb = (MessageFireBrigade) message;
             MessageUtil.reflectMessage(this.worldInfo, mfb);
-            FireBrigadeInfo info = this.agentInfoMap.get(mfb.getAgentID());
+            FireBrigadeInfo info = this.fireBrigadeInfoMap.get(mfb.getAgentID());
             if(info == null) {
                 info = new FireBrigadeInfo(mfb.getAgentID());
             }
             if(currentTime >= info.commandTime + 2) {
-                this.agentInfoMap.put(mfb.getAgentID(), this.update(info, mfb));
+                this.fireBrigadeInfoMap.put(mfb.getAgentID(), this.updateFireBrigadeInfo(info, mfb));
             }
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandFire.class)) {
@@ -151,19 +153,92 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageReport.class)) {
             MessageReport report = (MessageReport) message;
-            FireBrigadeInfo info = this.agentInfoMap.get(report.getSenderID());
+            FireBrigadeInfo info = this.fireBrigadeInfoMap.get(report.getSenderID());
             if(info != null && report.isDone()) {
                 info.canNewAction = true;
                 this.priorityBuildings.remove(info.target);
                 this.targetBuildings.remove(info.target);
                 info.target = null;
-                this.agentInfoMap.put(report.getSenderID(), info);
+                this.fireBrigadeInfoMap.put(report.getSenderID(), info);
             }
         }
         return this;
     }
 
-    private Map<EntityID, EntityID> convert(Map<EntityID, FireBrigadeInfo> infoMap) {
+    private FireBrigadeInfo updateFireBrigadeInfo(FireBrigadeInfo info, MessageFireBrigade message) {
+        if(message.isBuriednessDefined() && message.getBuriedness() > 0) {
+            info.canNewAction = false;
+            if (info.target != null) {
+                this.targetBuildings.add(info.target);
+                info.target = null;
+                info.commandTime = -1;
+            }
+            return info;
+        }
+        if(message.getAction() == MessageFireBrigade.ACTION_REST) {
+            info.canNewAction = true;
+            if (info.target != null) {
+                this.targetBuildings.add(info.target);
+                info.target = null;
+                info.commandTime = -1;
+            }
+        } else if(message.getAction() == MessageFireBrigade.ACTION_REFILL) {
+            info.canNewAction = (message.getWater() + this.maxPower >= this.maxWater);
+            if (info.target != null) {
+                this.targetBuildings.add(info.target);
+                info.target = null;
+                info.commandTime = -1;
+            }
+        } else if(message.getAction() == MessageFireBrigade.ACTION_EXTINGUISH) {
+            info.canNewAction = true;
+            info.target = null;
+            info.commandTime = -1;
+            this.priorityBuildings.remove(message.getTargetID());
+            this.targetBuildings.remove(message.getTargetID());
+        } else if(message.getAction() == MessageFireBrigade.ACTION_MOVE) {
+            if (message.getTargetID() == null) {
+                info.canNewAction = true;
+                if(info.target != null) {
+                    this.targetBuildings.add(info.target);
+                    info.target = null;
+                    info.commandTime = -1;
+                }
+                return info;
+            }
+            StandardEntity entity = this.worldInfo.getEntity(message.getTargetID());
+            if(entity != null && entity instanceof Area) {
+                if(info.target != null) {
+                    StandardEntity targetEntity = this.worldInfo.getEntity(info.target);
+                    if(targetEntity != null && targetEntity instanceof Area) {
+                        if(message.getTargetID().getValue() == info.target.getValue()) {
+                            info.canNewAction = false;
+                        } else {
+                            info.canNewAction = true;
+                            this.targetBuildings.add(info.target);
+                            info.target = null;
+                            info.commandTime = -1;
+                        }
+                    } else {
+                        info.canNewAction = true;
+                        info.target = null;
+                        info.commandTime = -1;
+                    }
+                } else {
+                    info.canNewAction = true;
+                    info.commandTime = -1;
+                }
+            } else {
+                info.canNewAction = true;
+                if(info.target != null) {
+                    this.targetBuildings.add(info.target);
+                    info.target = null;
+                }
+            }
+        }
+        return info;
+    }
+
+    private Map<EntityID, EntityID> convertToResult(Map<EntityID, FireBrigadeInfo> infoMap) {
         Map<EntityID, EntityID> result = new HashMap<>();
         for(EntityID id : infoMap.keySet()) {
             FireBrigadeInfo info = infoMap.get(id);
@@ -174,7 +249,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
         return result;
     }
 
-    private List<StandardEntity> getActionAgents(Map<EntityID, FireBrigadeInfo> infoMap) {
+    private List<StandardEntity> getAgents(Map<EntityID, FireBrigadeInfo> infoMap) {
         List<StandardEntity> result = new ArrayList<>();
         for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE)) {
             FireBrigadeInfo info = infoMap.get(entity.getID());
@@ -183,71 +258,6 @@ public class SampleFireTargetAllocator extends FireTargetAllocator {
             }
         }
         return result;
-    }
-
-    private FireBrigadeInfo update(FireBrigadeInfo info, MessageFireBrigade message) {
-        if(message.isBuriednessDefined() && message.getBuriedness() > 0) {
-            info.canNewAction = false;
-            if (info.target != null) {
-                this.targetBuildings.add(info.target);
-                info.target = null;
-            }
-            return info;
-        }
-        if(message.getAction() == MessageFireBrigade.ACTION_REST) {
-            info.canNewAction = true;
-            if (info.target != null) {
-                this.targetBuildings.add(info.target);
-                info.target = null;
-            }
-        } else if(message.getAction() == MessageFireBrigade.ACTION_REFILL) {
-            info.canNewAction = (message.getWater() + this.maxPower >= this.maxWater);
-            if (info.target != null) {
-                this.targetBuildings.add(info.target);
-                info.target = null;
-            }
-        } else if(message.getAction() == MessageFireBrigade.ACTION_MOVE) {
-            if(message.getTargetID() != null) {
-                StandardEntity entity = this.worldInfo.getEntity(message.getTargetID());
-                if(entity != null && entity instanceof Area) {
-                    if(info.target != null) {
-                        StandardEntity targetEntity = this.worldInfo.getEntity(info.target);
-                        if(targetEntity != null && targetEntity instanceof Area) {
-                            if(message.getTargetID().getValue() == info.target.getValue()) {
-                                info.canNewAction = false;
-                            } else {
-                                info.canNewAction = true;
-                                this.targetBuildings.add(info.target);
-                                info.target = null;
-                            }
-                        } else {
-                            info.canNewAction = true;
-                            info.target = null;
-                        }
-                    } else {
-                        info.canNewAction = true;
-                    }
-                } else {
-                    info.canNewAction = true;
-                    if(info.target != null) {
-                        this.targetBuildings.add(info.target);
-                        info.target = null;
-                    }
-                }
-            } else {
-                info.canNewAction = true;
-                if(info.target != null) {
-                    this.targetBuildings.add(info.target);
-                    info.target = null;
-                }
-            }
-        } else if(message.getAction() == MessageFireBrigade.ACTION_EXTINGUISH) {
-            info.canNewAction = true;
-            info.target = null;
-            this.priorityBuildings.remove(message.getTargetID());
-            this.targetBuildings.remove(message.getTargetID());
-        }
-        return info;
     }
 
     private class FireBrigadeInfo {

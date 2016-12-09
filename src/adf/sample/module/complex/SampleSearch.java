@@ -250,7 +250,7 @@ public class SampleSearch extends Search {
             }
         }
 
-        /*if(this.isSendBuildingMessage && building != null) {
+        if(this.isSendBuildingMessage && building != null) {
             messageManager.addMessage(new MessageBuilding(true, building));
             this.sentTimeMap.put(building.getID(), currentTime + this.sendingAvoidTimeSent);
         }
@@ -264,7 +264,7 @@ public class SampleSearch extends Search {
                 messageManager.addMessage(new MessageRoad(true, road, blockade, false));
                 this.sentTimeMap.put(road.getID(), currentTime + this.sendingAvoidTimeSent);
             }
-        }*/
+        }
     }
 
     private void checkSendFlags(Human agent){
