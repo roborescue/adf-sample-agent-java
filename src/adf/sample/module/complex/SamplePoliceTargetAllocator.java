@@ -26,13 +26,13 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
     private Collection<EntityID> priorityAreas;
     private Collection<EntityID> targetAreas;
 
-    private Map<EntityID, PoliceForceInfo> policeForceInfoMap;
+    private Map<EntityID, PoliceForceInfo> agentInfoMap;
 
     public SamplePoliceTargetAllocator(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
         this.priorityAreas = new HashSet<>();
         this.targetAreas = new HashSet<>();
-        this.policeForceInfoMap = new HashMap<>();
+        this.agentInfoMap = new HashMap<>();
     }
 
     @Override
@@ -42,26 +42,8 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             return this;
         }
         for(EntityID id : this.worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_FORCE)) {
-            this.policeForceInfoMap.put(id, new PoliceForceInfo(id));
+            this.agentInfoMap.put(id, new PoliceForceInfo(id));
         }
-        this.initTargetAreas();
-        return this;
-    }
-
-    @Override
-    public PoliceTargetAllocator preparate() {
-        super.preparate();
-        if(this.getCountPrecompute() >= 2) {
-            return this;
-        }
-        for(EntityID id : this.worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_FORCE)) {
-            this.policeForceInfoMap.put(id, new PoliceForceInfo(id));
-        }
-        this.initTargetAreas();
-        return this;
-    }
-
-    private void initTargetAreas() {
         for(StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE, BUILDING, GAS_STATION)) {
             for(EntityID id : ((Building)e).getNeighbours()) {
                 StandardEntity neighbour = this.worldInfo.getEntity(id);
@@ -78,38 +60,66 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
                 }
             }
         }
+        return this;
+    }
+
+    @Override
+    public PoliceTargetAllocator preparate() {
+        super.preparate();
+        if(this.getCountPrecompute() >= 2) {
+            return this;
+        }
+        for(EntityID id : this.worldInfo.getEntityIDsOfType(StandardEntityURN.POLICE_FORCE)) {
+            this.agentInfoMap.put(id, new PoliceForceInfo(id));
+        }
+        for(StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE, BUILDING, GAS_STATION)) {
+            for(EntityID id : ((Building)e).getNeighbours()) {
+                StandardEntity neighbour = this.worldInfo.getEntity(id);
+                if(neighbour instanceof Road) {
+                    this.targetAreas.add(id);
+                }
+            }
+        }
+        for(StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE)) {
+            for(EntityID id : ((Building)e).getNeighbours()) {
+                StandardEntity neighbour = this.worldInfo.getEntity(id);
+                if(neighbour instanceof Road) {
+                    this.priorityAreas.add(id);
+                }
+            }
+        }
+        return this;
     }
 
     @Override
     public Map<EntityID, EntityID> getResult() {
-        return this.convertToResult(this.policeForceInfoMap);
+        return this.convert(this.agentInfoMap);
     }
 
     @Override
     public PoliceTargetAllocator calc() {
-        List<StandardEntity> agents = this.getAgents(this.policeForceInfoMap);
-        int currentTime = this.agentInfo.getTime();
-
+        List<StandardEntity> agents = this.getActionAgents(this.agentInfoMap);
         Collection<EntityID> removes = new ArrayList<>();
+        int currentTime = this.agentInfo.getTime();
         for(EntityID target : this.priorityAreas) {
             if(agents.size() > 0) {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
                 if (targetEntity != null) {
                     agents.sort(new DistanceSorter(this.worldInfo, targetEntity));
-                    StandardEntity result = agents.remove(0);
-                    PoliceForceInfo info = this.policeForceInfoMap.get(result.getID());
+                    StandardEntity result = agents.get(0);
+                    agents.remove(0);
+                    PoliceForceInfo info = this.agentInfoMap.get(result.getID());
                     if(info != null) {
                         info.canNewAction = false;
                         info.target = target;
                         info.commandTime = currentTime;
-                        this.policeForceInfoMap.put(result.getID(), info);
+                        this.agentInfoMap.put(result.getID(), info);
                         removes.add(target);
                     }
                 }
             }
         }
         this.priorityAreas.removeAll(removes);
-
         List<StandardEntity> areas = new ArrayList<>();
         for(EntityID target : this.targetAreas) {
             StandardEntity targetEntity = this.worldInfo.getEntity(target);
@@ -120,14 +130,15 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
         for(StandardEntity agent : agents) {
             if(areas.size() > 0) {
                 areas.sort(new DistanceSorter(this.worldInfo, agent));
-                StandardEntity result = areas.remove(0);
+                StandardEntity result = areas.get(0);
+                areas.remove(0);
                 this.targetAreas.remove(result.getID());
-                PoliceForceInfo info = this.policeForceInfoMap.get(agent.getID());
+                PoliceForceInfo info = this.agentInfoMap.get(agent.getID());
                 if(info != null) {
                     info.canNewAction = false;
                     info.target = result.getID();
                     info.commandTime = currentTime;
-                    this.policeForceInfoMap.put(agent.getID(), info);
+                    this.agentInfoMap.put(agent.getID(), info);
                 }
             }
         }
@@ -148,12 +159,12 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessagePoliceForce.class)) {
             MessagePoliceForce mpf = (MessagePoliceForce) message;
             MessageUtil.reflectMessage(this.worldInfo, mpf);
-            PoliceForceInfo info = this.policeForceInfoMap.get(mpf.getAgentID());
+            PoliceForceInfo info = this.agentInfoMap.get(mpf.getAgentID());
             if(info == null) {
                 info = new PoliceForceInfo(mpf.getAgentID());
             }
             if(currentTime >= info.commandTime + 2) {
-                this.policeForceInfoMap.put(mpf.getAgentID(), this.updatePoliceForceInfo(info, mpf));
+                this.agentInfoMap.put(mpf.getAgentID(), this.update(info, mpf));
             }
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandPolice.class)) {
@@ -161,79 +172,72 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
             if(command.getAction() == CommandPolice.ACTION_CLEAR && command.isBroadcast()) {
                 this.priorityAreas.add(command.getTargetID());
                 this.targetAreas.add(command.getTargetID());
+                System.out.println("GetMessage!!!!!!!!!!!!!!!!!!!!!!!!!!");
             }
         }
         for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageReport.class)) {
             MessageReport report = (MessageReport) message;
-            PoliceForceInfo info = this.policeForceInfoMap.get(report.getSenderID());
-            if(info != null && currentTime >= info.commandTime + 2) {
-                if(report.isDone()) {
-                    info.canNewAction = true;
-                    this.priorityAreas.remove(info.target);
-                    this.targetAreas.remove(info.target);
-                    info.target = null;
-                    info.commandTime = -1;
-                    this.policeForceInfoMap.put(info.agentID, info);
-                }
+            PoliceForceInfo info = this.agentInfoMap.get(report.getSenderID());
+            if(info != null && report.isDone()) {
+                info.canNewAction = true;
+                this.priorityAreas.remove(info.target);
+                this.targetAreas.remove(info.target);
+                info.target = null;
+                this.agentInfoMap.put(info.agentID, info);
             }
         }
         return this;
     }
 
-    private PoliceForceInfo updatePoliceForceInfo(PoliceForceInfo info, MessagePoliceForce message) {
+    private PoliceForceInfo update(PoliceForceInfo info, MessagePoliceForce message) {
         if(message.isBuriednessDefined() && message.getBuriedness() > 0) {
             info.canNewAction = false;
             if (info.target != null) {
                 this.targetAreas.add(info.target);
                 info.target = null;
-                info.commandTime = -1;
             }
-        } else if(message.getAction() == MessagePoliceForce.ACTION_REST) {
+            return info;
+        }
+        if(message.getAction() == MessagePoliceForce.ACTION_REST) {
             info.canNewAction = true;
             if (info.target != null) {
                 this.targetAreas.add(info.target);
                 info.target = null;
-                info.commandTime = -1;
             }
         } else if(message.getAction() == MessagePoliceForce.ACTION_MOVE) {
-            if(message.getTargetID() == null) {
-                info.canNewAction = true;
-                if(info.target != null) {
-                    this.targetAreas.add(info.target);
-                    info.target = null;
-                    info.commandTime = -1;
-                }
-                return info;
-            }
-            StandardEntity messageTargetEntity = this.worldInfo.getEntity(message.getTargetID());
-            if(messageTargetEntity == null || !(messageTargetEntity instanceof Area)) {
-                info.canNewAction = true;
-                if(info.target != null) {
-                    this.targetAreas.add(info.target);
-                    info.target = null;
-                    info.commandTime = -1;
-                }
-                return info;
-            }
-            if(info.target != null) {
-                StandardEntity targetEntity = this.worldInfo.getEntity(info.target);
-                if (targetEntity == null || !(targetEntity instanceof Area)) {
-                    info.canNewAction = true;
-                    info.target = null;
-                    info.commandTime = -1;
-                    return info;
-                }
-                if(message.getTargetID().getValue() == info.target.getValue()) {
-                    info.canNewAction = false;
+            if(message.getTargetID() != null) {
+                StandardEntity entity = this.worldInfo.getEntity(message.getTargetID());
+                if(entity != null && entity instanceof Area) {
+                    if(info.target != null) {
+                        StandardEntity targetEntity = this.worldInfo.getEntity(info.target);
+                        if(targetEntity != null && targetEntity instanceof Area) {
+                            if(message.getTargetID().getValue() == info.target.getValue()) {
+                                info.canNewAction = false;
+                            } else {
+                                info.canNewAction = true;
+                                this.targetAreas.add(info.target);
+                                info.target = null;
+                            }
+                        } else {
+                            info.canNewAction = true;
+                            info.target = null;
+                        }
+                    } else {
+                        info.canNewAction = true;
+                    }
                 } else {
                     info.canNewAction = true;
-                    this.targetAreas.add(info.target);
-                    info.target = null;
-                    info.commandTime = -1;
+                    if(info.target != null) {
+                        this.targetAreas.add(info.target);
+                        info.target = null;
+                    }
                 }
             } else {
                 info.canNewAction = true;
-                info.commandTime = -1;
+                if(info.target != null) {
+                    this.targetAreas.add(info.target);
+                    info.target = null;
+                }
             }
         } else if(message.getAction() == MessagePoliceForce.ACTION_CLEAR) {
             info.canNewAction = false;
@@ -241,7 +245,7 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
         return info;
     }
 
-    private List<StandardEntity> getAgents(Map<EntityID, PoliceForceInfo> infoMap) {
+    private List<StandardEntity> getActionAgents(Map<EntityID, PoliceForceInfo> infoMap) {
         List<StandardEntity> result = new ArrayList<>();
         for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE)) {
             PoliceForceInfo info = infoMap.get(entity.getID());
@@ -252,7 +256,7 @@ public class SamplePoliceTargetAllocator extends PoliceTargetAllocator {
         return result;
     }
 
-    private Map<EntityID, EntityID> convertToResult(Map<EntityID, PoliceForceInfo> infoMap) {
+    private Map<EntityID, EntityID> convert(Map<EntityID, PoliceForceInfo> infoMap) {
         Map<EntityID, EntityID> result = new HashMap<>();
         for(EntityID id : infoMap.keySet()) {
             PoliceForceInfo info = infoMap.get(id);
