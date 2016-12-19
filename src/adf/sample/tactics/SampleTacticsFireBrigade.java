@@ -56,7 +56,7 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
                 this.search = moduleManager.getModule("TacticsFireBrigade.Search", "adf.sample.module.complex.SampleSearch");
-                this.buildingDetector = moduleManager.getModule("TacticsFireBrigade.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                this.buildingDetector = moduleManager.getModule("TacticsFireBrigade.BuildingDetector", "adf.sample.module.complex.SampleBuildingDetector");
                 this.actionFireFighting = moduleManager.getExtAction("TacticsFireBrigade.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
                 this.actionExtMove = moduleManager.getExtAction("TacticsFireBrigade.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 this.commandExecutorFire = moduleManager.getCommandExecutor("TacticsFireBrigade.CommandExecutorFire", "adf.sample.centralized.CommandExecutorFire");
@@ -64,7 +64,7 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
                 break;
             case PRECOMPUTED:
                 this.search = moduleManager.getModule("TacticsFireBrigade.Search", "adf.sample.module.complex.SampleSearch");
-                this.buildingDetector = moduleManager.getModule("TacticsFireBrigade.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                this.buildingDetector = moduleManager.getModule("TacticsFireBrigade.BuildingDetector", "adf.sample.module.complex.SampleBuildingDetector");
                 this.actionFireFighting = moduleManager.getExtAction("TacticsFireBrigade.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
                 this.actionExtMove = moduleManager.getExtAction("TacticsFireBrigade.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 this.commandExecutorFire = moduleManager.getCommandExecutor("TacticsFireBrigade.CommandExecutorFire", "adf.sample.centralized.CommandExecutorFire");
@@ -72,7 +72,7 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
                 break;
             case NON_PRECOMPUTE:
                 this.search = moduleManager.getModule("TacticsFireBrigade.Search", "adf.sample.module.complex.SampleSearch");
-                this.buildingDetector = moduleManager.getModule("TacticsFireBrigade.BuildingSelector", "adf.sample.module.complex.SampleBuildingSelector");
+                this.buildingDetector = moduleManager.getModule("TacticsFireBrigade.BuildingDetector", "adf.sample.module.complex.SampleBuildingDetector");
                 this.actionFireFighting = moduleManager.getExtAction("TacticsFireBrigade.ActionFireFighting", "adf.sample.extaction.ActionFireFighting");
                 this.actionExtMove = moduleManager.getExtAction("TacticsFireBrigade.ActionExtMove", "adf.sample.extaction.ActionExtMove");
                 this.commandExecutorFire = moduleManager.getCommandExecutor("TacticsFireBrigade.CommandExecutorFire", "adf.sample.centralized.CommandExecutorFire");
