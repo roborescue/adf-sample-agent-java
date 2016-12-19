@@ -10,10 +10,10 @@
 "SampleBuildingDetector.sendingAvoidTimeReceived":3,
 "SampleBuildingDetector.sendingAvoidTimeSent":5,
 "SampleBuildingDetector.moveDistance":40000,
-"SampleVictimDetector.sendingAvoidTimeClearRequest":5,
-"SampleVictimDetector.sendingAvoidTimeReceived":3,
-"SampleVictimDetector.sendingAvoidTimeSent":5,
-"SampleVictimDetector.moveDistance":40000,
+"SampleHumanDetector.sendingAvoidTimeClearRequest":5,
+"SampleHumanDetector.sendingAvoidTimeReceived":3,
+"SampleHumanDetector.sendingAvoidTimeSent":5,
+"SampleHumanDetector.moveDistance":40000,
 "CommandPickerAmbulance.scoutDistance":40000,
 "CommandPickerFire.scoutDistance":40000
 }

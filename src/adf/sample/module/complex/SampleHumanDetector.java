@@ -23,7 +23,7 @@ import java.util.*;
 
 import static rescuecore2.standard.entities.StandardEntityURN.*;
 
-public class SampleVictimDetector extends HumanDetector {
+public class SampleHumanDetector extends HumanDetector {
     private Clustering clustering;
 
     private EntityID result;
@@ -40,29 +40,29 @@ public class SampleVictimDetector extends HumanDetector {
     private EntityID lastPosition;
     private int positionCount;
 
-    public SampleVictimDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+    public SampleHumanDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
 
         this.result = null;
         this.sendTime = 0;
-        this.sendingAvoidTimeClearRequest = developData.getInteger("SampleVictimDetector.sendingAvoidTimeClearRequest", 5);
+        this.sendingAvoidTimeClearRequest = developData.getInteger("SampleHumanDetector.sendingAvoidTimeClearRequest", 5);
 
         this.agentPositions = new HashSet<>();
         this.sentTimeMap = new HashMap<>();
-        this.sendingAvoidTimeReceived = developData.getInteger("SampleVictimDetector.sendingAvoidTimeReceived", 3);
-        this.sendingAvoidTimeSent = developData.getInteger("SampleVictimDetector.sendingAvoidTimeSent", 5);
+        this.sendingAvoidTimeReceived = developData.getInteger("SampleHumanDetector.sendingAvoidTimeReceived", 3);
+        this.sendingAvoidTimeSent = developData.getInteger("SampleHumanDetector.sendingAvoidTimeSent", 5);
 
-        this.moveDistance = developData.getInteger("SampleVictimDetector.moveDistance", 40000);
+        this.moveDistance = developData.getInteger("SampleHumanDetector.moveDistance", 40000);
 
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.clustering = moduleManager.getModule("SampleVictimDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.clustering = moduleManager.getModule("SampleHumanDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case PRECOMPUTED:
-                this.clustering = moduleManager.getModule("SampleVictimDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.clustering = moduleManager.getModule("SampleHumanDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case NON_PRECOMPUTE:
-                this.clustering = moduleManager.getModule("SampleVictimDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
+                this.clustering = moduleManager.getModule("SampleHumanDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
     }
