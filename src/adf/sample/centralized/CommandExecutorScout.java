@@ -40,13 +40,13 @@ public class CommandExecutorScout extends CommandExecutor<CommandScout> {
         this.type = ACTION_UNKNOWN;
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("CommandExecutorAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("CommandExecutorScout.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("CommandExecutorAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("CommandExecutorScout.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("CommandExecutorAmbulance.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.pathPlanning = moduleManager.getModule("CommandExecutorScout.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
         }
     }

@@ -47,16 +47,16 @@ public class CommandExecutorScoutPolice extends CommandExecutor<CommandScout> {
 
         switch  (scenarioInfo.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("CommandExecutorPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionExtClear = moduleManager.getExtAction("CommandExecutorPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.pathPlanning = moduleManager.getModule("CommandExecutorScoutPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.actionExtClear = moduleManager.getExtAction("CommandExecutorScoutPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("CommandExecutorPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionExtClear = moduleManager.getExtAction("CommandExecutorPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.pathPlanning = moduleManager.getModule("CommandExecutorScoutPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.actionExtClear = moduleManager.getExtAction("CommandExecutorScoutPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("CommandExecutorPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-                this.actionExtClear = moduleManager.getExtAction("CommandExecutorPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
+                this.pathPlanning = moduleManager.getModule("CommandExecutorScoutPolice.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+                this.actionExtClear = moduleManager.getExtAction("CommandExecutorScoutPolice.ActionExtClear", "adf.sample.extaction.ActionExtClear");
                 break;
         }
     }
