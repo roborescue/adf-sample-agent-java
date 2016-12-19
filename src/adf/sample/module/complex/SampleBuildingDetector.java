@@ -13,7 +13,6 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.algorithm.Clustering;
-import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingDetector;
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Vector2D;
@@ -28,7 +27,6 @@ public class SampleBuildingDetector extends BuildingDetector {
     private EntityID result;
 
     private Clustering clustering;
-    private PathPlanning pathPlanning;
 
     private int sendTime;
     private int sendingAvoidTimeClearRequest;
@@ -46,15 +44,12 @@ public class SampleBuildingDetector extends BuildingDetector {
         super(ai, wi, si, moduleManager, developData);
         switch  (si.getMode()) {
             case PRECOMPUTATION_PHASE:
-                this.pathPlanning = moduleManager.getModule("SampleBuildingDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.clustering = moduleManager.getModule("SampleBuildingDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case PRECOMPUTED:
-                this.pathPlanning = moduleManager.getModule("SampleBuildingDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.clustering = moduleManager.getModule("SampleBuildingDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
             case NON_PRECOMPUTE:
-                this.pathPlanning = moduleManager.getModule("SampleBuildingDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 this.clustering = moduleManager.getModule("SampleBuildingDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
@@ -75,7 +70,6 @@ public class SampleBuildingDetector extends BuildingDetector {
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
-        this.pathPlanning.updateInfo(messageManager);
         this.clustering.updateInfo(messageManager);
 
         this.reflectMessage(messageManager);
@@ -236,7 +230,6 @@ public class SampleBuildingDetector extends BuildingDetector {
             return this;
         }
         this.clustering.precompute(precomputeData);
-        this.pathPlanning.precompute(precomputeData);
         return this;
     }
 
@@ -247,7 +240,6 @@ public class SampleBuildingDetector extends BuildingDetector {
             return this;
         }
         this.clustering.resume(precomputeData);
-        this.pathPlanning.resume(precomputeData);
         return this;
     }
 
@@ -258,7 +250,6 @@ public class SampleBuildingDetector extends BuildingDetector {
             return this;
         }
         this.clustering.preparate();
-        this.pathPlanning.preparate();
         return this;
     }
 
