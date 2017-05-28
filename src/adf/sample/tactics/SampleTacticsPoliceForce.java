@@ -22,9 +22,16 @@ import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsPoliceForce;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
+import test_team.Utils.WorldViewLauncher;
+import test_team.Utils.WorldViewer;
 
+import java.awt.BorderLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.Objects;
+
+import javax.swing.JFrame;
 
 public class SampleTacticsPoliceForce extends TacticsPoliceForce {
     private int clearDistance;
@@ -40,6 +47,10 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
 
     private CommunicationMessage recentCommand;
 
+	private Boolean isVisualDebug;
+
+//	private WorldViewer worldViewer;
+
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         worldInfo.indexClass(
@@ -49,6 +60,7 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
                 StandardEntityURN.REFUGE,
                 StandardEntityURN.BLOCKADE
         );
+        isVisualDebug=moduleManager.getModuleConfig().getBooleanValue("VisualDebug", false);
         // init value
         this.clearDistance = scenarioInfo.getClearRepairDistance();
         this.recentCommand = null;
@@ -99,6 +111,8 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         this.actionExtMove.resume(precomputeData);
         this.commandExecutorPolice.resume(precomputeData);
         this.commandExecutorScout.resume(precomputeData);
+        if(isVisualDebug)
+        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
     }
 
     @Override
@@ -109,6 +123,8 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         this.actionExtMove.preparate();
         this.commandExecutorPolice.preparate();
         this.commandExecutorScout.preparate();
+        if(isVisualDebug)
+        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
     }
 
     @Override
@@ -119,7 +135,8 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         this.actionExtMove.updateInfo(messageManager);
         this.commandExecutorPolice.updateInfo(messageManager);
         this.commandExecutorScout.updateInfo(messageManager);
-
+        if(isVisualDebug)
+        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
         PoliceForce agent = (PoliceForce) agentInfo.me();
         EntityID agentID = agent.getID();
         // command
@@ -137,6 +154,7 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
                 this.commandExecutorPolice.setCommand(command);
             }
         }
+//        worldViewer.showTimestep(0);
         if(this.recentCommand != null) {
             Action action = null;
             if(this.recentCommand.getClass() == CommandPolice.class) {
@@ -158,7 +176,7 @@ public class SampleTacticsPoliceForce extends TacticsPoliceForce {
         }
 
         target = this.search.calc().getTarget();
-        action = this.actionExtMove.setTarget(target).calc().getAction();
+        action = this.actionExtClear.setTarget(target).calc().getAction();
         if(action != null) {
             this.sendActionMessage(worldInfo, messageManager, agent, action);
             return action;

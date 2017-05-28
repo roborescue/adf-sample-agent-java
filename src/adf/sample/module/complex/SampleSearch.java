@@ -87,7 +87,10 @@ public class SampleSearch extends Search {
                 }
                 break;
         }
+        registerModule(this.pathPlanning);
+        registerModule(this.clustering);
     }
+    
 
     @Override
     public Search updateInfo(MessageManager messageManager) {
@@ -95,9 +98,6 @@ public class SampleSearch extends Search {
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
-        this.pathPlanning.updateInfo(messageManager);
-        this.clustering.updateInfo(messageManager);
-
         this.reflectMessage(messageManager);
         this.sendEntityInfo(messageManager);
 
@@ -465,8 +465,6 @@ public class SampleSearch extends Search {
         if(this.getCountPrecompute() >= 2) {
             return this;
         }
-        this.pathPlanning.precompute(precomputeData);
-        this.clustering.precompute(precomputeData);
         return this;
     }
 
@@ -477,8 +475,6 @@ public class SampleSearch extends Search {
             return this;
         }
         this.worldInfo.requestRollback();
-        this.pathPlanning.resume(precomputeData);
-        this.clustering.resume(precomputeData);
         return this;
     }
 
@@ -489,8 +485,6 @@ public class SampleSearch extends Search {
             return this;
         }
         this.worldInfo.requestRollback();
-        this.pathPlanning.preparate();
-        this.clustering.preparate();
         return this;
     }
 }

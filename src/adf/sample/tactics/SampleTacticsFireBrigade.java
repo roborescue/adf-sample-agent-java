@@ -1,4 +1,36 @@
 package adf.sample.tactics;
+import adf.agent.action.Action;
+import adf.agent.action.common.ActionMove;
+import adf.agent.action.common.ActionRest;
+import adf.agent.action.police.ActionClear;
+import adf.agent.communication.MessageManager;
+import adf.agent.communication.standard.bundle.centralized.CommandPolice;
+import adf.agent.communication.standard.bundle.centralized.CommandScout;
+import adf.agent.communication.standard.bundle.information.MessagePoliceForce;
+import adf.agent.develop.DevelopData;
+import adf.agent.info.AgentInfo;
+import adf.agent.info.ScenarioInfo;
+import adf.agent.info.WorldInfo;
+import adf.agent.module.ModuleManager;
+import adf.agent.precompute.PrecomputeData;
+import adf.component.centralized.CommandExecutor;
+import adf.component.communication.CommunicationMessage;
+import adf.component.extaction.ExtAction;
+import adf.component.module.complex.RoadDetector;
+import adf.component.module.complex.Search;
+import adf.component.tactics.TacticsPoliceForce;
+import rescuecore2.standard.entities.*;
+import rescuecore2.worldmodel.EntityID;
+import test_team.Utils.WorldViewLauncher;
+import test_team.Utils.WorldViewer;
+
+import java.awt.BorderLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.List;
+import java.util.Objects;
+
+import javax.swing.JFrame;
 
 import adf.agent.action.Action;
 import adf.agent.action.common.ActionMove;
@@ -18,6 +50,7 @@ import adf.agent.precompute.PrecomputeData;
 import adf.component.centralized.CommandExecutor;
 import adf.component.communication.CommunicationMessage;
 import adf.component.extaction.ExtAction;
+import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingDetector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsFireBrigade;
@@ -39,6 +72,9 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
 
     private CommunicationMessage recentCommand;
 
+	private WorldViewer worldViewer;
+	private Boolean isVisualDebug;
+
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
         worldInfo.indexClass(
@@ -51,6 +87,7 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
+        isVisualDebug=moduleManager.getModuleConfig().getBooleanValue("VisualDebug", false);
         this.recentCommand = null;
         // init Algorithm Module & ExtAction
         switch  (scenarioInfo.getMode()) {
@@ -99,7 +136,10 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
         this.actionExtMove.resume(precomputeData);
         this.commandExecutorFire.resume(precomputeData);
         this.commandExecutorScout.resume(precomputeData);
+        if(isVisualDebug)
+        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
     }
+    
 
     @Override
     public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
@@ -109,6 +149,9 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
         this.actionExtMove.preparate();
         this.commandExecutorFire.preparate();
         this.commandExecutorScout.preparate();
+        if(isVisualDebug)
+        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
+
     }
 
     @Override
@@ -119,7 +162,24 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
         this.actionExtMove.updateInfo(messageManager);
         this.commandExecutorFire.updateInfo(messageManager);
         this.commandExecutorScout.updateInfo(messageManager);
-
+        if(isVisualDebug)
+        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
+        if(agentInfo.getWater()==0){
+        	PathPlanning pathPlanning = (PathPlanning)moduleManager.getModule("ActionFireFighting.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
+        	pathPlanning.setFrom(agentInfo.getPosition());
+            pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
+            List<EntityID> path = pathPlanning.calc().getResult();
+            if(path != null && path.size() > 0) {
+                StandardEntity entity = worldInfo.getEntity(path.get(path.size() - 1));
+                if(entity instanceof Building) {
+                    if(entity.getStandardURN() != StandardEntityURN.REFUGE) {
+                        path.remove(path.size() - 1);
+                    }
+                }
+                return new ActionMove(path);
+            }
+        }
+        	
         FireBrigade agent = (FireBrigade) agentInfo.me();
         EntityID agentID = agentInfo.getID();
         // command
@@ -137,6 +197,7 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade {
                 this.commandExecutorFire.setCommand(command);
             }
         }
+        
         if(this.recentCommand != null) {
             Action action = null;
             if(this.recentCommand.getClass() == CommandFire.class) {

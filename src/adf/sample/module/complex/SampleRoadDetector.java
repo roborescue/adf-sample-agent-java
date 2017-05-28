@@ -44,6 +44,7 @@ public class SampleRoadDetector extends RoadDetector {
                 this.pathPlanning = moduleManager.getModule("SampleRoadDetector.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
         }
+        registerModule(this.pathPlanning);
         this.result = null;
     }
 
@@ -94,7 +95,6 @@ public class SampleRoadDetector extends RoadDetector {
         if(this.getCountPrecompute() >= 2) {
             return this;
         }
-        this.pathPlanning.precompute(precomputeData);
         return this;
     }
 
@@ -104,7 +104,6 @@ public class SampleRoadDetector extends RoadDetector {
         if(this.getCountResume() >= 2) {
             return this;
         }
-        this.pathPlanning.resume(precomputeData);
         this.targetAreas = new HashSet<>();
         for(StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE, BUILDING, GAS_STATION)) {
             for(EntityID id : ((Building)e).getNeighbours()) {
@@ -132,7 +131,6 @@ public class SampleRoadDetector extends RoadDetector {
         if(this.getCountPreparate() >= 2) {
             return this;
         }
-        this.pathPlanning.preparate();
         this.targetAreas = new HashSet<>();
         for(StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE, BUILDING, GAS_STATION)) {
             for(EntityID id : ((Building)e).getNeighbours()) {
@@ -160,7 +158,6 @@ public class SampleRoadDetector extends RoadDetector {
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
-        this.pathPlanning.updateInfo(messageManager);
         if(this.result != null) {
             if(this.agentInfo.getPosition().equals(this.result)) {
                 StandardEntity entity = this.worldInfo.getEntity(this.result);

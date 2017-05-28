@@ -25,6 +25,7 @@ import adf.component.tactics.TacticsAmbulanceTeam;
 import rescuecore2.standard.entities.AmbulanceTeam;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
+import test_team.Utils.WorldViewLauncher;
 
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +41,7 @@ public class SampleTacticsAmbulanceTeam extends TacticsAmbulanceTeam {
     private CommandExecutor<CommandScout> commandExecutorScout;
 
     private CommunicationMessage recentCommand;
+	private Boolean isVisualDebug;
 
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData developData) {
@@ -57,6 +59,7 @@ public class SampleTacticsAmbulanceTeam extends TacticsAmbulanceTeam {
                 StandardEntityURN.FIRE_STATION,
                 StandardEntityURN.POLICE_OFFICE
         );
+        isVisualDebug=moduleManager.getModuleConfig().getBooleanValue("VisualDebug", false);
         this.recentCommand = null;
         // init Algorithm Module & ExtAction
         switch  (scenarioInfo.getMode()) {
@@ -104,6 +107,8 @@ public class SampleTacticsAmbulanceTeam extends TacticsAmbulanceTeam {
         this.actionExtMove.resume(precomputeData);
         this.commandExecutorAmbulance.resume(precomputeData);
         this.commandExecutorScout.resume(precomputeData);
+        if(isVisualDebug)
+        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
     }
 
     @Override
@@ -114,6 +119,8 @@ public class SampleTacticsAmbulanceTeam extends TacticsAmbulanceTeam {
         this.actionExtMove.preparate();
         this.commandExecutorAmbulance.preparate();
         this.commandExecutorScout.preparate();
+        if(isVisualDebug)
+        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
     }
 
     @Override
@@ -124,7 +131,8 @@ public class SampleTacticsAmbulanceTeam extends TacticsAmbulanceTeam {
         this.actionExtMove.updateInfo(messageManager);
         this.commandExecutorAmbulance.updateInfo(messageManager);
         this.commandExecutorScout.updateInfo(messageManager);
-
+        if(isVisualDebug)
+        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
         AmbulanceTeam agent = (AmbulanceTeam)agentInfo.me();
         EntityID agentID = agentInfo.getID();
         // command

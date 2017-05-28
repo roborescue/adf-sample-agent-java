@@ -12,6 +12,7 @@ import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.communication.CommunicationMessage;
+import adf.component.module.AbstractModule;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.BuildingDetector;
 import rescuecore2.misc.geometry.Point2D;
@@ -53,6 +54,7 @@ public class SampleBuildingDetector extends BuildingDetector {
                 this.clustering = moduleManager.getModule("SampleBuildingDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
+        registerModule(this.clustering);
         this.sendTime = 0;
         this.sendingAvoidTimeClearRequest = developData.getInteger("SampleBuildingDetector.sendingAvoidTimeClearRequest", 5);
 
@@ -64,14 +66,13 @@ public class SampleBuildingDetector extends BuildingDetector {
         this.moveDistance = developData.getInteger("SampleBuildingDetector.moveDistance", 40000);
     }
 
+    
     @Override
     public BuildingDetector updateInfo(MessageManager messageManager) {
         super.updateInfo(messageManager);
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
-        this.clustering.updateInfo(messageManager);
-
         this.reflectMessage(messageManager);
         this.sendEntityInfo(messageManager);
 
@@ -229,7 +230,6 @@ public class SampleBuildingDetector extends BuildingDetector {
         if(this.getCountPrecompute() >= 2) {
             return this;
         }
-        this.clustering.precompute(precomputeData);
         return this;
     }
 
@@ -239,7 +239,6 @@ public class SampleBuildingDetector extends BuildingDetector {
         if(this.getCountPrecompute() >= 2) {
             return this;
         }
-        this.clustering.resume(precomputeData);
         return this;
     }
 
@@ -249,7 +248,6 @@ public class SampleBuildingDetector extends BuildingDetector {
         if(this.getCountPrecompute() >= 2) {
             return this;
         }
-        this.clustering.preparate();
         return this;
     }
 

@@ -65,6 +65,7 @@ public class SampleHumanDetector extends HumanDetector {
                 this.clustering = moduleManager.getModule("SampleHumanDetector.Clustering", "adf.sample.module.algorithm.SampleKMeans");
                 break;
         }
+        registerModule(this.clustering);
     }
 
     @Override
@@ -73,8 +74,6 @@ public class SampleHumanDetector extends HumanDetector {
         if(this.getCountUpdateInfo() >= 2) {
             return this;
         }
-        this.clustering.updateInfo(messageManager);
-
         this.reflectMessage(messageManager);
         this.sendEntityInfo(messageManager);
 
@@ -296,7 +295,6 @@ public class SampleHumanDetector extends HumanDetector {
         if(this.getCountPrecompute() >= 2) {
             return this;
         }
-        this.clustering.precompute(precomputeData);
         return this;
     }
 
@@ -306,7 +304,6 @@ public class SampleHumanDetector extends HumanDetector {
         if(this.getCountResume() >= 2) {
             return this;
         }
-        this.clustering.resume(precomputeData);
         return this;
     }
 
@@ -316,7 +313,6 @@ public class SampleHumanDetector extends HumanDetector {
         if(this.getCountPreparate() >= 2) {
             return this;
         }
-        this.clustering.preparate();
         return this;
     }
 
