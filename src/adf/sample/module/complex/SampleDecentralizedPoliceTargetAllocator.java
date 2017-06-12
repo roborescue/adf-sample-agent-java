@@ -13,43 +13,53 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleDecentralizedPoliceTargetAllocator extends PoliceTargetAllocator {
-    public SampleDecentralizedPoliceTargetAllocator(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+public class SampleDecentralizedPoliceTargetAllocator extends PoliceTargetAllocator
+{
+    public SampleDecentralizedPoliceTargetAllocator(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData)
+    {
         super(ai, wi, si, moduleManager, developData);
     }
 
     @Override
-    public PoliceTargetAllocator resume(PrecomputeData precomputeData) {
+    public PoliceTargetAllocator resume(PrecomputeData precomputeData)
+    {
         super.resume(precomputeData);
-        if(this.getCountResume() >= 2) {
+        if (this.getCountResume() >= 2)
+        {
             return this;
         }
         return this;
     }
 
     @Override
-    public PoliceTargetAllocator preparate() {
+    public PoliceTargetAllocator preparate()
+    {
         super.preparate();
-        if(this.getCountPrecompute() >= 2) {
+        if (this.getCountPrecompute() >= 2)
+        {
             return this;
         }
         return this;
     }
 
     @Override
-    public Map<EntityID, EntityID> getResult() {
+    public Map<EntityID, EntityID> getResult()
+    {
         return new HashMap<>();
     }
 
     @Override
-    public PoliceTargetAllocator calc() {
+    public PoliceTargetAllocator calc()
+    {
         return this;
     }
 
     @Override
-    public PoliceTargetAllocator updateInfo(MessageManager messageManager) {
+    public PoliceTargetAllocator updateInfo(MessageManager messageManager)
+    {
         super.updateInfo(messageManager);
-        if(this.getCountUpdateInfo() >= 2) {
+        if (this.getCountUpdateInfo() >= 2)
+        {
             return this;
         }
         return this;

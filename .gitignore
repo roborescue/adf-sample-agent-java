@@ -22,3 +22,4 @@ build/
 !library/rescue/adf/sources/*.jar
 
 *.bin
+logs/

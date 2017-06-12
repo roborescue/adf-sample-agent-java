@@ -12,26 +12,22 @@ import adf.component.communication.CommunicationMessage;
 import adf.component.module.complex.TargetAllocator;
 import adf.component.tactics.TacticsAmbulanceCentre;
 import rescuecore2.worldmodel.EntityID;
-import test_team.Utils.WorldViewLauncher;
+import adf.sample.tactics.utils.WorldViewLauncher;
 
 import java.util.Map;
 
-public class SampleTacticsAmbulanceCentre extends TacticsAmbulanceCentre {
+public class SampleTacticsAmbulanceCentre extends TacticsAmbulanceCentre
+{
     private TargetAllocator allocator;
     private CommandPicker picker;
-	private Boolean isVisualDebug;
+    private Boolean isVisualDebug;
 
     @Override
-    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData) {
-        switch  (scenarioInfo.getMode()) {
+    public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData)
+    {
+        switch (scenarioInfo.getMode())
+        {
             case PRECOMPUTATION_PHASE:
-                this.allocator = moduleManager.getModule(
-                        "TacticsAmbulanceCentre.TargetAllocator",
-                        "adf.sample.module.complex.SampleAmbulanceTargetAllocator");
-                this.picker = moduleManager.getCommandPicker(
-                        "TacticsAmbulanceCentre.CommandPicker",
-                        "adf.sample.centralized.CommandPickerAmbulance");
-                break;
             case PRECOMPUTED:
                 this.allocator = moduleManager.getModule(
                         "TacticsAmbulanceCentre.TargetAllocator",
@@ -48,34 +44,49 @@ public class SampleTacticsAmbulanceCentre extends TacticsAmbulanceCentre {
                         "TacticsAmbulanceCentre.CommandPicker",
                         "adf.sample.centralized.CommandPickerAmbulance");
         }
-        isVisualDebug=moduleManager.getModuleConfig().getBooleanValue("VisualDebug", false);
+        registerModule(this.allocator);
+        registerModule(this.picker);
+
+        this.isVisualDebug = (scenarioInfo.isDebugMode()
+                && moduleManager.getModuleConfig().getBooleanValue("VisualDebug", false));
     }
 
     @Override
-    public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData) {
-        this.allocator.updateInfo(messageManager);
-        this.picker.updateInfo(messageManager);
-        if(isVisualDebug)
-        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
+    public void think(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData)
+    {
+        modulesUpdateInfo(messageManager);
+
+        if (isVisualDebug)
+        {
+            WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
+        }
+
         Map<EntityID, EntityID> allocatorResult = this.allocator.calc().getResult();
-        for(CommunicationMessage message : this.picker.setAllocatorResult(allocatorResult).calc().getResult()) {
+        for (CommunicationMessage message : this.picker.setAllocatorResult(allocatorResult).calc().getResult())
+        {
             messageManager.addMessage(message);
         }
     }
 
     @Override
-    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData debugData) {
-        this.allocator.resume(precomputeData);
-        this.picker.resume(precomputeData);
-        if(isVisualDebug)
-        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
+    public void resume(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, PrecomputeData precomputeData, DevelopData debugData)
+    {
+        modulesResume(precomputeData);
+
+        if (isVisualDebug)
+        {
+            WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
+        }
     }
 
     @Override
-    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData debugData) {
-        this.allocator.preparate();
-        this.picker.preparate();
-        if(isVisualDebug)
-        	WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
+    public void preparate(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData debugData)
+    {
+        modulesPreparate();
+
+        if (isVisualDebug)
+        {
+            WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
+        }
     }
 }

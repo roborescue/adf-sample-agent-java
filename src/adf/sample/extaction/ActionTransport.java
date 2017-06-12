@@ -28,7 +28,8 @@ import static rescuecore2.standard.entities.StandardEntityURN.BLOCKADE;
 import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
 import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
-public class ActionTransport extends ExtAction {
+public class ActionTransport extends ExtAction
+{
     private PathPlanning pathPlanning;
 
     private int thresholdRest;
@@ -36,12 +37,14 @@ public class ActionTransport extends ExtAction {
 
     private EntityID target;
 
-    public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData) {
+    public ActionTransport(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData)
+    {
         super(agentInfo, worldInfo, scenarioInfo, moduleManager, developData);
         this.target = null;
         this.thresholdRest = developData.getInteger("ActionTransport.rest", 100);
 
-        switch  (scenarioInfo.getMode()) {
+        switch (scenarioInfo.getMode())
+        {
             case PRECOMPUTATION_PHASE:
                 this.pathPlanning = moduleManager.getModule("ActionTransport.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
                 break;
@@ -54,51 +57,68 @@ public class ActionTransport extends ExtAction {
         }
     }
 
-    public ExtAction precompute(PrecomputeData precomputeData) {
+    public ExtAction precompute(PrecomputeData precomputeData)
+    {
         super.precompute(precomputeData);
-        if(this.getCountPrecompute() >= 2) {
+        if (this.getCountPrecompute() >= 2)
+        {
             return this;
         }
         this.pathPlanning.precompute(precomputeData);
-        try {
+        try
+        {
             this.kernelTime = this.scenarioInfo.getKernelTimesteps();
-        }catch (NoSuchConfigOptionException e) {
+        }
+        catch (NoSuchConfigOptionException e)
+        {
             this.kernelTime = -1;
         }
         return this;
     }
 
-    public ExtAction resume(PrecomputeData precomputeData) {
+    public ExtAction resume(PrecomputeData precomputeData)
+    {
         super.resume(precomputeData);
-        if(this.getCountResume() >= 2) {
+        if (this.getCountResume() >= 2)
+        {
             return this;
         }
         this.pathPlanning.resume(precomputeData);
-        try {
+        try
+        {
             this.kernelTime = this.scenarioInfo.getKernelTimesteps();
-        }catch (NoSuchConfigOptionException e) {
+        }
+        catch (NoSuchConfigOptionException e)
+        {
             this.kernelTime = -1;
         }
         return this;
     }
 
-    public ExtAction preparate() {
+    public ExtAction preparate()
+    {
         super.preparate();
-        if(this.getCountPreparate() >= 2) {
+        if (this.getCountPreparate() >= 2)
+        {
             return this;
         }
         this.pathPlanning.preparate();
-        try {
+        try
+        {
             this.kernelTime = this.scenarioInfo.getKernelTimesteps();
-        }catch (NoSuchConfigOptionException e) {
+        }
+        catch (NoSuchConfigOptionException e)
+        {
             this.kernelTime = -1;
         }
         return this;
     }
 
-    public ExtAction updateInfo(MessageManager messageManager){
+    public ExtAction updateInfo(MessageManager messageManager)
+    {
         super.updateInfo(messageManager);
-        if(this.getCountUpdateInfo() >= 2) {
+        if (this.getCountUpdateInfo() >= 2)
+        {
             return this;
         }
         this.pathPlanning.updateInfo(messageManager);
@@ -106,11 +126,14 @@ public class ActionTransport extends ExtAction {
     }
 
     @Override
-    public ExtAction setTarget(EntityID target) {
+    public ExtAction setTarget(EntityID target)
+    {
         this.target = null;
-        if(target != null) {
+        if (target != null)
+        {
             StandardEntity entity = this.worldInfo.getEntity(target);
-            if(entity instanceof Human || entity instanceof Area) {
+            if (entity instanceof Human || entity instanceof Area)
+            {
                 this.target = target;
                 return this;
             }
@@ -119,192 +142,257 @@ public class ActionTransport extends ExtAction {
     }
 
     @Override
-    public ExtAction calc() {
+    public ExtAction calc()
+    {
         this.result = null;
-        AmbulanceTeam agent = (AmbulanceTeam)this.agentInfo.me();
+        AmbulanceTeam agent = (AmbulanceTeam) this.agentInfo.me();
         Human transportHuman = this.agentInfo.someoneOnBoard();
 
-        if(transportHuman != null) {
+        if (transportHuman != null)
+        {
             this.result = this.calcUnload(agent, this.pathPlanning, transportHuman, this.target);
-            if(this.result != null) {
+            if (this.result != null)
+            {
                 return this;
             }
         }
-        if(this.needRest(agent)) {
+        if (this.needRest(agent))
+        {
             EntityID areaID = this.convertArea(this.target);
             ArrayList<EntityID> targets = new ArrayList<>();
-            if(areaID != null) {
+            if (areaID != null)
+            {
                 targets.add(areaID);
             }
             this.result = this.calcRefugeAction(agent, this.pathPlanning, targets, false);
-            if(this.result != null) {
+            if (this.result != null)
+            {
                 return this;
             }
         }
-        if(this.target != null) {
+        if (this.target != null)
+        {
             this.result = this.calcRescue(agent, this.pathPlanning, this.target);
         }
         return this;
     }
 
-    private Action calcRescue(AmbulanceTeam agent, PathPlanning pathPlanning, EntityID targetID) {
+    private Action calcRescue(AmbulanceTeam agent, PathPlanning pathPlanning, EntityID targetID)
+    {
         StandardEntity targetEntity = this.worldInfo.getEntity(targetID);
-        if(targetEntity == null) {
+        if (targetEntity == null)
+        {
             return null;
         }
         EntityID agentPosition = agent.getPosition();
-        if(targetEntity instanceof Human) {
+        if (targetEntity instanceof Human)
+        {
             Human human = (Human) targetEntity;
-            if (!human.isPositionDefined()) {
+            if (!human.isPositionDefined())
+            {
                 return null;
             }
-            if (human.isHPDefined() && human.getHP() == 0) {
+            if (human.isHPDefined() && human.getHP() == 0)
+            {
                 return null;
             }
             EntityID targetPosition = human.getPosition();
-            if (agentPosition.getValue() == targetPosition.getValue()) {
-                if (human.isBuriednessDefined() && human.getBuriedness() > 0) {
+            if (agentPosition.getValue() == targetPosition.getValue())
+            {
+                if (human.isBuriednessDefined() && human.getBuriedness() > 0)
+                {
                     return new ActionRescue(human);
-                } else if (human.getStandardURN() == CIVILIAN) {
+                }
+                else if (human.getStandardURN() == CIVILIAN)
+                {
                     return new ActionLoad(human.getID());
                 }
-            } else {
+            }
+            else
+            {
                 List<EntityID> path = pathPlanning.getResult(agentPosition, targetPosition);
-                if (path != null && path.size() > 0) {
+                if (path != null && path.size() > 0)
+                {
                     return new ActionMove(path);
                 }
             }
             return null;
         }
-        if(targetEntity.getStandardURN() == BLOCKADE) {
+        if (targetEntity.getStandardURN() == BLOCKADE)
+        {
             Blockade blockade = (Blockade) targetEntity;
-            if(blockade.isPositionDefined()) {
+            if (blockade.isPositionDefined())
+            {
                 targetEntity = this.worldInfo.getEntity(blockade.getPosition());
             }
         }
-        if(targetEntity instanceof Area) {
+        if (targetEntity instanceof Area)
+        {
             List<EntityID> path = pathPlanning.getResult(agentPosition, targetEntity.getID());
-            if (path != null && path.size() > 0) {
+            if (path != null && path.size() > 0)
+            {
                 this.result = new ActionMove(path);
             }
         }
         return null;
     }
 
-    private Action calcUnload(AmbulanceTeam agent, PathPlanning pathPlanning, Human transportHuman, EntityID targetID) {
-        if (transportHuman == null) {
+    private Action calcUnload(AmbulanceTeam agent, PathPlanning pathPlanning, Human transportHuman, EntityID targetID)
+    {
+        if (transportHuman == null)
+        {
             return null;
         }
-        if (transportHuman.isHPDefined() && transportHuman.getHP() == 0) {
+        if (transportHuman.isHPDefined() && transportHuman.getHP() == 0)
+        {
             return new ActionUnload();
         }
         EntityID agentPosition = agent.getPosition();
-        if(targetID == null || transportHuman.getID().getValue() == targetID.getValue()) {
+        if (targetID == null || transportHuman.getID().getValue() == targetID.getValue())
+        {
             StandardEntity position = this.worldInfo.getEntity(agentPosition);
-            if (position != null && position.getStandardURN() == REFUGE) {
+            if (position != null && position.getStandardURN() == REFUGE)
+            {
                 return new ActionUnload();
-            } else {
+            }
+            else
+            {
                 pathPlanning.setFrom(agentPosition);
                 pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(REFUGE));
                 List<EntityID> path = pathPlanning.calc().getResult();
-                if (path != null && path.size() > 0) {
+                if (path != null && path.size() > 0)
+                {
                     return new ActionMove(path);
                 }
             }
         }
-        if(targetID == null) {
+        if (targetID == null)
+        {
             return null;
         }
         StandardEntity targetEntity = this.worldInfo.getEntity(targetID);
-        if(targetEntity != null && targetEntity.getStandardURN() == BLOCKADE) {
-            Blockade blockade = (Blockade)targetEntity;
-            if(blockade.isPositionDefined()) {
+        if (targetEntity != null && targetEntity.getStandardURN() == BLOCKADE)
+        {
+            Blockade blockade = (Blockade) targetEntity;
+            if (blockade.isPositionDefined())
+            {
                 targetEntity = this.worldInfo.getEntity(blockade.getPosition());
             }
         }
-        if(targetEntity instanceof Area) {
-            if (agentPosition.getValue() == targetID.getValue()) {
+        if (targetEntity instanceof Area)
+        {
+            if (agentPosition.getValue() == targetID.getValue())
+            {
                 return new ActionUnload();
-            } else {
+            }
+            else
+            {
                 pathPlanning.setFrom(agentPosition);
                 pathPlanning.setDestination(targetID);
                 List<EntityID> path = pathPlanning.calc().getResult();
-                if (path != null && path.size() > 0) {
+                if (path != null && path.size() > 0)
+                {
                     return new ActionMove(path);
                 }
             }
-        } else if(targetEntity instanceof Human) {
-            Human human = (Human)targetEntity;
-            if(human.isPositionDefined()) {
+        }
+        else if (targetEntity instanceof Human)
+        {
+            Human human = (Human) targetEntity;
+            if (human.isPositionDefined())
+            {
                 return calcRefugeAction(agent, pathPlanning, Lists.newArrayList(human.getPosition()), true);
             }
             pathPlanning.setFrom(agentPosition);
             pathPlanning.setDestination(this.worldInfo.getEntityIDsOfType(REFUGE));
             List<EntityID> path = pathPlanning.calc().getResult();
-            if (path != null && path.size() > 0) {
+            if (path != null && path.size() > 0)
+            {
                 return new ActionMove(path);
             }
         }
         return null;
     }
 
-    private boolean needRest(Human agent) {
+    private boolean needRest(Human agent)
+    {
         int hp = agent.getHP();
         int damage = agent.getDamage();
-        if(hp == 0 || damage == 0) {
+        if (hp == 0 || damage == 0)
+        {
             return false;
         }
         int activeTime = (hp / damage) + ((hp % damage) != 0 ? 1 : 0);
-        if(this.kernelTime == -1) {
-            try {
+        if (this.kernelTime == -1)
+        {
+            try
+            {
                 this.kernelTime = this.scenarioInfo.getKernelTimesteps();
-            }catch (NoSuchConfigOptionException e) {
+            }
+            catch (NoSuchConfigOptionException e)
+            {
                 this.kernelTime = -1;
             }
         }
         return damage >= this.thresholdRest || (activeTime + this.agentInfo.getTime()) < this.kernelTime;
     }
 
-    private EntityID convertArea(EntityID targetID) {
+    private EntityID convertArea(EntityID targetID)
+    {
         StandardEntity entity = this.worldInfo.getEntity(targetID);
-        if(entity == null) {
+        if (entity == null)
+        {
             return null;
         }
-        if(entity instanceof Human) {
+        if (entity instanceof Human)
+        {
             Human human = (Human) entity;
-            if(human.isPositionDefined()) {
+            if (human.isPositionDefined())
+            {
                 EntityID position = human.getPosition();
-                if(this.worldInfo.getEntity(position) instanceof Area) {
+                if (this.worldInfo.getEntity(position) instanceof Area)
+                {
                     return position;
                 }
             }
-        }else if(entity instanceof Area) {
+        }
+        else if (entity instanceof Area)
+        {
             return targetID;
-        }else if(entity.getStandardURN() == BLOCKADE) {
-            Blockade blockade = (Blockade)entity;
-            if(blockade.isPositionDefined()) {
+        }
+        else if (entity.getStandardURN() == BLOCKADE)
+        {
+            Blockade blockade = (Blockade) entity;
+            if (blockade.isPositionDefined())
+            {
                 return blockade.getPosition();
             }
         }
         return null;
     }
 
-    private Action calcRefugeAction(Human human, PathPlanning pathPlanning, Collection<EntityID> targets, boolean isUnload) {
+    private Action calcRefugeAction(Human human, PathPlanning pathPlanning, Collection<EntityID> targets, boolean isUnload)
+    {
         EntityID position = human.getPosition();
         Collection<EntityID> refuges = this.worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE);
         int size = refuges.size();
-        if(refuges.contains(position)) {
+        if (refuges.contains(position))
+        {
             return isUnload ? new ActionUnload() : new ActionRest();
         }
         List<EntityID> firstResult = null;
-        while(refuges.size() > 0) {
+        while (refuges.size() > 0)
+        {
             pathPlanning.setFrom(position);
             pathPlanning.setDestination(refuges);
             List<EntityID> path = pathPlanning.calc().getResult();
-            if (path != null && path.size() > 0) {
-                if (firstResult == null) {
+            if (path != null && path.size() > 0)
+            {
+                if (firstResult == null)
+                {
                     firstResult = new ArrayList<>(path);
-                    if(targets == null || targets.isEmpty()) {
+                    if (targets == null || targets.isEmpty())
+                    {
                         break;
                     }
                 }
@@ -312,16 +400,20 @@ public class ActionTransport extends ExtAction {
                 pathPlanning.setFrom(refugeID);
                 pathPlanning.setDestination(targets);
                 List<EntityID> fromRefugeToTarget = pathPlanning.calc().getResult();
-                if (fromRefugeToTarget != null && fromRefugeToTarget.size() > 0) {
+                if (fromRefugeToTarget != null && fromRefugeToTarget.size() > 0)
+                {
                     return new ActionMove(path);
                 }
                 refuges.remove(refugeID);
                 //remove failed
-                if (size == refuges.size()) {
+                if (size == refuges.size())
+                {
                     break;
                 }
                 size = refuges.size();
-            } else {
+            }
+            else
+            {
                 break;
             }
         }

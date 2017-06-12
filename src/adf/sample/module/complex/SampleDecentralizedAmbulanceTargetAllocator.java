@@ -13,43 +13,53 @@ import rescuecore2.worldmodel.EntityID;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleDecentralizedAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
-    public SampleDecentralizedAmbulanceTargetAllocator(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+public class SampleDecentralizedAmbulanceTargetAllocator extends AmbulanceTargetAllocator
+{
+    public SampleDecentralizedAmbulanceTargetAllocator(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData)
+    {
         super(ai, wi, si, moduleManager, developData);
     }
 
     @Override
-    public AmbulanceTargetAllocator resume(PrecomputeData precomputeData) {
+    public AmbulanceTargetAllocator resume(PrecomputeData precomputeData)
+    {
         super.resume(precomputeData);
-        if(this.getCountResume() >= 2) {
+        if (this.getCountResume() >= 2)
+        {
             return this;
         }
         return this;
     }
 
     @Override
-    public AmbulanceTargetAllocator preparate() {
+    public AmbulanceTargetAllocator preparate()
+    {
         super.preparate();
-        if(this.getCountPrecompute() >= 2) {
+        if (this.getCountPrecompute() >= 2)
+        {
             return this;
         }
         return this;
     }
 
     @Override
-    public Map<EntityID, EntityID> getResult() {
+    public Map<EntityID, EntityID> getResult()
+    {
         return new HashMap<>();
     }
 
     @Override
-    public AmbulanceTargetAllocator calc() {
+    public AmbulanceTargetAllocator calc()
+    {
         return this;
     }
 
     @Override
-    public AmbulanceTargetAllocator updateInfo(MessageManager messageManager) {
+    public AmbulanceTargetAllocator updateInfo(MessageManager messageManager)
+    {
         super.updateInfo(messageManager);
-        if(this.getCountUpdateInfo() >= 2) {
+        if (this.getCountUpdateInfo() >= 2)
+        {
             return this;
         }
         return this;

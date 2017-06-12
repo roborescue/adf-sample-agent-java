@@ -23,13 +23,15 @@ import java.util.*;
 
 import static rescuecore2.standard.entities.StandardEntityURN.*;
 
-public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
+public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator
+{
     private Collection<EntityID> priorityHumans;
     private Collection<EntityID> targetHumans;
 
     private Map<EntityID, AmbulanceTeamInfo> ambulanceTeamInfoMap;
 
-    public SampleAmbulanceTargetAllocator(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+    public SampleAmbulanceTargetAllocator(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData)
+    {
         super(ai, wi, si, moduleManager, developData);
         this.priorityHumans = new HashSet<>();
         this.targetHumans = new HashSet<>();
@@ -37,48 +39,60 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
     }
 
     @Override
-    public AmbulanceTargetAllocator resume(PrecomputeData precomputeData) {
+    public AmbulanceTargetAllocator resume(PrecomputeData precomputeData)
+    {
         super.resume(precomputeData);
-        if(this.getCountResume() >= 2) {
+        if (this.getCountResume() >= 2)
+        {
             return this;
         }
-        for(EntityID id : this.worldInfo.getEntityIDsOfType(StandardEntityURN.AMBULANCE_TEAM)) {
+        for (EntityID id : this.worldInfo.getEntityIDsOfType(StandardEntityURN.AMBULANCE_TEAM))
+        {
             this.ambulanceTeamInfoMap.put(id, new AmbulanceTeamInfo(id));
         }
         return this;
     }
 
     @Override
-    public AmbulanceTargetAllocator preparate() {
+    public AmbulanceTargetAllocator preparate()
+    {
         super.preparate();
-        if(this.getCountPrecompute() >= 2) {
+        if (this.getCountPrecompute() >= 2)
+        {
             return this;
         }
-        for(EntityID id : this.worldInfo.getEntityIDsOfType(StandardEntityURN.AMBULANCE_TEAM)) {
+        for (EntityID id : this.worldInfo.getEntityIDsOfType(StandardEntityURN.AMBULANCE_TEAM))
+        {
             this.ambulanceTeamInfoMap.put(id, new AmbulanceTeamInfo(id));
         }
         return this;
     }
 
     @Override
-    public Map<EntityID, EntityID> getResult() {
+    public Map<EntityID, EntityID> getResult()
+    {
         return this.convert(this.ambulanceTeamInfoMap);
     }
 
     @Override
-    public AmbulanceTargetAllocator calc() {
+    public AmbulanceTargetAllocator calc()
+    {
         List<StandardEntity> agents = this.getActionAgents(this.ambulanceTeamInfoMap);
         Collection<EntityID> removes = new ArrayList<>();
         int currentTime = this.agentInfo.getTime();
-        for(EntityID target : this.priorityHumans) {
-            if(agents.size() > 0) {
+        for (EntityID target : this.priorityHumans)
+        {
+            if (agents.size() > 0)
+            {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
-                if (targetEntity != null && targetEntity instanceof Human && ((Human)targetEntity).isPositionDefined()) {
+                if (targetEntity != null && targetEntity instanceof Human && ((Human) targetEntity).isPositionDefined())
+                {
                     agents.sort(new DistanceSorter(this.worldInfo, targetEntity));
                     StandardEntity result = agents.get(0);
                     agents.remove(0);
                     AmbulanceTeamInfo info = this.ambulanceTeamInfoMap.get(result.getID());
-                    if (info != null) {
+                    if (info != null)
+                    {
                         info.canNewAction = false;
                         info.target = target;
                         info.commandTime = currentTime;
@@ -90,15 +104,19 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
         }
         this.priorityHumans.removeAll(removes);
         removes.clear();
-        for(EntityID target : this.targetHumans) {
-            if(agents.size() > 0) {
+        for (EntityID target : this.targetHumans)
+        {
+            if (agents.size() > 0)
+            {
                 StandardEntity targetEntity = this.worldInfo.getEntity(target);
-                if (targetEntity != null && targetEntity instanceof Human && ((Human)targetEntity).isPositionDefined()) {
+                if (targetEntity != null && targetEntity instanceof Human && ((Human) targetEntity).isPositionDefined())
+                {
                     agents.sort(new DistanceSorter(this.worldInfo, targetEntity));
                     StandardEntity result = agents.get(0);
                     agents.remove(0);
                     AmbulanceTeamInfo info = this.ambulanceTeamInfoMap.get(result.getID());
-                    if(info != null) {
+                    if (info != null)
+                    {
                         info.canNewAction = false;
                         info.target = target;
                         info.commandTime = currentTime;
@@ -113,74 +131,103 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
     }
 
     @Override
-    public AmbulanceTargetAllocator updateInfo(MessageManager messageManager) {
+    public AmbulanceTargetAllocator updateInfo(MessageManager messageManager)
+    {
         super.updateInfo(messageManager);
-        if(this.getCountUpdateInfo() >= 2) {
+        if (this.getCountUpdateInfo() >= 2)
+        {
             return this;
         }
         int currentTime = this.agentInfo.getTime();
-        for(CommunicationMessage message : messageManager.getReceivedMessageList()) {
+        for (CommunicationMessage message : messageManager.getReceivedMessageList())
+        {
             Class<? extends CommunicationMessage> messageClass = message.getClass();
-            if(messageClass == MessageCivilian.class) {
+            if (messageClass == MessageCivilian.class)
+            {
                 MessageCivilian mc = (MessageCivilian) message;
                 MessageUtil.reflectMessage(this.worldInfo, mc);
-                if(mc.isBuriednessDefined() && mc.getBuriedness() > 0) {
+                if (mc.isBuriednessDefined() && mc.getBuriedness() > 0)
+                {
                     this.targetHumans.add(mc.getAgentID());
-                } else {
+                }
+                else
+                {
                     this.priorityHumans.remove(mc.getAgentID());
                     this.targetHumans.remove(mc.getAgentID());
                 }
-            } else if(messageClass == MessageFireBrigade.class) {
+            }
+            else if (messageClass == MessageFireBrigade.class)
+            {
                 MessageFireBrigade mfb = (MessageFireBrigade) message;
                 MessageUtil.reflectMessage(this.worldInfo, mfb);
-                if(mfb.isBuriednessDefined() && mfb.getBuriedness() > 0) {
+                if (mfb.isBuriednessDefined() && mfb.getBuriedness() > 0)
+                {
                     this.priorityHumans.add(mfb.getAgentID());
-                } else {
+                }
+                else
+                {
                     this.priorityHumans.remove(mfb.getAgentID());
                     this.targetHumans.remove(mfb.getAgentID());
                 }
-            } else if(messageClass == MessagePoliceForce.class) {
+            }
+            else if (messageClass == MessagePoliceForce.class)
+            {
                 MessagePoliceForce mpf = (MessagePoliceForce) message;
                 MessageUtil.reflectMessage(this.worldInfo, mpf);
-                if(mpf.isBuriednessDefined() && mpf.getBuriedness() > 0) {
+                if (mpf.isBuriednessDefined() && mpf.getBuriedness() > 0)
+                {
                     this.priorityHumans.add(mpf.getAgentID());
-                }else {
+                }
+                else
+                {
                     this.priorityHumans.remove(mpf.getAgentID());
                     this.targetHumans.remove(mpf.getAgentID());
                 }
             }
         }
-        for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageAmbulanceTeam.class)) {
+        for (CommunicationMessage message : messageManager.getReceivedMessageList(MessageAmbulanceTeam.class))
+        {
             MessageAmbulanceTeam mat = (MessageAmbulanceTeam) message;
             MessageUtil.reflectMessage(this.worldInfo, mat);
-            if(mat.isBuriednessDefined() && mat.getBuriedness() > 0) {
+            if (mat.isBuriednessDefined() && mat.getBuriedness() > 0)
+            {
                 this.priorityHumans.add(mat.getAgentID());
-            }else {
+            }
+            else
+            {
                 this.priorityHumans.remove(mat.getAgentID());
                 this.targetHumans.remove(mat.getAgentID());
             }
             AmbulanceTeamInfo info = this.ambulanceTeamInfoMap.get(mat.getAgentID());
-            if(info == null) {
+            if (info == null)
+            {
                 info = new AmbulanceTeamInfo(mat.getAgentID());
             }
-            if(currentTime >= info.commandTime + 2) {
+            if (currentTime >= info.commandTime + 2)
+            {
                 this.ambulanceTeamInfoMap.put(mat.getAgentID(), this.update(info, mat));
             }
         }
-        for(CommunicationMessage message : messageManager.getReceivedMessageList(CommandAmbulance.class)) {
-            CommandAmbulance command = (CommandAmbulance)message;
-            if(command.getAction() == CommandAmbulance.ACTION_RESCUE && command.isBroadcast()) {
+        for (CommunicationMessage message : messageManager.getReceivedMessageList(CommandAmbulance.class))
+        {
+            CommandAmbulance command = (CommandAmbulance) message;
+            if (command.getAction() == CommandAmbulance.ACTION_RESCUE && command.isBroadcast())
+            {
                 this.priorityHumans.add(command.getTargetID());
                 this.targetHumans.add(command.getTargetID());
-            } else if(command.getAction() == CommandAmbulance.ACTION_LOAD && command.isBroadcast()) {
+            }
+            else if (command.getAction() == CommandAmbulance.ACTION_LOAD && command.isBroadcast())
+            {
                 this.priorityHumans.add(command.getTargetID());
                 this.targetHumans.add(command.getTargetID());
             }
         }
-        for(CommunicationMessage message : messageManager.getReceivedMessageList(MessageReport.class)) {
+        for (CommunicationMessage message : messageManager.getReceivedMessageList(MessageReport.class))
+        {
             MessageReport report = (MessageReport) message;
             AmbulanceTeamInfo info = this.ambulanceTeamInfoMap.get(report.getSenderID());
-            if(info != null && report.isDone()) {
+            if (info != null && report.isDone())
+            {
                 info.canNewAction = true;
                 this.priorityHumans.remove(info.target);
                 this.targetHumans.remove(info.target);
@@ -191,57 +238,77 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
         return this;
     }
 
-    private Map<EntityID, EntityID> convert(Map<EntityID, AmbulanceTeamInfo> map) {
+    private Map<EntityID, EntityID> convert(Map<EntityID, AmbulanceTeamInfo> map)
+    {
         Map<EntityID, EntityID> result = new HashMap<>();
-        for(EntityID id : map.keySet()) {
+        for (EntityID id : map.keySet())
+        {
             AmbulanceTeamInfo info = map.get(id);
-            if(info != null && info.target != null) {
+            if (info != null && info.target != null)
+            {
                 result.put(id, info.target);
             }
         }
         return result;
     }
 
-    private List<StandardEntity> getActionAgents(Map<EntityID, AmbulanceTeamInfo> map) {
+    private List<StandardEntity> getActionAgents(Map<EntityID, AmbulanceTeamInfo> map)
+    {
         List<StandardEntity> result = new ArrayList<>();
-        for(StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE)) {
+        for (StandardEntity entity : this.worldInfo.getEntitiesOfType(StandardEntityURN.POLICE_FORCE))
+        {
             AmbulanceTeamInfo info = map.get(entity.getID());
-            if(info != null && info.canNewAction && ((AmbulanceTeam)entity).isPositionDefined()) {
+            if (info != null && info.canNewAction && ((AmbulanceTeam) entity).isPositionDefined())
+            {
                 result.add(entity);
             }
         }
         return result;
     }
 
-    private AmbulanceTeamInfo update(AmbulanceTeamInfo info, MessageAmbulanceTeam message) {
-        if(message.isBuriednessDefined() && message.getBuriedness() > 0) {
+    private AmbulanceTeamInfo update(AmbulanceTeamInfo info, MessageAmbulanceTeam message)
+    {
+        if (message.isBuriednessDefined() && message.getBuriedness() > 0)
+        {
             info.canNewAction = false;
-            if (info.target != null) {
+            if (info.target != null)
+            {
                 this.targetHumans.add(info.target);
                 info.target = null;
             }
             return info;
         }
-        if(message.getAction() == MessageAmbulanceTeam.ACTION_REST) {
+        if (message.getAction() == MessageAmbulanceTeam.ACTION_REST)
+        {
             info.canNewAction = true;
-            if (info.target != null) {
+            if (info.target != null)
+            {
                 this.targetHumans.add(info.target);
                 info.target = null;
             }
-        } else if(message.getAction() == MessageAmbulanceTeam.ACTION_MOVE) {
-            if(message.getTargetID() != null) {
+        }
+        else if (message.getAction() == MessageAmbulanceTeam.ACTION_MOVE)
+        {
+            if (message.getTargetID() != null)
+            {
                 StandardEntity entity = this.worldInfo.getEntity(message.getTargetID());
-                if(entity != null) {
-                    if(entity instanceof Area) {
-                        if(entity.getStandardURN() == REFUGE) {
+                if (entity != null)
+                {
+                    if (entity instanceof Area)
+                    {
+                        if (entity.getStandardURN() == REFUGE)
+                        {
                             info.canNewAction = false;
                             return info;
                         }
                         StandardEntity targetEntity = this.worldInfo.getEntity(info.target);
-                        if (targetEntity != null) {
-                            if(targetEntity instanceof Human) {
-                                targetEntity = this.worldInfo.getPosition((Human)targetEntity);
-                                if(targetEntity == null) {
+                        if (targetEntity != null)
+                        {
+                            if (targetEntity instanceof Human)
+                            {
+                                targetEntity = this.worldInfo.getPosition((Human) targetEntity);
+                                if (targetEntity == null)
+                                {
                                     this.priorityHumans.remove(info.target);
                                     this.targetHumans.remove(info.target);
                                     info.canNewAction = true;
@@ -249,24 +316,35 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
                                     return info;
                                 }
                             }
-                            if (targetEntity.getID().getValue() == entity.getID().getValue()) {
+                            if (targetEntity.getID().getValue() == entity.getID().getValue())
+                            {
                                 info.canNewAction = false;
-                            } else {
+                            }
+                            else
+                            {
                                 info.canNewAction = true;
-                                if (info.target != null) {
+                                if (info.target != null)
+                                {
                                     this.targetHumans.add(info.target);
                                     info.target = null;
                                 }
                             }
-                        } else {
+                        }
+                        else
+                        {
                             info.canNewAction = true;
                             info.target = null;
                         }
                         return info;
-                    } else if(entity instanceof Human) {
-                        if(entity.getID().getValue() == info.target.getValue()) {
+                    }
+                    else if (entity instanceof Human)
+                    {
+                        if (entity.getID().getValue() == info.target.getValue())
+                        {
                             info.canNewAction = false;
-                        } else {
+                        }
+                        else
+                        {
                             info.canNewAction = true;
                             this.targetHumans.add(info.target);
                             this.targetHumans.add(entity.getID());
@@ -277,19 +355,27 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
                 }
             }
             info.canNewAction = true;
-            if(info.target != null) {
+            if (info.target != null)
+            {
                 this.targetHumans.add(info.target);
                 info.target = null;
             }
-        } else if(message.getAction() == MessageAmbulanceTeam.ACTION_RESCUE) {
+        }
+        else if (message.getAction() == MessageAmbulanceTeam.ACTION_RESCUE)
+        {
             info.canNewAction = true;
-            if(info.target != null) {
+            if (info.target != null)
+            {
                 this.targetHumans.add(info.target);
                 info.target = null;
             }
-        } else if(message.getAction() == MessageAmbulanceTeam.ACTION_LOAD) {
+        }
+        else if (message.getAction() == MessageAmbulanceTeam.ACTION_LOAD)
+        {
             info.canNewAction = false;
-        } else if(message.getAction() == MessageAmbulanceTeam.ACTION_UNLOAD) {
+        }
+        else if (message.getAction() == MessageAmbulanceTeam.ACTION_UNLOAD)
+        {
             info.canNewAction = true;
             this.priorityHumans.remove(info.target);
             this.targetHumans.remove(info.target);
@@ -299,13 +385,15 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
     }
 
 
-    private class AmbulanceTeamInfo {
+    private class AmbulanceTeamInfo
+    {
         EntityID agentID;
         EntityID target;
         boolean canNewAction;
         int commandTime;
 
-        AmbulanceTeamInfo(EntityID id) {
+        AmbulanceTeamInfo(EntityID id)
+        {
             agentID = id;
             target = null;
             canNewAction = true;
@@ -313,16 +401,19 @@ public class SampleAmbulanceTargetAllocator extends AmbulanceTargetAllocator {
         }
     }
 
-    private class DistanceSorter implements Comparator<StandardEntity> {
+    private class DistanceSorter implements Comparator<StandardEntity>
+    {
         private StandardEntity reference;
         private WorldInfo worldInfo;
 
-        DistanceSorter(WorldInfo wi, StandardEntity reference) {
+        DistanceSorter(WorldInfo wi, StandardEntity reference)
+        {
             this.reference = reference;
             this.worldInfo = wi;
         }
 
-        public int compare(StandardEntity a, StandardEntity b) {
+        public int compare(StandardEntity a, StandardEntity b)
+        {
             int d1 = this.worldInfo.getDistance(this.reference, a);
             int d2 = this.worldInfo.getDistance(this.reference, b);
             return d1 - d2;
