@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import adf.debug.TestLogger;
 import org.apache.log4j.Logger;
 
 import adf.agent.communication.MessageManager;
@@ -27,9 +28,8 @@ import adf.component.module.complex.RoadDetector;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
+import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
-import test_team.Utils.TestLogger;
-import test_team.Utils.TestUtils;
 
 public class TestRoadDetector extends RoadDetector {
 	private Set<Area> openedAreas = new HashSet<>();
@@ -99,7 +99,7 @@ public class TestRoadDetector extends RoadDetector {
 			targetAreas.add((Area) e);
 		}
 		for (StandardEntity e : this.worldInfo.getEntitiesOfType(CIVILIAN, AMBULANCE_TEAM, FIRE_BRIGADE, POLICE_FORCE)) {
-			if (TestUtils.isValidHuman(worldInfo, e)) {
+			if (isValidHuman(e)) {
 				Human h = (Human) e;
 				targetAreas.add((Area) worldInfo.getEntity(h.getPosition()));
 			}
@@ -126,4 +126,30 @@ public class TestRoadDetector extends RoadDetector {
 		return this.result;
 	}
 
+	private boolean isValidHuman(StandardEntity entity) {
+		if (entity == null)
+			return false;
+		if (!(entity instanceof Human))
+			return false;
+
+		Human target = (Human) entity;
+		if (!target.isHPDefined() || target.getHP() == 0)
+			return false;
+		if (!target.isPositionDefined())
+			return false;
+		if (!target.isDamageDefined() || target.getDamage() == 0)
+			return false;
+		if (!target.isBuriednessDefined())
+			return false;
+
+		StandardEntity position = worldInfo.getPosition(target);
+		if (position == null)
+			return false;
+
+		StandardEntityURN positionURN = position.getStandardURN();
+		if (positionURN == REFUGE || positionURN == AMBULANCE_TEAM)
+			return false;
+
+		return true;
+	}
 }

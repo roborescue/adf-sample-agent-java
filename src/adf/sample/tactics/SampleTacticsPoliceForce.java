@@ -14,6 +14,7 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.agent.utils.WorldViewLauncher;
 import adf.component.centralized.CommandExecutor;
 import adf.component.communication.CommunicationMessage;
 import adf.component.extaction.ExtAction;
@@ -21,7 +22,6 @@ import adf.component.module.complex.RoadDetector;
 import adf.component.module.complex.Search;
 import adf.component.tactics.TacticsPoliceForce;
 import adf.sample.tactics.utils.MessageTool;
-import adf.sample.tactics.utils.WorldViewLauncher;
 import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
 

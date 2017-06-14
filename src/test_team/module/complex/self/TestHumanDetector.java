@@ -1,32 +1,26 @@
 package test_team.module.complex.self;
 
-import static rescuecore2.standard.entities.StandardEntityURN.AMBULANCE_TEAM;
-import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
-import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-
 import adf.agent.communication.MessageManager;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
-import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.complex.HumanDetector;
+import adf.debug.TestLogger;
+import org.apache.log4j.Logger;
 import rescuecore2.standard.entities.Civilian;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
+import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
-import test_team.Utils.TestLogger;
-import test_team.Utils.TestUtils;
+
+import java.util.*;
+
+import static rescuecore2.standard.entities.StandardEntityURN.AMBULANCE_TEAM;
+import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
+import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
 public class TestHumanDetector extends HumanDetector {
 	private Clustering clustering;
@@ -94,11 +88,7 @@ public class TestHumanDetector extends HumanDetector {
 		return this.result;
 	}
 
-	public boolean isValidHuman(StandardEntity entity) {
-		return TestUtils.isValidHuman(worldInfo, entity);
-	}
-
-	public List<Human> filterRescueTargets(Collection<? extends StandardEntity> list) {
+	private List<Human> filterRescueTargets(Collection<? extends StandardEntity> list) {
 		List<Human> rescueTargets = new ArrayList<>();
 		for (StandardEntity next : list) {
 			if (!(next instanceof Human))
@@ -176,4 +166,30 @@ public class TestHumanDetector extends HumanDetector {
 		}
 	}
 
+	private boolean isValidHuman(StandardEntity entity) {
+		if (entity == null)
+			return false;
+		if (!(entity instanceof Human))
+			return false;
+
+		Human target = (Human) entity;
+		if (!target.isHPDefined() || target.getHP() == 0)
+			return false;
+		if (!target.isPositionDefined())
+			return false;
+		if (!target.isDamageDefined() || target.getDamage() == 0)
+			return false;
+		if (!target.isBuriednessDefined())
+			return false;
+
+		StandardEntity position = worldInfo.getPosition(target);
+		if (position == null)
+			return false;
+
+		StandardEntityURN positionURN = position.getStandardURN();
+		if (positionURN == REFUGE || positionURN == AMBULANCE_TEAM)
+			return false;
+
+		return true;
+	}
 }

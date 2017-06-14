@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import adf.debug.TestLogger;
 import org.apache.log4j.Logger;
 
 import adf.agent.communication.MessageManager;
@@ -22,7 +23,6 @@ import adf.agent.info.AgentInfo;
 import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
-import adf.agent.precompute.PrecomputeData;
 import adf.component.module.algorithm.Clustering;
 import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.Search;
@@ -30,7 +30,6 @@ import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
-import test_team.Utils.TestLogger;
 
 public class TestSearchForFire extends Search {
 	private PathPlanning pathPlanning;

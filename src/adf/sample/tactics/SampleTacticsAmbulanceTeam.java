@@ -16,6 +16,7 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
+import adf.agent.utils.WorldViewLauncher;
 import adf.component.centralized.CommandExecutor;
 import adf.component.communication.CommunicationMessage;
 import adf.component.extaction.ExtAction;
@@ -26,7 +27,6 @@ import adf.sample.tactics.utils.MessageTool;
 import rescuecore2.standard.entities.AmbulanceTeam;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
-import test_team.Utils.WorldViewLauncher;
 
 import java.util.List;
 import java.util.Objects;
