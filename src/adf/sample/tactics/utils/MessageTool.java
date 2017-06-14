@@ -33,6 +33,7 @@ public class MessageTool
     private int estimatedMoveDistance;
 
     private int maxTimeStep = Integer.MAX_VALUE;
+    private Map<EntityID, Integer> prevBrokenessMap;
     private EntityID lastPosition;
     private int lastSentTime;
     private int stayCount;
@@ -56,6 +57,7 @@ public class MessageTool
         this.lastSentTime = 0;
         this.stayCount = 0;
 
+        this.prevBrokenessMap = new HashMap<>();
         this.receivedTimeMap = new HashMap<>();
         this.agentsPotition = new HashSet<>();
         this.receivedPassableRoads = new HashSet<>();
@@ -179,7 +181,7 @@ public class MessageTool
 
     private void updateInfo(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager)
     {
-        if (agentInfo.getTime() != Integer.MAX_VALUE)
+        if (this.maxTimeStep == Integer.MAX_VALUE)
         {
             try
             {
@@ -201,6 +203,39 @@ public class MessageTool
             {
                 this.dominanceAgentID = entity.getID();
             }
+        }
+
+        boolean aftershock = false;
+        for (EntityID id : agentInfo.getChanged().getChangedEntities())
+        {
+            if (this.prevBrokenessMap.containsKey(id) && worldInfo.getEntity(id).getStandardURN().equals(BUILDING))
+            {
+                Building building = (Building)worldInfo.getEntity(id);
+                int brokenness = this.prevBrokenessMap.get(id);
+                this.prevBrokenessMap.get(id);
+                if (building.isBrokennessDefined())
+                {
+                    if (building.getBrokenness() > brokenness)
+                    {
+                        aftershock = true;
+                    }
+                }
+            }
+        }
+        this.prevBrokenessMap.clear();
+        for (EntityID id : agentInfo.getChanged().getChangedEntities())
+        {
+            if (! worldInfo.getEntity(id). getStandardURN().equals(BUILDING)) { continue; }
+
+            Building building = (Building)worldInfo.getEntity(id);
+            if (building.isBrokennessDefined())
+            {
+                this.prevBrokenessMap.put(id, building.getBrokenness());
+            }
+        }
+        if (aftershock)
+        {
+            this.receivedPassableRoads.clear();
         }
 
         for (CommunicationMessage message : messageManager.getReceivedMessageList(MessageRoad.class))
