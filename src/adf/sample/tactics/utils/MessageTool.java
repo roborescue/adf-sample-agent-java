@@ -130,7 +130,7 @@ public class MessageTool
     public void sendRequestMessages (AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager)
     {
         if (agentInfo.me().getStandardURN() == AMBULANCE_TEAM
-                && agentInfo.me().getStandardURN() == FIRE_BRIGADE)
+                || agentInfo.me().getStandardURN() == FIRE_BRIGADE)
         {
             int currentTime = agentInfo.getTime();
             Human agent = (Human) agentInfo.me();
