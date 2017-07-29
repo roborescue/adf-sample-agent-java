@@ -140,26 +140,6 @@ public class SampleTacticsFireBrigade extends TacticsFireBrigade
         {
             WorldViewLauncher.getInstance().showTimeStep(agentInfo, worldInfo, scenarioInfo);
         }
-
-        if (agentInfo.getWater() == 0)
-        {
-        	PathPlanning pathPlanning = (PathPlanning)moduleManager.getModule("ActionFireFighting.PathPlanning", "adf.sample.module.algorithm.SamplePathPlanning");
-        	pathPlanning.setFrom(agentInfo.getPosition());
-            pathPlanning.setDestination(worldInfo.getEntityIDsOfType(StandardEntityURN.REFUGE));
-            List<EntityID> path = pathPlanning.calc().getResult();
-            if (path != null && path.size() > 0)
-            {
-                StandardEntity entity = worldInfo.getEntity(path.get(path.size() - 1));
-                if (entity instanceof Building)
-                {
-                    if (entity.getStandardURN() != StandardEntityURN.REFUGE)
-                    {
-                        path.remove(path.size() - 1);
-                    }
-                }
-                return new ActionMove(path);
-            }
-        }
         	
         FireBrigade agent = (FireBrigade) agentInfo.me();
         EntityID agentID = agentInfo.getID();
