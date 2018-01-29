@@ -27,22 +27,8 @@ public class SampleChannelSubscriber extends ChannelSubscriber {
 
             StandardEntityURN agentType = getAgentType(agentInfo, worldInfo);
             int[] channels = new int[maxChannelCount];
-            int agentInc = 0;
-            if (agentType == StandardEntityURN.FIRE_BRIGADE || agentType == StandardEntityURN.FIRE_STATION) {
-                agentInc = 1;
-            } else if (agentType == StandardEntityURN.POLICE_FORCE || agentType == StandardEntityURN.POLICE_OFFICE) {
-                agentInc = 2;
-            } else if (agentType == StandardEntityURN.AMBULANCE_TEAM || agentType == StandardEntityURN.AMBULANCE_CENTRE) {
-                agentInc = 3;
-            }
-
             for (int i = 0; i < maxChannelCount; i++) {
-                int ch = (i*3)+agentInc;
-                if (ch > numChannels) {
-                    ch = (ch % numChannels)+1;
-                }
-                channels[i] = ch;
-                System.out.println("[" + agentInfo.getID() + "] Subscribe to channel:" + ch + " numChannels:" + numChannels + " maxChannelCount:" + maxChannelCount);
+                channels[i] = getChannelNumber(agentType, i, numChannels);
             }
 
             messageManager.subscribeToChannels(channels);
@@ -62,5 +48,38 @@ public class SampleChannelSubscriber extends ChannelSubscriber {
     protected StandardEntityURN getAgentType(AgentInfo agentInfo, WorldInfo worldInfo) {
         StandardEntityURN agentType = worldInfo.getEntity(agentInfo.getID()).getStandardURN();
         return agentType;
+    }
+
+    public static int getChannelNumber(StandardEntityURN agentType, int channelIndex, int numChannels) {
+        int agentIndex = 0;
+        if (agentType == StandardEntityURN.FIRE_BRIGADE || agentType == StandardEntityURN.FIRE_STATION) {
+            agentIndex = 1;
+        } else if (agentType == StandardEntityURN.POLICE_FORCE || agentType == StandardEntityURN.POLICE_OFFICE) {
+            agentIndex = 2;
+        } else if (agentType == StandardEntityURN.AMBULANCE_TEAM || agentType == StandardEntityURN.AMBULANCE_CENTRE) {
+            agentIndex = 3;
+        }
+
+        int index = (3*channelIndex)+agentIndex;
+        if ((index%numChannels) == 0) {
+            index = numChannels;
+        } else {
+            index = index % numChannels;
+        }
+        return index;
+    }
+
+    public static void main(String[] args) {
+        int numChannels = 6;
+        int maxChannels = 2;
+        for (int i = 0; i < maxChannels; i++) {
+            System.out.println("FIREBRIGADE-" + i + ":" + getChannelNumber(StandardEntityURN.FIRE_BRIGADE, i, numChannels));
+        }
+        for (int i = 0; i < maxChannels; i++) {
+            System.out.println("POLICE-" + i + ":" + getChannelNumber(StandardEntityURN.POLICE_OFFICE, i, numChannels));
+        }
+        for (int i = 0; i < maxChannels; i++) {
+            System.out.println("AMB-" + i + ":" + getChannelNumber(StandardEntityURN.AMBULANCE_CENTRE, i, numChannels));
+        }
     }
 }

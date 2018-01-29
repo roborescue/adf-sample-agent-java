@@ -125,16 +125,7 @@ public class SampleMessageCoordinator extends MessageCoordinator {
 
     protected int[] getChannelsByAgentType(StandardEntityURN agentType, AgentInfo agentInfo,
                                         WorldInfo worldInfo, ScenarioInfo scenarioInfo, int channelIndex) {
-        int agentIndex = 0;
-        if (agentType == StandardEntityURN.FIRE_BRIGADE || agentType == StandardEntityURN.FIRE_STATION) {
-            agentIndex = 1;
-        } else if (agentType == StandardEntityURN.POLICE_FORCE || agentType == StandardEntityURN.POLICE_OFFICE) {
-            agentIndex = 2;
-        } else if (agentType == StandardEntityURN.AMBULANCE_TEAM || agentType == StandardEntityURN.AMBULANCE_CENTRE) {
-            agentIndex = 3;
-        }
         int numChannels = scenarioInfo.getCommsChannelsCount()-1; // 0th channel is the voice channel
-
         int maxChannelCount = 0;
         boolean isPlatoon = isPlatoonAgent(agentInfo, worldInfo);
         if (isPlatoon) {
@@ -145,11 +136,7 @@ public class SampleMessageCoordinator extends MessageCoordinator {
         int[] channels = new int[maxChannelCount];
 
         for (int i = 0; i < maxChannelCount; i++) {
-            int ch = (i*3)+agentIndex;
-            if (ch > numChannels) {
-                ch = (ch % numChannels)+1;
-            }
-            channels[i] = ch;
+            channels[i] = SampleChannelSubscriber.getChannelNumber(agentType, i, numChannels);
         }
         return channels;
     }
