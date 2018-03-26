@@ -7,7 +7,7 @@ import adf.agent.info.ScenarioInfo;
 import adf.agent.info.WorldInfo;
 import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
-import adf.agent.utils.WorldViewLauncher;
+import adf.debug.WorldViewLauncher;
 import adf.component.centralized.CommandPicker;
 import adf.component.communication.CommunicationMessage;
 import adf.component.module.complex.TargetAllocator;
@@ -25,6 +25,9 @@ public class SampleTacticsFireStation extends TacticsFireStation
     @Override
     public void initialize(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, MessageManager messageManager, DevelopData debugData)
     {
+        messageManager.setChannelSubscriber(moduleManager.getChannelSubscriber("MessageManager.CenterChannelSubscriber", "adf.sample.module.comm.SampleChannelSubscriber"));
+        messageManager.setMessageCoordinator(moduleManager.getMessageCoordinator("MessageManager.CenterMessageCoordinator", "adf.sample.module.comm.SampleMessageCoordinator"));
+
         switch (scenarioInfo.getMode())
         {
             case PRECOMPUTATION_PHASE:
