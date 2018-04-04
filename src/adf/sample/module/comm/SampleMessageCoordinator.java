@@ -87,14 +87,17 @@ public class SampleMessageCoordinator extends MessageCoordinator {
             }
         }
 
-        int[] channelSize = new int[scenarioInfo.getCommsChannelsCount()-1];
+        if (scenarioInfo.getCommsChannelsCount() > 1) {
+            // send radio messages if there are more than one communication channel
+            int[] channelSize = new int[scenarioInfo.getCommsChannelsCount() - 1];
 
-        setSendMessages(scenarioInfo, StandardEntityURN.POLICE_FORCE, agentInfo, worldInfo, policeMessages,
-                channelSendMessageList, channelSize);
-        setSendMessages(scenarioInfo, StandardEntityURN.AMBULANCE_TEAM, agentInfo, worldInfo, ambulanceMessages,
-                channelSendMessageList, channelSize);
-        setSendMessages(scenarioInfo, StandardEntityURN.FIRE_BRIGADE, agentInfo, worldInfo, fireBrigadeMessages,
-                channelSendMessageList, channelSize);
+            setSendMessages(scenarioInfo, StandardEntityURN.POLICE_FORCE, agentInfo, worldInfo, policeMessages,
+                    channelSendMessageList, channelSize);
+            setSendMessages(scenarioInfo, StandardEntityURN.AMBULANCE_TEAM, agentInfo, worldInfo, ambulanceMessages,
+                    channelSendMessageList, channelSize);
+            setSendMessages(scenarioInfo, StandardEntityURN.FIRE_BRIGADE, agentInfo, worldInfo, fireBrigadeMessages,
+                    channelSendMessageList, channelSize);
+        }
 
         ArrayList<StandardMessage> voiceMessageLowList = new ArrayList<>();
         ArrayList<StandardMessage> voiceMessageNormalList = new ArrayList<>();
