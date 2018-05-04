@@ -318,6 +318,7 @@ public class SampleFireTargetAllocator extends FireTargetAllocator
 
     private class FireBrigadeInfo
     {
+        @SuppressWarnings("unused")
         EntityID agentID;
         EntityID target;
         boolean canNewAction;

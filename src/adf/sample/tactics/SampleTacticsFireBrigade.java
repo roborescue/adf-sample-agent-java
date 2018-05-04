@@ -27,7 +27,6 @@ import adf.agent.action.fire.ActionExtinguish;
 import adf.agent.action.fire.ActionRefill;
 import adf.agent.communication.standard.bundle.centralized.CommandFire;
 import adf.agent.communication.standard.bundle.information.MessageFireBrigade;
-import adf.component.module.algorithm.PathPlanning;
 import adf.component.module.complex.BuildingDetector;
 import adf.component.tactics.TacticsFireBrigade;
 

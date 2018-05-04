@@ -10,5 +10,3 @@ CP=`find $PWD/library/ -name '*.jar' ! -name '*-sources.jar' | awk -F '\n' -v OR
 
 cd src
 javac -encoding UTF-8 -classpath "${CP}." -d ../build/ `find ./ -name '*.java'` && echo Done. || echo Failed.
-
-

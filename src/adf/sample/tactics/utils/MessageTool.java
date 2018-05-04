@@ -25,9 +25,11 @@ import static rescuecore2.standard.entities.StandardEntityURN.*;
 
 public class MessageTool
 {
+    @SuppressWarnings("unused")
     private DevelopData developData;
 
     private int sendingAvoidTimeReceived;
+    @SuppressWarnings("unused")
     private int sendingAvoidTimeSent;
     private int sendingAvoidTimeClearRequest;
     private int estimatedMoveDistance;
@@ -78,6 +80,7 @@ public class MessageTool
         }
     }
 
+    @SuppressWarnings("incomplete-switch")
     public void sendInformationMessages(AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, MessageManager messageManager)
     {
         Set<EntityID> changedEntities = worldInfo.getChanged().getChangedEntities();
