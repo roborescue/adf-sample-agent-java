@@ -231,7 +231,7 @@ public class ActionTransport extends ExtAction
             List<EntityID> path = pathPlanning.getResult(agentPosition, targetEntity.getID());
             if (path != null && path.size() > 0)
             {
-                this.result = new ActionMove(path);
+                return new ActionMove(path);
             }
         }
         return null;
