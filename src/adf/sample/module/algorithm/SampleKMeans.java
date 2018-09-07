@@ -47,7 +47,14 @@ public class SampleKMeans extends StaticClustering {
         super(ai, wi, si, moduleManager, developData);
         this.repeatPrecompute = developData.getInteger("sample.module.SampleKMeans.repeatPrecompute", 7);
         this.repeatPreparate = developData.getInteger("sample.module.SampleKMeans.repeatPreparate", 30);
-        this.clusterSize = developData.getInteger("sample.module.SampleKMeans.clusterSize", 10);
+        int clusterSizeDEFAULT = 5;
+        if(agentInfo.me().getStandardURN().equals(StandardEntityURN.AMBULANCE_TEAM)){
+            clusterSizeDEFAULT = scenarioInfo.getScenarioAgentsAt();
+        }else if(agentInfo.me().getStandardURN().equals(StandardEntityURN.FIRE_BRIGADE)){
+            clusterSizeDEFAULT = scenarioInfo.getScenarioAgentsFb();
+        }else if(agentInfo.me().getStandardURN().equals(StandardEntityURN.POLICE_FORCE)){
+            clusterSizeDEFAULT = scenarioInfo.getScenarioAgentsPf();
+        }
         this.assignAgentsFlag = developData.getBoolean("sample.module.SampleKMeans.assignAgentsFlag", true);
         this.clusterEntityIDsList = new ArrayList<>();
         this.centerIDs = new ArrayList<>();
