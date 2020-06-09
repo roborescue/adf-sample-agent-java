@@ -1,0 +1,41 @@
+plugins {
+  id 'java'
+}
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+version = '1.0'
+
+dependencies {
+  implementation fileTree( dir: 'library', include: '**/*.jar', exclude: '**/*-source.jar' )
+
+  testImplementation 'junit:junit:4.12'
+}
+
+repositories {
+  jcenter()
+}
+
+sourceSets {
+  main {
+    java {
+      srcDirs = [ 'src' ]
+    }
+  }
+}
+
+test {
+  useJUnit()
+}
+
+clean.doFirst {
+  delete file( new File( rootDir, 'bin' ) )
+  delete file( new File( rootDir, 'precomp_data' ) )
+  delete file( new File( rootDir, 'test-results' ) )
+}
+
+task launch(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath
+  main = 'adf.Main'
+  maxHeapSize = '2048m'
+}

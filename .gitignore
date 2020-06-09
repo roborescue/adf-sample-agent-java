@@ -1,29 +1,29 @@
-.project
-.classpath
+# Java
 *.class
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
-#*.jar
-*.war
-*.ear
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Log files
+*.log
 hs_err_pid*
 
-# inteliJ
+# Gradle
+.gradle
+build
+bin
+
+# IntelliJ
 *.iml
 *.ipr
 *.iws
-.idea/
+.idea
 
-build/
-!library/rescue/adf/*.jar
-!library/rescue/adf/sources/*.jar
+# Eclipse project
+.settings
+.project
+.classpath
 
-*.bin
-*.log
-logs/
-/bin/
+# Visual Studio Code
+.vscode
+
+# Project
+precomp_data
+test-results

@@ -1,14 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 LOADER="adf.sample.SampleLoader"
+PARAMS=$*
 
 cd `dirname $0`
 
-PWD=`pwd`
-CP=`find $PWD/library/ -name '*.jar' ! -name '*-sources.jar' | awk -F '\n' -v ORS=':' '{print}'`
-
 if [ ! -z "$1" ]; then
-  java -classpath "${CP}./build" adf.Main ${LOADER} $*
+  ./gradlew launch --args="${LOADER} ${PARAMS}"
 else
   echo "Options:"
   echo "-t [FB],[FS],[PF],[PO],[AT],[AC] number of agents"

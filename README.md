@@ -5,6 +5,7 @@
 ## 1. Software Pre-Requisites
 
 - Git
+- Gradle
 - OpenJDK Java 8+
 
 ## 2. Download
@@ -18,9 +19,9 @@ $ git clone https://github.com/roborescue/rcrs-adf-sample.git
 
 ```bash
 
-$ ./clean
+$ ./gradlew clean
 
-$ ./compile.sh
+$ ./gradlew build
 ```
 
 ## 4. Execute
