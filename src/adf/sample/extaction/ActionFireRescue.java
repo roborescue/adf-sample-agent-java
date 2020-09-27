@@ -1,11 +1,8 @@
 package adf.sample.extaction;
 
 import adf.agent.action.Action;
-import adf.agent.action.ambulance.ActionLoad;
 import adf.agent.action.ambulance.ActionRescue;
-import adf.agent.action.ambulance.ActionUnload;
 import adf.agent.action.common.ActionMove;
-import adf.agent.action.common.ActionRest;
 import adf.agent.communication.MessageManager;
 import adf.agent.develop.DevelopData;
 import adf.agent.info.AgentInfo;
@@ -15,24 +12,19 @@ import adf.agent.module.ModuleManager;
 import adf.agent.precompute.PrecomputeData;
 import adf.component.extaction.ExtAction;
 import adf.component.module.algorithm.PathPlanning;
-import com.google.common.collect.Lists;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import rescuecore2.config.NoSuchConfigOptionException;
-import rescuecore2.standard.entities.AmbulanceTeam;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.entities.FireBrigade;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
-import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
 
 import static rescuecore2.standard.entities.StandardEntityURN.BLOCKADE;
-import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
-import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 
-public class ActionTransport extends ExtAction {
+public class ActionFireRescue extends ExtAction {
 
   private PathPlanning pathPlanning;
 
@@ -42,25 +34,25 @@ public class ActionTransport extends ExtAction {
   private EntityID     target;
 
 
-  public ActionTransport( AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData ) {
+  public ActionFireRescue( AgentInfo agentInfo, WorldInfo worldInfo, ScenarioInfo scenarioInfo, ModuleManager moduleManager, DevelopData developData ) {
     super( agentInfo, worldInfo, scenarioInfo, moduleManager, developData );
     this.target = null;
-    this.thresholdRest = developData.getInteger( "ActionTransport.rest", 100 );
+    this.thresholdRest = developData.getInteger( "ActionFireRescue.rest", 100 );
 
     switch ( scenarioInfo.getMode() ) {
       case PRECOMPUTATION_PHASE:
         this.pathPlanning = moduleManager.getModule(
-            "ActionTransport.PathPlanning",
+            "ActionFireRescue.PathPlanning",
             "adf.sample.module.algorithm.SamplePathPlanning" );
         break;
       case PRECOMPUTED:
         this.pathPlanning = moduleManager.getModule(
-            "ActionTransport.PathPlanning",
+            "ActionFireRescue.PathPlanning",
             "adf.sample.module.algorithm.SamplePathPlanning" );
         break;
       case NON_PRECOMPUTE:
         this.pathPlanning = moduleManager.getModule(
-            "ActionTransport.PathPlanning",
+            "ActionFireRescue.PathPlanning",
             "adf.sample.module.algorithm.SamplePathPlanning" );
         break;
     }
@@ -139,26 +131,13 @@ public class ActionTransport extends ExtAction {
   @Override
   public ExtAction calc() {
     this.result = null;
-    AmbulanceTeam agent = (AmbulanceTeam) this.agentInfo.me();
-    Human transportHuman = this.agentInfo.someoneOnBoard();
+    FireBrigade agent = (FireBrigade) this.agentInfo.me();
 
-    if ( transportHuman != null ) {
-      this.result = this.calcUnload( agent, this.pathPlanning, transportHuman,
-          this.target );
-      if ( this.result != null ) {
-        return this;
-      }
-    }
     if ( this.needRest( agent ) ) {
       EntityID areaID = this.convertArea( this.target );
       ArrayList<EntityID> targets = new ArrayList<>();
       if ( areaID != null ) {
         targets.add( areaID );
-      }
-      this.result = this.calcRefugeAction( agent, this.pathPlanning, targets,
-          false );
-      if ( this.result != null ) {
-        return this;
       }
     }
     if ( this.target != null ) {
@@ -168,7 +147,7 @@ public class ActionTransport extends ExtAction {
   }
 
 
-  private Action calcRescue( AmbulanceTeam agent, PathPlanning pathPlanning,
+  private Action calcRescue( FireBrigade agent, PathPlanning pathPlanning,
       EntityID targetID ) {
     StandardEntity targetEntity = this.worldInfo.getEntity( targetID );
     if ( targetEntity == null ) {
@@ -187,8 +166,6 @@ public class ActionTransport extends ExtAction {
       if ( agentPosition.getValue() == targetPosition.getValue() ) {
         if ( human.isBuriednessDefined() && human.getBuriedness() > 0 ) {
           return new ActionRescue( human );
-        } else if ( human.getStandardURN() == CIVILIAN ) {
-          return new ActionLoad( human.getID() );
         }
       } else {
         List<EntityID> path = pathPlanning.getResult( agentPosition,
@@ -208,69 +185,6 @@ public class ActionTransport extends ExtAction {
     if ( targetEntity instanceof Area ) {
       List<EntityID> path = pathPlanning.getResult( agentPosition,
           targetEntity.getID() );
-      if ( path != null && path.size() > 0 ) {
-        return new ActionMove( path );
-      }
-    }
-    return null;
-  }
-
-
-  private Action calcUnload( AmbulanceTeam agent, PathPlanning pathPlanning,
-      Human transportHuman, EntityID targetID ) {
-    if ( transportHuman == null ) {
-      return null;
-    }
-    if ( transportHuman.isHPDefined() && transportHuman.getHP() == 0 ) {
-      return new ActionUnload();
-    }
-    EntityID agentPosition = agent.getPosition();
-    if ( targetID == null
-        || transportHuman.getID().getValue() == targetID.getValue() ) {
-      StandardEntity position = this.worldInfo.getEntity( agentPosition );
-      if ( position != null && position.getStandardURN() == REFUGE ) {
-        return new ActionUnload();
-      } else {
-        pathPlanning.setFrom( agentPosition );
-        pathPlanning
-            .setDestination( this.worldInfo.getEntityIDsOfType( REFUGE ) );
-        List<EntityID> path = pathPlanning.calc().getResult();
-        if ( path != null && path.size() > 0 ) {
-          return new ActionMove( path );
-        }
-      }
-    }
-    if ( targetID == null ) {
-      return null;
-    }
-    StandardEntity targetEntity = this.worldInfo.getEntity( targetID );
-    if ( targetEntity != null && targetEntity.getStandardURN() == BLOCKADE ) {
-      Blockade blockade = (Blockade) targetEntity;
-      if ( blockade.isPositionDefined() ) {
-        targetEntity = this.worldInfo.getEntity( blockade.getPosition() );
-      }
-    }
-    if ( targetEntity instanceof Area ) {
-      if ( agentPosition.getValue() == targetID.getValue() ) {
-        return new ActionUnload();
-      } else {
-        pathPlanning.setFrom( agentPosition );
-        pathPlanning.setDestination( targetID );
-        List<EntityID> path = pathPlanning.calc().getResult();
-        if ( path != null && path.size() > 0 ) {
-          return new ActionMove( path );
-        }
-      }
-    } else if ( targetEntity instanceof Human ) {
-      Human human = (Human) targetEntity;
-      if ( human.isPositionDefined() ) {
-        return calcRefugeAction( agent, pathPlanning,
-            Lists.newArrayList( human.getPosition() ), true );
-      }
-      pathPlanning.setFrom( agentPosition );
-      pathPlanning
-          .setDestination( this.worldInfo.getEntityIDsOfType( REFUGE ) );
-      List<EntityID> path = pathPlanning.calc().getResult();
       if ( path != null && path.size() > 0 ) {
         return new ActionMove( path );
       }
@@ -320,47 +234,5 @@ public class ActionTransport extends ExtAction {
       }
     }
     return null;
-  }
-
-
-  private Action calcRefugeAction( Human human, PathPlanning pathPlanning,
-      Collection<EntityID> targets, boolean isUnload ) {
-    EntityID position = human.getPosition();
-    Collection<EntityID> refuges = this.worldInfo
-        .getEntityIDsOfType( StandardEntityURN.REFUGE );
-    int size = refuges.size();
-    if ( refuges.contains( position ) ) {
-      return isUnload ? new ActionUnload() : new ActionRest();
-    }
-    List<EntityID> firstResult = null;
-    while ( refuges.size() > 0 ) {
-      pathPlanning.setFrom( position );
-      pathPlanning.setDestination( refuges );
-      List<EntityID> path = pathPlanning.calc().getResult();
-      if ( path != null && path.size() > 0 ) {
-        if ( firstResult == null ) {
-          firstResult = new ArrayList<>( path );
-          if ( targets == null || targets.isEmpty() ) {
-            break;
-          }
-        }
-        EntityID refugeID = path.get( path.size() - 1 );
-        pathPlanning.setFrom( refugeID );
-        pathPlanning.setDestination( targets );
-        List<EntityID> fromRefugeToTarget = pathPlanning.calc().getResult();
-        if ( fromRefugeToTarget != null && fromRefugeToTarget.size() > 0 ) {
-          return new ActionMove( path );
-        }
-        refuges.remove( refugeID );
-        // remove failed
-        if ( size == refuges.size() ) {
-          break;
-        }
-        size = refuges.size();
-      } else {
-        break;
-      }
-    }
-    return firstResult != null ? new ActionMove( firstResult ) : null;
   }
 }

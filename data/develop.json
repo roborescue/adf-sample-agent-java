@@ -2,6 +2,7 @@
 "ActionFireFighting.refill.completed":10,
 "ActionFireFighting.refill.request":1,
 "ActionFireFighting.rest":100,
+"ActionFireRescue.rest":100,
 "ActionExtClear.forcedMove":3,
 "ActionExtClear.rest":100,
 "ActionTransport.rest":100,

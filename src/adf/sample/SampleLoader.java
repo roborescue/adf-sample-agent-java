@@ -15,38 +15,45 @@ import adf.sample.tactics.SampleTacticsFireBrigade;
 import adf.sample.tactics.SampleTacticsPoliceForce;
 
 public class SampleLoader extends AbstractLoader {
-    @Override
-    public String getTeamName() {
-        return "Sample";
-    }
 
-    @Override
-    public TacticsAmbulanceTeam getTacticsAmbulanceTeam() {
-        return new SampleTacticsAmbulanceTeam();
-    }
+  @Override
+  public String getTeamName() {
+    return "Sample";
+  }
 
-    @Override
-    public TacticsFireBrigade getTacticsFireBrigade() {
-        return new SampleTacticsFireBrigade();
-    }
 
-    @Override
-    public TacticsPoliceForce getTacticsPoliceForce() {
-        return new SampleTacticsPoliceForce();
-    }
+  @Override
+  public TacticsAmbulanceTeam getTacticsAmbulanceTeam() {
+    return new SampleTacticsAmbulanceTeam();
+  }
 
-    @Override
-    public TacticsAmbulanceCentre getTacticsAmbulanceCentre() {
-        return new SampleTacticsAmbulanceCentre();
-    }
 
-    @Override
-    public TacticsFireStation getTacticsFireStation() {
-        return new SampleTacticsFireStation();
-    }
+  @Override
+  public TacticsFireBrigade getTacticsFireBrigade() {
+    return new SampleTacticsFireBrigade();
+  }
 
-    @Override
-    public TacticsPoliceOffice getTacticsPoliceOffice() {
-        return new SampleTacticsPoliceOffice();
-    }
+
+  @Override
+  public TacticsPoliceForce getTacticsPoliceForce() {
+    return new SampleTacticsPoliceForce();
+  }
+
+
+  @Override
+  public TacticsAmbulanceCentre getTacticsAmbulanceCentre() {
+    return new SampleTacticsAmbulanceCentre();
+  }
+
+
+  @Override
+  public TacticsFireStation getTacticsFireStation() {
+    return new SampleTacticsFireStation();
+  }
+
+
+  @Override
+  public TacticsPoliceOffice getTacticsPoliceOffice() {
+    return new SampleTacticsPoliceOffice();
+  }
 }
