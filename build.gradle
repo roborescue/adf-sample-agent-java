@@ -4,7 +4,7 @@ plugins {
 
 sourceCompatibility = '11'
 targetCompatibility = '11'
-version = '1.1'
+version = '1.5'
 
 dependencies {
   implementation fileTree( dir: 'library', include: '**/*.jar', exclude: '**/*-source.jar' )
