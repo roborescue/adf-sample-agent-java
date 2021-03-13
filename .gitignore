@@ -24,6 +24,9 @@ bin
 # Visual Studio Code
 .vscode
 
+# Theia IDE
+.theia
+
 # Project
 precomp_data
 test-results

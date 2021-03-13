@@ -2,9 +2,9 @@ plugins {
   id 'java'
 }
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
-version = '1.0'
+sourceCompatibility = '11'
+targetCompatibility = '11'
+version = '1.1'
 
 dependencies {
   implementation fileTree( dir: 'library', include: '**/*.jar', exclude: '**/*-source.jar' )
@@ -13,7 +13,7 @@ dependencies {
 }
 
 repositories {
-  jcenter()
+  mavenCentral()
 }
 
 sourceSets {
