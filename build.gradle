@@ -36,6 +36,6 @@ clean.doFirst {
 
 task launch(type: JavaExec) {
   classpath = sourceSets.main.runtimeClasspath
-  main = 'adf.Main'
+  mainClass = 'adf.Main'
   maxHeapSize = '2048m'
 }
