@@ -2,9 +2,9 @@ plugins {
   id 'java'
 }
 
-sourceCompatibility = '11'
-targetCompatibility = '11'
-version = '1.5'
+sourceCompatibility = '16'
+targetCompatibility = '16'
+version = '2.0'
 
 dependencies {
   implementation fileTree( dir: 'library', include: '**/*.jar', exclude: '**/*-source.jar' )
@@ -15,6 +15,14 @@ dependencies {
 repositories {
   mavenCentral()
 }
+
+[compileJava, compileTestJava].each {
+  it.options.encoding = 'UTF-8'
+  it.options.compilerArgs += [ '-Xlint:unchecked', '-Xlint:deprecation' ]
+}
+
+javadoc.options.encoding = 'UTF-8'
+javadoc.options.addStringOption('Xdoclint:none', '-quiet')
 
 sourceSets {
   main {
