@@ -2,23 +2,32 @@ plugins {
   id 'java'
 }
 
-sourceCompatibility = '16'
-targetCompatibility = '16'
+sourceCompatibility = '17'
+targetCompatibility = '17'
 version = '2.0'
 
 dependencies {
-  implementation fileTree( dir: 'library', include: '**/*.jar', exclude: '**/*-source.jar' )
+  implementation project(':rcrs-server')
+  implementation project(':rcrs-adf-core')
+
+  implementation 'com.google.common:google-collect:0.5'
+  implementation 'log4j:log4j:1.2.17'
 
   testImplementation 'junit:junit:4.12'
 }
 
 repositories {
   mavenCentral()
-}
 
-[compileJava, compileTestJava].each {
-  it.options.encoding = 'UTF-8'
-  it.options.compilerArgs += [ '-Xlint:unchecked', '-Xlint:deprecation' ]
+  maven {
+    url = 'http://sourceforge.net/projects/jsi/files/m2_repo'
+    allowInsecureProtocol = true
+  }
+
+  maven {
+    url = 'https://repo.enonic.com/public/'
+    allowInsecureProtocol = true
+  }
 }
 
 javadoc.options.encoding = 'UTF-8'
@@ -38,8 +47,14 @@ test {
 
 clean.doFirst {
   delete file( new File( rootDir, 'bin' ) )
+  delete file( new File( rootDir, 'build' ) )
   delete file( new File( rootDir, 'precomp_data' ) )
   delete file( new File( rootDir, 'test-results' ) )
+}
+
+[compileJava, compileTestJava].each {
+  it.options.encoding = 'UTF-8'
+  it.options.compilerArgs += [ '-Xlint:unchecked', '-Xlint:deprecation' ]
 }
 
 task launch(type: JavaExec) {

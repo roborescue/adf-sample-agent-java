@@ -4,13 +4,17 @@
 
 ## 1. Software Pre-Requisites
 
-- Git
-- Gradle
-- OpenJDK Java 17
+* Git
+* OpenJDK Java 17
+* Gradle
 
 ## 2. Download
 
 ```bash
+
+$ git clone https://github.com/roborescue/rcrs-server.git
+
+$ git clone https://github.com/roborescue/rcrs-adf-core.git
 
 $ git clone https://github.com/roborescue/rcrs-adf-sample.git
 ```
@@ -18,6 +22,8 @@ $ git clone https://github.com/roborescue/rcrs-adf-sample.git
 ## 3. Compile
 
 ```bash
+
+$ cd rcrs-adf-sample
 
 $ ./gradlew clean
 
