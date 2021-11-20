@@ -2,13 +2,15 @@ plugins {
   id 'java'
 }
 
+defaultTasks 'build'
+
 sourceCompatibility = '17'
 targetCompatibility = '17'
 version = '2.0'
 
 dependencies {
-  implementation project(':rcrs-server')
-  implementation project(':rcrs-adf-core')
+  implementation 'com.github.roborescue:rcrs-server:protobuf-v6-SNAPSHOT'
+  implementation 'com.github.roborescue:rcrs-adf-core:protobuf-comm-SNAPSHOT'
 
   implementation 'com.google.common:google-collect:0.5'
   implementation 'log4j:log4j:1.2.17'
@@ -23,15 +25,25 @@ repositories {
     url = 'http://sourceforge.net/projects/jsi/files/m2_repo'
     allowInsecureProtocol = true
   }
-
   maven {
     url = 'https://repo.enonic.com/public/'
     allowInsecureProtocol = true
   }
+  maven {
+    url 'https://jitpack.io'
+  }
 }
 
-javadoc.options.encoding = 'UTF-8'
-javadoc.options.addStringOption('Xdoclint:none', '-quiet')
+test {
+  useJUnit()
+}
+
+javadoc {
+  options {
+    encoding = 'UTF-8'
+    addStringOption('Xdoclint:none', '-quiet')
+  }
+}
 
 sourceSets {
   main {
@@ -39,10 +51,6 @@ sourceSets {
       srcDirs = [ 'src' ]
     }
   }
-}
-
-test {
-  useJUnit()
 }
 
 clean.doFirst {
