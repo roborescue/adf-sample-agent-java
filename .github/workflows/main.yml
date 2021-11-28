@@ -6,12 +6,17 @@ on:
 jobs:
   build:
    runs-on: ubuntu-latest
+
    steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-    - name: Obtain the asciidoctor image
-      uses: docker://asciidoctor/docker-asciidoctor
     - name: Generate HTML
-      run: asciidoctor -r asciidoctor-bibtex docs/manual.adoc
+      uses: docker://asciidoctor/docker-asciidoctor
+      with:
+        entrypoint: asciidoctor
+        args: -r asciidoctor-bibtex docs/manual.adoc
     - name: Generate PDF
-      run: asciidoctor-pdf -r asciidoctor-bibtex -r asciidoctor-mathematical -a mathematical-format=svg -a optimize -a pdf-theme=docs/resources/themes/manual.yml -a pdf-fontsdir=docs/resources/fonts
+      uses: docker://asciidoctor/docker-asciidoctor
+      with:
+        entrypoint: asciidoctor-pdf
+        args: -r asciidoctor-bibtex -r asciidoctor-mathematical -a mathematical-format=svg -a optimize -a pdf-theme=docs/resources/themes/manual.yml -a pdf-fontsdir=docs/resources/fonts
