@@ -34,7 +34,7 @@ This manual assumes the agents will run in a Linux machine even though it is pos
 [#requirements]
 === Software Requirements
 
-* https://openjdk.java.net/[Java OpenJDK 8+]
+* https://openjdk.java.net/[Java OpenJDK 11+]
 * https://git-scm.com/[Git]
 * https://gradle.org/[Gradle]
 * Utilities like `wget`, `bash`, `xterm`, `tar`, `gzip`, etc. +

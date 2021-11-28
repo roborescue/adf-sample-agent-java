@@ -14,7 +14,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
     - name: Generate HTML
-      run: asciidoctor -b html5 -r asciidoctor-bibtex -a bibtex-file=docs/references.bib docs/adf-manual.adoc -o docs/adf-manual.html
+      run: asciidoctor -b html5 -r asciidoctor-bibtex -a bibtex-file=docs/references.bib docs/adf-manual.adoc -o docs/index.html
     - name: Generate PDF
       run: asciidoctor-pdf -r asciidoctor-bibtex -r asciidoctor-mathematical -a bibtex-file=docs/references.bib -a mathematical-format=svg -a optimize -a pdf-theme=docs/resources/themes/manual.yml -a pdf-fontsdir=docs/resources/fonts docs/adf-manual.adoc -o docs/adf-manual.pdf
     - name: Deploy to GitHub Pages
