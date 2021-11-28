@@ -10,13 +10,9 @@ jobs:
    steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+    - name: Load Docker
+      uses: docker://asciidoctor/docker-asciidoctor
+      with:
+        args: -it -v docs
     - name: Generate HTML
-      uses: docker://asciidoctor/docker-asciidoctor
-      with:
-        entrypoint: asciidoctor
-        args: -r asciidoctor-bibtex docs/manual.adoc
-    - name: Generate PDF
-      uses: docker://asciidoctor/docker-asciidoctor
-      with:
-        entrypoint: asciidoctor-pdf
-        args: -r asciidoctor-bibtex -r asciidoctor-mathematical -a mathematical-format=svg -a optimize -a pdf-theme=docs/resources/themes/manual.yml -a pdf-fontsdir=docs/resources/fonts
+      run: asciidoctor -r asciidoctor-bibtex docs/manual.adoc
