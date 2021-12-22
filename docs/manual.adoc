@@ -112,7 +112,7 @@ After running the simulation server for the precomputation, move to the ADF dire
 .Running Sample Agents in precomputation mode
 ----
 $ bash launch.sh -t 1,0,1,0,1,0 -h localhost -pre 1 & APID=$! ; sleep 120 ; kill $APID
-[START] Connect to server (host:localhost, port:7000)
+[START] Connect to server (host:localhost, port:27931)
 [INFO] Connected - adf.agent.platoon.PlatoonFire@756ec19c (PRECOMPUTATION)
 [INFO] Connected - adf.agent.platoon.PlatoonPolice@366bbbe (PRECOMPUTATION)
 [INFO] Connected - adf.agent.platoon.PlatoonAmbulance@2a453513 (PRECOMPUTATION)

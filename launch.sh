@@ -18,7 +18,7 @@ else
   echo "-ac [AC]                         number of AmbulanceCentre"
   echo "-all                             [alias] -t -1,-1,-1,-1,-1,-1"
   echo "-s [HOST]:[PORT]                 RCRS server host and port"
-  echo "-h [HOST]                        RCRS server host (port:7000)"
+  echo "-h [HOST]                        RCRS server host (port:27931)"
   echo "-local                           [alias] -h localhost"
   echo "-pre [0|1]                       Precompute flag"
   echo "-d [0|1]                         Debug flag"
