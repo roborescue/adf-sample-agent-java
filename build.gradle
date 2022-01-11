@@ -2,40 +2,65 @@ plugins {
   id 'java'
 }
 
-sourceCompatibility = '11'
-targetCompatibility = '11'
-version = '1.5'
+defaultTasks 'build'
+
+group = 'com.github.roborescue'
+
+sourceCompatibility = '17'
+targetCompatibility = '17'
+version = '4.0'
 
 dependencies {
-  implementation fileTree( dir: 'library', include: '**/*.jar', exclude: '**/*-source.jar' )
+  implementation 'com.github.roborescue:rcrs-server:master-SNAPSHOT'
+  implementation 'com.github.roborescue:adf-core-java:master-SNAPSHOT'
 
-  testImplementation 'junit:junit:4.12'
+  implementation 'log4j:log4j:1.2.17'
+
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
 repositories {
   mavenCentral()
-}
 
-sourceSets {
-  main {
-    java {
-      srcDirs = [ 'src' ]
-    }
+  maven {
+    url = 'https://sourceforge.net/projects/jsi/files/m2_repo'
+  }
+  maven {
+    url = 'https://repo.enonic.com/public/'
+  }
+  maven {
+    url 'https://jitpack.io'
   }
 }
 
 test {
-  useJUnit()
+  useJUnitPlatform()
 }
 
-clean.doFirst {
-  delete file( new File( rootDir, 'bin' ) )
-  delete file( new File( rootDir, 'precomp_data' ) )
-  delete file( new File( rootDir, 'test-results' ) )
+javadoc {
+  options {
+    encoding = 'UTF-8'
+    addStringOption('Xdoclint:none', '-quiet')
+  }
+}
+
+clean {
+  doFirst {
+    delete file( new File( rootDir, 'bin' ) )
+    delete file( new File( rootDir, 'build' ) )
+    delete file( new File( rootDir, 'precomp_data' ) )
+    delete file( new File( rootDir, 'test-results' ) )
+  }
+}
+
+[compileJava, compileTestJava].each {
+  it.options.encoding = 'UTF-8'
+  it.options.compilerArgs += [ '-Xlint:unchecked', '-Xlint:deprecation' ]
 }
 
 task launch(type: JavaExec) {
   classpath = sourceSets.main.runtimeClasspath
-  main = 'adf.Main'
+  mainClass = 'adf.core.Main'
   maxHeapSize = '2048m'
 }

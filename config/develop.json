@@ -1,0 +1,20 @@
+{
+  "ActionFireFighting.refill.completed": 10,
+  "ActionFireFighting.refill.request": 1,
+  "ActionFireFighting.rest": 100,
+  "ActionFireRescue.rest": 100,
+  "ActionExtClear.forcedMove": 3,
+  "ActionExtClear.rest": 100,
+  "ActionTransport.rest": 100,
+  "ActionExtMove.rest": 100,
+  "SampleBuildingDetector.sendingAvoidTimeClearRequest": 5,
+  "SampleBuildingDetector.sendingAvoidTimeReceived": 3,
+  "SampleBuildingDetector.sendingAvoidTimeSent": 5,
+  "SampleBuildingDetector.moveDistance": 40000,
+  "SampleHumanDetector.sendingAvoidTimeClearRequest": 5,
+  "SampleHumanDetector.sendingAvoidTimeReceived": 3,
+  "SampleHumanDetector.sendingAvoidTimeSent": 5,
+  "SampleHumanDetector.moveDistance": 40000,
+  "CommandPickerAmbulance.scoutDistance": 40000,
+  "CommandPickerFire.scoutDistance": 40000
+}

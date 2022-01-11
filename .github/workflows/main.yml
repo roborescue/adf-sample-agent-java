@@ -1,6 +1,4 @@
-# Publish Asciidoc Documentation
 name: asciidoctor-ghpages
-
 on:
   push:
     paths:
