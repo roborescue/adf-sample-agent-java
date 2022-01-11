@@ -1,7 +1,7 @@
 = Agent Development Framework (ADF) Manual
 :author: RoboCup Rescue Simulation Team
-:revnumber: 2.5
-:revdate: December 01, 2021
+:revnumber: 4.0
+:revdate: January 02, 2022
 :size: A4
 :reproducible: true
 :encode: UTF-8
@@ -37,51 +37,37 @@ This manual assumes the agents will run in a Linux machine even though it is pos
 [#requirements]
 === Software Requirements
 
-* https://openjdk.java.net/[Java OpenJDK 8+]
-* https://git-scm.com/[Git]
-* https://gradle.org/[Gradle]
+* Git
+* OpenJDK Java 17
+* Gradle
 * Utilities like `wget`, `bash`, `xterm`, `tar`, `gzip`, etc. +
-  *Note:* If you are using Ubuntu, all of these utilities are present in the default software repositories.
+  **NOTE:** If you are using Ubuntu, all of these utilities are present in the default software repositories.
 
 [#download]
 === Download
-You can download the sample agents with ADF by cloning the `https://github.com/roborescue/rcrs-adf-sample` repository. Clone this repository using the command
+You can download the sample agents with ADF by cloning the `https://github.com/roborescue/adf-sample-agent-java` repository. Clone this repository using the command
 [source,shell]
 ----
-git clone https://github.com/roborescue/rcrs-adf-sample.git
+git clone https://github.com/roborescue/adf-sample-agent-java.git
 ----
 
 [#directories]
 === Directories
-The `rcrs-adf-sample` contains multiple directories. The important directories are:
+The `adf-sample-agent-java` contains multiple directories. The important directories are:
 
-* `config/`: configuration file of agents
-* `src/`: agents' source codes
-* `precomp_data`: results of a precomputation for each type of agents
-* `build/`: agents' Java classes
-* `library/`: libraries used by agents
+* `config/`: configuration files
+* `docs/`: documentation source code
+* `src/`: source code
+* `logs/`: execution output logs
+* `precomp_data`: results of precomputation
 
 [#compiling]
 === Compiling
 Execute the steps below to compile the ADF Sample Agent.
 
-. Change to the directory `rcrs-adf-sample`
-. Compile the project using the commands
 [source,shell]
 ----
-$ ./gradlew clean
-$ ./gradlew build
-----
-
-[#example]
-=== Example
-In Ubuntu, the installation proceeds according to the following commands.
-
-[source,shell]
-.Installation on Ubuntu
-----
-$ git clone https://github.com/roborescue/rcrs-adf-sample.git
-$ cd rcrs-adf-sample
+$ cd adf-sample-agent-java
 $ ./gradlew clean
 $ ./gradlew build
 ----
@@ -92,7 +78,7 @@ There are two modes of execution of the simulation server and ADF Sample Agent: 
 
 [#precomputation_mode]
 === Precomputation Mode
-In the precomputation mode, the simulator connects one agent of each type and allows them to write the computation results.
+In the precomputation mode, the simulator connects one agent of each type and allows them to write the computation results persistently.
 
 The sequence of commands to run the simulation server in precomputation mode are:
 
@@ -100,13 +86,13 @@ The sequence of commands to run the simulation server in precomputation mode are
 .Running simulation server in precomputation mode
 ----
 $ cd rcrs-server
-$ cd boot
-$ bash start-precompute.sh
+$ cd scripts
+$ ./start-precompute.sh -m ../maps/test/maps -c ../maps/test/config
 ----
 
-See https://roborescue.github.io/rcrs-docs/rcrs-server/manual.html[RoboCup Rescue Simulator Manual] for further information on how to compile and run the RoboCup Rescue Simulator server.
+See https://roborescue.github.io/rcrs-server/rcrs-server/index.html[RoboCup Rescue Simulator Manual] for further information on how to compile and run the RoboCup Rescue Simulator server.
 
-After running the simulation server for the precomputation, move to the ADF directory on another terminal window and run the agents executing the commands:
+After running the simulation server for the precomputation, move to the ADF Sample Agent directory on another terminal window and run the agents executing the commands:
 
 [source,shell]
 .Running Sample Agents in precomputation mode
@@ -123,7 +109,7 @@ $ bash launch.sh -t 1,0,1,0,1,0 -h localhost -pre 1 & APID=$! ; sleep 120 ; kill
 [FINISH] Done connecting to server (3 agents)
 ----
 
-Once the precomputation is completed, push _Control-C_ and type `sh kill.sh` to stop the simulation server of running.
+Once the precomputation is completed, press _Control-C_ and type `bash kill.sh` to stop the simulation server of running.
 
 [source,shell]
 .Stop running simulation server in precomputation mode
@@ -134,7 +120,7 @@ $ bash kill.sh
 
 [#normal_mode]
 === Normal Mode
-In the normal mode, the simulator connects all agents defined in the scenario and allows them to use the precomputation output.
+In the normal mode, the simulator connects all agents defined in the scenario and allows them to use the precomputation output (see <<precomputation_mode>>).
 
 The sequence of commands to run the simulation server in normal mode are:
 
@@ -146,9 +132,9 @@ $ cd boot
 $ bash start-comprun.sh
 ----
 
-See https://roborescue.github.io/rcrs-docs/rcrs-server/manual.html[RoboCup Rescue Simulator Manual] for further information on how to compile and run the RoboCup Rescue Simulator server.
+See https://roborescue.github.io/rcrs-server/rcrs-server/index.html[RoboCup Rescue Simulator Manual] for further information on how to compile and run the RoboCup Rescue Simulator server.
 
-After running the simulation server, move to the ADF directory on the other terminal window and run the agents using the commands:
+After running the simulation server, move to the ADF Sample Agent directory on another terminal window and run the agents using the commands:
 
 [source,shell]
 .Running Sample Agents in normal mode
@@ -179,10 +165,10 @@ You should fundamentally copy the sample codes, not edit them. The reason is tha
 === Workflow for coding your agents
 The steps necessary to code your own agents are:
 
-. Copy sample codes related to agents which you want to create,
-. Edit the copied files.
-. Edit `src/adf/config/module.cfg` according to the edited files.
-. Compile and run.
+* Copy sample codes related to agents which you want to create,
+* Edit the copied files.
+* Edit `src/adf/config/module.cfg` according to the edited files.
+* Compile and run.
 
 [#module_configuration]
 === Modules' configuration files

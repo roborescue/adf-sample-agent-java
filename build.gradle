@@ -4,30 +4,30 @@ plugins {
 
 defaultTasks 'build'
 
+group = 'com.github.roborescue'
+
 sourceCompatibility = '17'
 targetCompatibility = '17'
-version = '2.0'
+version = '4.0'
 
 dependencies {
-  implementation 'com.github.roborescue:rcrs-server:protobuf-v6-SNAPSHOT'
-  implementation 'com.github.roborescue:rcrs-adf-core:protobuf-comm-SNAPSHOT'
+  implementation 'com.github.roborescue:rcrs-server:master-SNAPSHOT'
+  implementation 'com.github.roborescue:adf-core-java:master-SNAPSHOT'
 
-  implementation 'com.google.common:google-collect:0.5'
   implementation 'log4j:log4j:1.2.17'
 
-  testImplementation 'junit:junit:4.12'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
 repositories {
   mavenCentral()
 
   maven {
-    url = 'http://sourceforge.net/projects/jsi/files/m2_repo'
-    allowInsecureProtocol = true
+    url = 'https://sourceforge.net/projects/jsi/files/m2_repo'
   }
   maven {
     url = 'https://repo.enonic.com/public/'
-    allowInsecureProtocol = true
   }
   maven {
     url 'https://jitpack.io'
@@ -35,7 +35,7 @@ repositories {
 }
 
 test {
-  useJUnit()
+  useJUnitPlatform()
 }
 
 javadoc {
@@ -45,19 +45,13 @@ javadoc {
   }
 }
 
-sourceSets {
-  main {
-    java {
-      srcDirs = [ 'src' ]
-    }
+clean {
+  doFirst {
+    delete file( new File( rootDir, 'bin' ) )
+    delete file( new File( rootDir, 'build' ) )
+    delete file( new File( rootDir, 'precomp_data' ) )
+    delete file( new File( rootDir, 'test-results' ) )
   }
-}
-
-clean.doFirst {
-  delete file( new File( rootDir, 'bin' ) )
-  delete file( new File( rootDir, 'build' ) )
-  delete file( new File( rootDir, 'precomp_data' ) )
-  delete file( new File( rootDir, 'test-results' ) )
 }
 
 [compileJava, compileTestJava].each {
@@ -67,6 +61,6 @@ clean.doFirst {
 
 task launch(type: JavaExec) {
   classpath = sourceSets.main.runtimeClasspath
-  mainClass = 'adf.Main'
+  mainClass = 'adf.core.Main'
   maxHeapSize = '2048m'
 }

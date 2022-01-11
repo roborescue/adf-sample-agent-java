@@ -1,4 +1,4 @@
-# `rcrs-adf-sample` RCRS Agent Development Framework (Sample)
+# `adf-sample-agent-java` Agent Development Framework Sample Agent Java
 
 (Linux) Instructions to download, build and run the sample implementation using the Agent Development Framework (ADF)
 
@@ -11,19 +11,14 @@
 ## 2. Download
 
 ```bash
-
-$ git clone https://github.com/roborescue/rcrs-server.git
-
-$ git clone https://github.com/roborescue/rcrs-adf-core.git
-
-$ git clone https://github.com/roborescue/rcrs-adf-sample.git
+$ git clone https://github.com/roborescue/adf-sample-agent-java.git
 ```
 
 ## 3. Compile
 
 ```bash
 
-$ cd rcrs-adf-sample
+$ cd adf-sample-agent-java
 
 $ ./gradlew clean
 
@@ -32,15 +27,15 @@ $ ./gradlew build
 
 ## 4. Execute
 
-The `rcrs-adf-sample` is a sample team implementation for the RCRS (`rcrs-server`) using the ADF core (`rcrs-adf-core`).
+The `adf-sample-agent-java` is a sample team implementation for the RCRS (`rcrs-server`) using the ADF core (`adf-core-java`).
 
-To run the `rcrs-adf-sample`, first the `rcrs-server` must be running (Instructions of how to download, compile and run the `rcrs-server` are available at <https://github.com/roborescue/rcrs-server>).
+To run the `adf-sample-agent-java`, first the `rcrs-server` must be running (Instructions of how to download, compile and run the `rcrs-server` are available at <https://github.com/roborescue/rcrs-server>).
 
 After start the `rcrs-server`, open a new terminal window and execute
 
 ```bash
 
-$ cd rcrs-adf-sample
+$ cd adf-sample-agent-java
 
 $ ./launch.sh -all
 ```
