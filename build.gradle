@@ -11,9 +11,9 @@ targetCompatibility = '17'
 version = '4.0'
 
 dependencies {
+  implementation fileTree(dir: 'lib', include: '*.jar')
   implementation 'com.github.roborescue:rcrs-server:master-SNAPSHOT'
   implementation 'com.github.roborescue:adf-core-java:master-SNAPSHOT'
-
   implementation 'log4j:log4j:1.2.17'
 
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
@@ -60,7 +60,9 @@ clean {
 }
 
 task launch(type: JavaExec) {
-  classpath = sourceSets.main.runtimeClasspath
+  classpath = files('lib')
+  classpath += files('.')
+  classpath += sourceSets.main.runtimeClasspath
   mainClass = 'adf.core.Main'
   maxHeapSize = '2048m'
 }
