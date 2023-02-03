@@ -1,7 +1,7 @@
 = Agent Development Framework (ADF) Manual
 :author: RoboCup Rescue Simulation Team
-:revnumber: 2.3
-:revdate: September 27, 2021
+:revnumber: 4.1
+:revdate: February 03, 2023
 :size: A4
 :reproducible: true
 :encode: UTF-8
@@ -12,9 +12,12 @@
 :toclevels: 3
 :outlinelevels: 3
 :xrefstyle: short
+:imagesoutdir: images
+:imagesdir: images
 :math:
 :stem: latexmath
-:source-highlighter: highlight.js
+:source-highlighter: rouge
+:bibtex-file: references.bib
 :bibtex-style: apa
 :bibtex-order: alphabetical
 :bibtex-format: asciidoc
@@ -34,51 +37,36 @@ This manual assumes the agents will run in a Linux machine even though it is pos
 [#requirements]
 === Software Requirements
 
-* https://openjdk.java.net/[Java OpenJDK 11+]
-* https://git-scm.com/[Git]
-* https://gradle.org/[Gradle]
+* Git
+* OpenJDK Java 17
+* Gradle
+* Utilities like `wget`, `bash`, `xterm`, `tar`, `gzip`, etc. +
+  **NOTE:** If you are using Ubuntu, all of these utilities are present in the default software repositories.
 
 [#download]
 === Download
-You can download the sample agents with ADF by cloning the `https://github.com/roborescue/rcrs-adf-sample` repository. Clone this repository using the command
+You can download the sample agents with ADF by cloning the `https://github.com/roborescue/adf-sample-agent-java` repository. Clone this repository using the command
 [source,shell]
 ----
-git clone https://github.com/roborescue/rcrs-adf-sample.git
+git clone https://github.com/roborescue/adf-sample-agent-java.git
 ----
 
 [#directories]
 === Directories
-The `rcrs-adf-sample` contains multiple directories. The important directories are:
+The `adf-sample-agent-java` contains multiple directories. The important directories are:
 
-* `config/`: configuration file of agents
-* `src/`: agents' source codes
+* `config/`: ADF and Agent Modules'  configuration files
+* `src/`: Sample agents' source codes
 * `precomp_data`: results of a precomputation for each type of agents
-* `build/`: agents' Java classes
-* `library/`: libraries used by agents
 
 [#compiling]
 === Compiling
 Execute the steps below to compile the ADF Sample Agent.
 
-. Change to the directory `rcrs-adf-sample`
-. Compile the project using the commands
 [source,shell]
 ----
-$ ./gradlew clean
-$ ./gradlew build
-----
-
-[#example]
-=== Example
-In Ubuntu, the installation proceeds according to the following commands.
-
-[source,shell]
-.Installation on Ubuntu
-----
-$ git clone https://github.com/roborescue/rcrs-adf-sample.git
-$ cd rcrs-adf-sample
-$ ./gradlew clean
-$ ./gradlew build
+$ cd adf-sample-agent-java
+$ ./gradlew clean build
 ----
 
 [#running]
@@ -87,27 +75,26 @@ There are two modes of execution of the simulation server and ADF Sample Agent: 
 
 [#precomputation_mode]
 === Precomputation Mode
-In the precomputation mode, the simulator connects one agent of each type and allows them to write the computation results.
+In the precomputation mode, the simulator connects one agent of each type and allows them to write the computation results persistently.
 
 The sequence of commands to run the simulation server in precomputation mode are:
 
 [source,shell]
-.Running simulation server in precomputation mode
 ----
 $ cd rcrs-server
-$ cd boot
-$ bash start-precompute.sh
+$ cd scripts
+$ ./start-precompute.sh -m ../maps/test/maps -c ../maps/test/config
 ----
 
-See https://roborescue.github.io/rcrs-docs/rcrs-server/manual.html[RoboCup Rescue Simulator Manual] for further information on how to compile and run the RoboCup Rescue Simulator server.
+See https://roborescue.github.io/rcrs-server/rcrs-server/index.html[RoboCup Rescue Simulator Manual] for further information on how to compile and run the RoboCup Rescue Simulator server.
 
-After running the simulation server for the precomputation, move to the ADF directory on another terminal window and run the agents executing the commands:
+After running the simulation server for the precomputation, move to the ADF Sample Agent directory on another terminal window and run the agents executing the commands:
 
 [source,shell]
-.Running Sample Agents in precomputation mode
 ----
 $ bash launch.sh -t 1,0,1,0,1,0 -h localhost -pre 1 & APID=$! ; sleep 120 ; kill $APID
-[START] Connect to server (host:localhost, port:7000)
+
+[START] Connect to server (host:localhost, port:27931)
 [INFO] Connected - adf.agent.platoon.PlatoonFire@756ec19c (PRECOMPUTATION)
 [INFO] Connected - adf.agent.platoon.PlatoonPolice@366bbbe (PRECOMPUTATION)
 [INFO] Connected - adf.agent.platoon.PlatoonAmbulance@2a453513 (PRECOMPUTATION)
@@ -118,10 +105,9 @@ $ bash launch.sh -t 1,0,1,0,1,0 -h localhost -pre 1 & APID=$! ; sleep 120 ; kill
 [FINISH] Done connecting to server (3 agents)
 ----
 
-Once the precomputation is completed, push _Control-C_ and type `sh kill.sh` to stop the simulation server of running.
+Once the precomputation is completed, press _Control-C_ and type `bash kill.sh` to stop the simulation server of running.
 
 [source,shell]
-.Stop running simulation server in precomputation mode
 ----
 Control-C
 $ bash kill.sh
@@ -129,24 +115,22 @@ $ bash kill.sh
 
 [#normal_mode]
 === Normal Mode
-In the normal mode, the simulator connects all agents defined in the scenario and allows them to use the precomputation output.
+In the normal mode, the simulator connects all agents defined in the scenario and allows them to use the precomputation output (see <<precomputation_mode>>).
 
 The sequence of commands to run the simulation server in normal mode are:
 
 [source,shell]
-.Running simulation server in normal mode
 ----
 $ cd rcrs-server
-$ cd boot
+$ cd scripts
 $ bash start-comprun.sh
 ----
 
-See https://roborescue.github.io/rcrs-docs/rcrs-server/manual.html[RoboCup Rescue Simulator Manual] for further information on how to compile and run the RoboCup Rescue Simulator server.
+See https://roborescue.github.io/rcrs-server/rcrs-server/index.html[RoboCup Rescue Simulator Manual] for further information on how to compile and run the RoboCup Rescue Simulator server.
 
-After running the simulation server, move to the ADF directory on the other terminal window and run the agents using the commands:
+After running the simulation server, move to the ADF Sample Agent directory on another terminal window and run the agents using the commands:
 
 [source,shell]
-.Running Sample Agents in normal mode
 ----
 $ bash launch.sh -all
 [FINISH] Done connecting to server (3 agents)
@@ -154,119 +138,130 @@ $ bash launch.sh -all
 
 [#develop_agent]
 == Develop your own agents using ADF
-This section explain how to implement your agents using ADF samples.
-
-[#files]
-=== Files to develop your agents
-You can develop your own agents codes using only the files in the directories:
-
-`src/adf/sample/centralized`:: source codes for _central agents_. This is the type of agents whose only interaction with the world is through radio communication. There are three types of central agents: *Ambulance Centers*, *Fire Stations* and *Police Office*, and they are represented as buildings in the simulation server.
-`src/adf/sample/extraction`:: codes of combining actions described in the directory below.
-`src/adf/sample/module`:: concrete codes of algorithms, e.g., path planning, clustering, target detection, etc. The directory contains two directories:
-  * `src/adf/sample/module/algorithm`
-  * `src/adf/sample/module/complex`
-
-NOTE: You *must not* make any changes of files in `src/adf/sample/tactics`. This is the restriction for our current competition rule.
-
-You should fundamentally copy the sample codes, not edit them. The reason is that the sample codes would be used if ADF could not find your own codes. You can easily change reference to your modules by modifying `src/adf/config/module.cfg`. The usage of the file is described below.
+This section explain how to implement your agents using the ADF Sample Agent as the starting point.
 
 [#workflow]
 === Workflow for coding your agents
 The steps necessary to code your own agents are:
 
-. Copy sample codes related to agents which you want to create,
-. Edit the copied files.
-. Edit `src/adf/config/module.cfg` according to the edited files.
-. Compile and run.
+* Implement the customized modules
+* Change the `config/module.cfg` to point to the customized modules
+
+[#files]
+=== Customize modules
+ADF is a modular framework whose modules were define in the `adf-core-java` (https://github.com/roborescue/adf-core-java) repository together with a set of default implementations. To implement your own team of agents, you have to implement the modules' Java interfaces correspondent to the behavior you want to customize.
+
+The default implementations of the modules' Java interfaces is available under the package `impl` in the `adf-core-java` repository. There you find default implementations for:
+
+* `adf.impl.centralized`: source code of the  _central agents_. This is the type of agents whose only interaction with the world is through radio communication. There are three types of central agents: *Ambulance Centers*, *Fire Stations* and *Police Office*, and they are represented as buildings in the simulation server.
+* `adf.impl.extraction`: source code of the possible actions available to agents.
+* `adf.impl.module`: source code of the algorithms, e.g., path planning, clustering, target detection, etc. representing the agents' behavior. The modules are split into
++
+--
+  * `adf.impl.module.algorithm`
+  * `adf.impl.module.comm`
+  * `adf.impl.module.complex`
+--
+
+To customize any of these modules, you can copy modules'  file you want to customize to you team agents' repository and make changes to the implementation. Then you need to change the references to your modules by modifying `config/module.cfg` file (see below).
 
 [#module_configuration]
-=== Modules' configuration files
-The modules configuration file `src/adf/config/module.cfg` indicates which codes would be used as agents' module. <<lst:module_configuration,Listing 1>> shows part of the modules configuration file. The left-hand side of the colon indicates the module name, the right-hand side is the class name. In most cases, modules of which targets' problems are the same should refer to an identical class for all agent types. The example in <<lst:module_configuration,Listing 1>> is in `TacticsAmbulanceTeam.Search` and `TacticsFireBrigade.Search` indicates that both modules refer to `adf.sample.module.complex.SampleSearch`. An usage example is shown in <<edit_module_configuration>>.
+=== Modules' configuration file
+The modules configuration file `config/module.cfg` indicates which class will be used as agents' module. <<lst:module_configuration,Listing 1>> shows part of the modules configuration file. The left-hand side of the colon indicates the module name, the right-hand side is the class name. In most cases, modules of which targets' problems are the same should refer to an identical class for all agent types. The example in <<lst:module_configuration,Listing 1>> is in `DefaultTacticsAmbulanceTeam.Search` and `DefaultTacticsFireBrigade.Search` indicates that both modules refer to `sample_team.module.complex.SampleSearch`. An usage example is shown in <<edit_module_configuration>>.
 
 [#lst:module_configuration]
 [source,text]
-.Listing 1. Module's configuration file
+.*Listing 1*. Part of a module configuration file
 ----
-TacticsAmbulanceTeam.HumanDetector : adf.sample.module.complex.SampleHumanDetector
-TacticsAmbulanceTeam.Search : adf.sample.module.complex.SampleSearch
+## DefaultTacticsAmbulanceTeam
+DefaultTacticsAmbulanceTeam.HumanDetector : sample_team.module.complex.SampleHumanDetector
+DefaultTacticsAmbulanceTeam.Search : sample_team.module.complex.SampleSearch
+DefaultTacticsAmbulanceTeam.ExtActionTransport : adf.impl.extaction.DefaultExtActionTransport
+DefaultTacticsAmbulanceTeam.ExtActionMove : adf.impl.extaction.DefaultExtActionMove
+DefaultTacticsAmbulanceTeam.CommandExecutorAmbulance : adf.impl.centralized.DefaultCommandExecutorAmbulance
+DefaultTacticsAmbulanceTeam.CommandExecutorScout : adf.impl.centralized.DefaultCommandExecutorScout
 
-TacticsAmbulanceTeam.ActionTransport : adf.sample.extaction.ActionTransport
-TacticsAmbulanceTeam.ActionExtMove : adf.sample.extaction.ActionExtMove
-
-TacticsAmbulanceTeam.CommandExecutorAmbulance : adf.sample.centralized.CommandExecutorAmbulance
-TacticsAmbulanceTeam.CommandExecutorScout : adf.sample.centralized.CommandExecutorScout
-
-TacticsFireBrigade.BuildingDetector : adf.sample.module.complex.SampleBuildingDetector
-TacticsFireBrigade.Search : adf.sample.module.complex.SampleSearch
-
-TacticsFireBrigade.ActionFireFighting : adf.sample.extaction.ActionFireFighting
-TacticsFireBrigade.ActionExtMove : adf.sample.extaction.ActionExtMove
+## DefaultTacticsFireBrigade
+DefaultTacticsFireBrigade.HumanDetector : sample_team.module.complex.SampleHumanDetector
+DefaultTacticsFireBrigade.Search : sample_team.module.complex.SampleSearch
+DefaultTacticsFireBrigade.ExtActionFireRescue : adf.impl.extaction.DefaultExtActionFireRescue
+DefaultTacticsFireBrigade.ExtActionMove : adf.impl.extaction.DefaultExtActionMove
+DefaultTacticsFireBrigade.CommandExecutorFire : adf.impl.centralized.DefaultCommandExecutorFire
+DefaultTacticsFireBrigade.CommandExecutorScout : adf.impl.centralized.DefaultCommandExecutorScout
 ----
 
 [#astar_example]
 === Example of implementing A* algorithm for Path Planning algorithm
+In this example, you will learn how to implement the A* Path Planning algorithm in a module and how to setup the ADF Sample Agent to use it instead of the Dijkstra Path Planning. Here we assume that you will apply the changes to the `adf-sample-agent-java` repository.
 
 [#copy_sample]
-==== Copy the ADF Sample code
-First, you should copy the sample code for path planning which is `SamplePathPlanning.java`. The example is described below. Note that the second command is split into two lines because of space limitations, but it should be entered as a single line.
+==== Copy the Dijkstra Path Planning file
+First, you should copy the Dijkstra path planning (`src/main/java/adf/impl/module/algorithm/DijkstraPathPlanning.java`) from the `adf-core-java` repository to the `adf-sample-agent-java` repository (`src/main/java/sample_team/module/algorithm`).
 
 [source,shell]
-.Copy the Sample Path Planning
 ----
-$ mkdir -p src/myteam/module/algorithm
-$ cp src/adf/sample/module/algorithm/SamplePathPlanning.java src/myteam/module/algorithm/AStarPathPlanning.java
+$ cd adf-sample-agent-java
+$ mkdir -p src/main/java/sample_team/module/algorithm
+$ cp ../adf-core-java/src/main/java/adf/impl/module/algorithm/DijkstraPathPlanning.java src/main/java/sample_team/module/algorithm/AStarPathPlanning.java
 ----
 
 [#edit_sample]
-==== Edit the ADF Sample code
-<<lst:sample_path_planning,Listing 2>> is the code of `SamplePathPlanning.java`, which has Dijkstra's algorithm. You should edit 1st line, 18th line and 27th line. You would implement your own code in the method `calc()`, and remove the method `isGoal()` that is only used by `calc()`. <<lst:astar_planning,Listing 3>> shows the results of editing these lines.
+==== Edit the Dijkstra code
+<<lst:sample_path_planning,Listing 2>> is the code of `DijkstraPathPlanning.java`, which implements the Dijkstra's algorithm. You should edit line 1 and 23th as well as replace the code in the method `calc()` starting on line 96. Remove the method `isGoal()` that is only used by the Dijkstra `calc()`. <<lst:astar_planning,Listing 3>> shows the results of editing these lines.
 
 You must implement the method `calc()` to get its calculation result
 by the method `getResult()`. The type of `getResult()` returning is `List<EntityID>`.
 
-<<lst:astar_planning_calc,Listing 4>> indicates the contents of the method `calc()`. In addition, you should write the new private class `Node` which is used by the method `calc()`. The code is shown in <<lst:astar_node_class,Listing 5>>. It must be put in the file `AStarPathPlanning.java`.
+<<lst:astar_planning_calc,Listing 4>> indicates the contents of the method `calc()`. In addition, you should write the new private class `Node` which is used by the method `calc()`. The code is shown in <<lst:astar_node_class,Listing 5>>.
 
 [#lst:sample_path_planning]
-[source,java]
-.Listing 2. `SamplePathPlanning.java` file
+[source,java,linenums]
+.*Listing 2*. `DijkstraPathPlanning.java` file
 ----
-package adf.sample.module.algorithm; // Edit this line
+package adf.impl.module.algorithm; // Edit this line
 
-import adf.agent.communication.MessageManager;
-import adf.agent.develop.DevelopData;
-import adf.agent.info.AgentInfo;
-import adf.agent.info.ScenarioInfo;
-import adf.agent.info.WorldInfo;
-import adf.agent.module.ModuleManager;
-import adf.agent.precompute.PrecomputeData;
-import adf.component.module.algorithm.PathPlanning;
+import adf.core.agent.communication.MessageManager;
+import adf.core.agent.develop.DevelopData;
+import adf.core.agent.info.AgentInfo;
+import adf.core.agent.info.ScenarioInfo;
+import adf.core.agent.info.WorldInfo;
+import adf.core.agent.module.ModuleManager;
+import adf.core.agent.precompute.PrecomputeData;
+import adf.core.component.module.algorithm.PathPlanning;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import rescuecore2.misc.collections.LazyMap;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.worldmodel.Entity;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.*;
-
-public class SamplePathPlanning extends PathPlanning { // Edit this line
+public class DijkstraPathPlanning extends PathPlanning { // Edit this line
 
   private Map<EntityID, Set<EntityID>> graph;
 
   private EntityID from;
   private Collection<EntityID> targets;
   private List<EntityID> result;
-  // Edit the following line
-  public SamplePathPlanning(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+
+  public DijkstraPathPlanning(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
     super(ai, wi, si, moduleManager, developData);
     this.init();
   }
 
   private void init() {
-    Map<EntityID, Set<EntityID>> neighbours = new LazyMap<EntityID, Set<EntityID>>() {
-      @Override
-      public Set<EntityID> createValue() {
-          return new HashSet<>();
-      }
-    };
+    Map<EntityID,
+        Set<EntityID>> neighbours = new LazyMap<EntityID, Set<EntityID>>() {
+
+          @Override
+          public Set<EntityID> createValue() {
+            return new HashSet<>();
+          }
+        };
     for (Entity next : this.worldInfo) {
       if (next instanceof Area) {
         Collection<EntityID> areaNeighbours = ((Area) next).getNeighbours();
@@ -318,7 +313,7 @@ public class SamplePathPlanning extends PathPlanning { // Edit this line
   }
 
   @Override
-  public PathPlanning calc() { // Renew this method (implement your algorithm here)
+  public PathPlanning calc() {   // Replace the code in this method by the A* Path Planning algorithm
     List<EntityID> open = new LinkedList<>();
     Map<EntityID, EntityID> ancestors = new HashMap<>();
     open.add(this.from);
@@ -341,8 +336,7 @@ public class SamplePathPlanning extends PathPlanning { // Edit this line
           next = neighbour;
           found = true;
           break;
-        }
-        else {
+        } else {
           if (!ancestors.containsKey(neighbour)) {
             open.add(neighbour);
             ancestors.put(neighbour, next);
@@ -361,13 +355,14 @@ public class SamplePathPlanning extends PathPlanning { // Edit this line
       path.add(0, current);
       current = ancestors.get(current);
       if (current == null) {
-        throw new RuntimeException("Found a node with no ancestor! Something is broken.");
+        throw new RuntimeException(
+            "Found a node with no ancestor! Something is broken.");
       }
     } while (current != this.from);
     this.result = path;
     return this;
   }
-  // Remove the method (it is only used by calc()).
+
   private boolean isGoal(EntityID e, Collection<EntityID> test) {
     return test.contains(e);
   }
@@ -375,49 +370,56 @@ public class SamplePathPlanning extends PathPlanning { // Edit this line
 ----
 
 [#lst:astar_planning]
-[source,java]
-.Listing 3. `AStartPlanning.java` file
+[source,java,linenums]
+.*Listing 3*. `AStartPlanning.java` file
 ----
-package myteam.module.algorithm; // Position of the file
+package sample_team.module.algorithm; // Position of the file
 
-import adf.agent.communication.MessageManager;
-import adf.agent.develop.DevelopData;
-import adf.agent.info.AgentInfo;
-import adf.agent.info.ScenarioInfo;
-import adf.agent.info.WorldInfo;
-import adf.agent.module.ModuleManager;
-import adf.agent.precompute.PrecomputeData;
-import adf.component.module.algorithm.PathPlanning;
+import adf.core.agent.develop.DevelopData;
+import adf.core.agent.info.AgentInfo;
+import adf.core.agent.info.ScenarioInfo;
+import adf.core.agent.info.WorldInfo;
+import adf.core.agent.module.ModuleManager;
+import adf.core.agent.precompute.PrecomputeData;
+import adf.core.component.module.algorithm.PathPlanning;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import rescuecore2.misc.collections.LazyMap;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.worldmodel.Entity;
 import rescuecore2.worldmodel.EntityID;
 
-import java.util.*;
-
-public class AStarPathPlanning extends PathPlanning { // Same as the file name
+public class AStarPathPlanning extends PathPlanning {
 
   private Map<EntityID, Set<EntityID>> graph;
 
   private EntityID from;
   private Collection<EntityID> targets;
   private List<EntityID> result;
-  // Same as the file name
+
   public AStarPathPlanning(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
     super(ai, wi, si, moduleManager, developData);
     this.init();
   }
+
+  ...
 ----
 
 [#lst:astar_planning_calc]
-[source,java]
-.Listing 4. `calc()` method
+[source,java,linenums]
+.*Listing 4*. `calc()` method
 ----
   @Override
   public PathPlanning calc() {
     List<EntityID> open = new LinkedList<>();
     List<EntityID> close = new LinkedList<>();
     Map<EntityID, Node> nodeMap = new HashMap<>();
+
     open.add(this.from);
     nodeMap.put(this.from, new Node(null, this.from));
     close.clear();
@@ -427,21 +429,25 @@ public class AStarPathPlanning extends PathPlanning { // Same as the file name
         this.result = null;
         return this;
       }
+
       Node n = null;
       for (EntityID id : open) {
         Node node = nodeMap.get(id);
+
         if (n == null) {
           n = node;
         } else if (node.estimate() < n.estimate()) {
           n = node;
         }
       }
+
       if (targets.contains(n.getID())) {
         List<EntityID> path = new LinkedList<>();
         while (n != null) {
           path.add(0, n.getID());
           n = nodeMap.get(n.getParent());
         }
+
         this.result = path;
         return this;
       }
@@ -451,14 +457,15 @@ public class AStarPathPlanning extends PathPlanning { // Same as the file name
       Collection<EntityID> neighbours = this.graph.get(n.getID());
       for (EntityID neighbour : neighbours) {
         Node m = new Node(n, neighbour);
+
         if (!open.contains(neighbour) && !close.contains(neighbour)) {
           open.add(m.getID());
           nodeMap.put(neighbour, m);
-        }
-        else if (open.contains(neighbour) && m.estimate() < nodeMap.get(neighbour).estimate()) {
+        } else if (open.contains(neighbour)
+            && m.estimate() < nodeMap.get(neighbour).estimate()) {
           nodeMap.put(neighbour, m);
-        }
-        else if (!close.contains(neighbour) && m.estimate() < nodeMap.get(neighbour).estimate()) {
+        } else if (!close.contains(neighbour)
+            && m.estimate() < nodeMap.get(neighbour).estimate()) {
           nodeMap.put(neighbour, m);
         }
       }
@@ -467,85 +474,79 @@ public class AStarPathPlanning extends PathPlanning { // Same as the file name
 ----
 
 [#lst:astar_node_class]
-[source,java]
-.Listing 5. `Node` class
+[source,java,linenums]
+.*Listing 5*. `Node` class
 ----
 private class Node {
-  EntityID id;
-  EntityID parent;
+    EntityID id;
+    EntityID parent;
 
-  double cost;
-  double heuristic;
+    double cost;
+    double heuristic;
 
-  public Node(Node from, EntityID id) {
-    this.id = id;
+    public Node(Node from, EntityID id) {
+      this.id = id;
 
-    if (from == null) {
-      this.cost = 0;
-    } else {
-      this.parent = from.getID();
-      this.cost = from.getCost() + worldInfo.getDistance(from.getID(), id);
+      if (from == null) {
+        this.cost = 0;
+      } else {
+        this.parent = from.getID();
+        this.cost = from.getCost() + worldInfo.getDistance(from.getID(), id);
+      }
+
+      this.heuristic = worldInfo.getDistance(id,
+          targets.toArray(new EntityID[targets.size()])[0]);
     }
 
-    this.heuristic = worldInfo.getDistance(id, targets.toArray(new EntityID[targets.size()])[0]);
-  }
 
-  public EntityID getID() {
-    return id;
-  }
+    public EntityID getID() {
+      return id;
+    }
 
-  public double getCost() {
-    return cost;
-  }
 
-  public double estimate() {
-    return cost + heuristic;
-  }
+    public double getCost() {
+      return cost;
+    }
 
-  public EntityID getParent() {
-    return this.parent;
+
+    public double estimate() {
+      return cost + heuristic;
+    }
+
+
+    public EntityID getParent() {
+      return this.parent;
+    }
   }
 }
 ----
 
 [#edit_module_configuration]
 ==== Edit the Modules' configuration file
-You must edit the module configuration file `src/adf/config/module.cfg` related to a path planning to use your code. <<lst:default_module_cfg,Listing 6>> and <<lst:edited_module_cfg,Listing 7>> show the part of the default `module.cfg` and the part of the edited `module.cfg` where the lines related to a path planning are changed. In this case, all `adf.sample.module.algorithm.SamplePathPlanning` in the file are replaced with `myteam.module.algorithm.AStarPathPlanning`. If you would like to use the code in some modules, you can indicate that the only modules refer to it.
+After created the module code, you must edit the module configuration file `config/module.cfg` and replace the modules you would like to use your implementation. <<lst:default_module_cfg,Listing 6>> and <<lst:edited_module_cfg,Listing 7>> show the part of the default `module.cfg` and the part of the edited `config/module.cfg` where the lines related to a path planning are changed. In this case, all `adf.impl.module.algorithm.DijkstraPathPlanning` are replaced with `sample_team.module.algorithm.AStarPathPlanning`.
 
 [#lst:default_module_cfg]
 [source,text]
-.Listing 6. Default `module.cfg`
+.*Listing 6*. Default `module.cfg`
 ----
-SampleRoadDetector.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
-SampleSearch.PathPlanning.Ambulance : adf.sample.module.algorithm.SamplePathPlanning
-SampleSearch.PathPlanning.Fire : adf.sample.module.algorithm.SamplePathPlanning
-SampleSearch.PathPlanning.Police : adf.sample.module.algorithm.SamplePathPlanning
-ActionExtClear.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
-ActionExtMove.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
-ActionFireFighting.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
-ActionTransport.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
-CommandExecutorAmbulance.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
-CommandExecutorFire.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
-CommandExecutorPolice.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
-CommandExecutorScout.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
-CommandExecutorScoutPolice.PathPlanning : adf.sample.module.algorithm.SamplePathPlanning
+## SampleSearch
+SampleSearch.PathPlanning.Ambulance : adf.impl.module.algorithm.DijkstraPathPlanning
+SampleSearch.Clustering.Ambulance : adf.impl.module.algorithm.KMeansClustering
+SampleSearch.PathPlanning.Fire : adf.impl.module.algorithm.DijkstraPathPlanning
+SampleSearch.Clustering.Fire : adf.impl.module.algorithm.KMeansClustering
+SampleSearch.PathPlanning.Police : adf.impl.module.algorithm.DijkstraPathPlanning
+SampleSearch.Clustering.Police : adf.impl.module.algorithm.KMeansClustering
 ----
 
 [#lst:edited_module_cfg]
 [source,text]
-.Listing 7. Edited `module.cfg`
+.*Listing 7*. Edited `module.cfg`
 ----
-SampleRoadDetector.PathPlanning : myteam.module.algorithm.AStarPathPlanning
-SampleSearch.PathPlanning.Ambulance : myteam.module.algorithm.AStarPathPlanning
-SampleSearch.PathPlanning.Fire : myteam.module.algorithm.AStarPathPlanning
-SampleSearch.PathPlanning.Police : myteam.module.algorithm.AStarPathPlanning
-ActionExtClear.PathPlanning : myteam.module.algorithm.AStarPathPlanning
-ActionExtMove.PathPlanning : myteam.module.algorithm.AStarPathPlanning
-ActionFireFighting.PathPlanning : myteam.module.algorithm.AStarPathPlanning
-ActionTransport.PathPlanning : myteam.module.algorithm.AStarPathPlanning
-CommandExecutorAmbulance.PathPlanning : myteam.module.algorithm.AStarPathPlanning
-CommandExecutorFire.PathPlanning : myteam.module.algorithm.AStarPathPlanning
-CommandExecutorPolice.PathPlanning : myteam.module.algorithm.AStarPathPlanning
-CommandExecutorScout.PathPlanning : myteam.module.algorithm.AStarPathPlanning
-CommandExecutorScoutPolice.PathPlanning : myteam.module.algorithm.AStarPathPlanning
+## SampleSearch
+SampleSearch.PathPlanning.Ambulance : sample_team.module.algorithm.AStarPathPlanning
+SampleSearch.Clustering.Ambulance : adf.impl.module.algorithm.KMeansClustering
+SampleSearch.PathPlanning.Fire : adf.impl.module.algorithm.AStarPathPlanning
+SampleSearch.Clustering.Fire : adf.impl.module.algorithm.KMeansClustering
+SampleSearch.PathPlanning.Police : adf.impl.module.algorithm.AStarPathPlanning
+SampleSearch.Clustering.Police : adf.impl.module.algorithm.KMeansClustering
 ----
