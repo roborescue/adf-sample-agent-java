@@ -6,7 +6,6 @@
 
 * Git
 * OpenJDK Java 17
-* Gradle
 
 ## 2. Download
 
