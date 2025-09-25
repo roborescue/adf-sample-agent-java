@@ -1,12 +1,5 @@
 package sample_team.module.complex;
 
-import static rescuecore2.standard.entities.StandardEntityURN.AMBULANCE_TEAM;
-import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
-import static rescuecore2.standard.entities.StandardEntityURN.FIRE_BRIGADE;
-import static rescuecore2.standard.entities.StandardEntityURN.GAS_STATION;
-import static rescuecore2.standard.entities.StandardEntityURN.POLICE_FORCE;
-import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
-import adf.core.agent.communication.MessageManager;
 import adf.core.agent.develop.DevelopData;
 import adf.core.agent.info.AgentInfo;
 import adf.core.agent.info.ScenarioInfo;
@@ -16,151 +9,158 @@ import adf.core.component.module.algorithm.Clustering;
 import adf.core.component.module.algorithm.PathPlanning;
 import adf.core.component.module.complex.RoadDetector;
 import adf.core.debug.DefaultLogger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
-import rescuecore2.standard.entities.Area;
-import rescuecore2.standard.entities.Human;
-import rescuecore2.standard.entities.StandardEntity;
-import rescuecore2.standard.entities.StandardEntityURN;
+import rescuecore2.standard.entities.*;
 import rescuecore2.worldmodel.EntityID;
+import adf.core.agent.communication.MessageManager;
 
 public class SampleRoadDetector extends RoadDetector {
 
-  private Set<Area> openedAreas = new HashSet<>();
-  private Clustering clustering;
-  private PathPlanning pathPlanning;
+    private PathPlanning pathPlanning;
+    private Clustering clustering;
+    private Logger logger;
 
-  private EntityID result;
-  private Logger logger;
+    // keyが道路ID，valueが優先度
+    private Map<EntityID, Integer> tasks;
+    // 啓開が完了した道路のIDを保持するSet
+    private Set<EntityID> completedTasks;
+    // 自身に割り当てられた担当区画（クラスタ）内の全エンティティIDを保持するSet
+    private Set<EntityID> myCluster;
+    // 啓開対象となる道路のID
+    private EntityID result;
 
-  public SampleRoadDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
-    super(ai, wi, si, moduleManager, developData);
-    logger = DefaultLogger.getLogger(agentInfo.me());
-    this.pathPlanning = moduleManager.getModule(
-        "SampleRoadDetector.PathPlanning",
-        "adf.impl.module.algorithm.DijkstraPathPlanning");
-    this.clustering = moduleManager.getModule("SampleRoadDetector.Clustering",
-        "adf.impl.module.algorithm.KMeansClustring");
-    registerModule(this.clustering);
-    registerModule(this.pathPlanning);
-    this.result = null;
-  }
+    // コンストラクタ
+    public SampleRoadDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
+        super(ai, wi, si, moduleManager, developData);
 
+        this.logger = DefaultLogger.getLogger(agentInfo.me());
+        this.pathPlanning = moduleManager.getModule("SampleRoadDetector.PathPlanning", "adf.impl.module.algorithm.DijkstraPathPlanning");
+        this.clustering = moduleManager.getModule("SampleRoadDetector.Clustering", "adf.impl.module.algorithm.KMeansClustering");
 
-  @Override
-  public RoadDetector updateInfo(MessageManager messageManager) {
-    logger.debug("Time:" + agentInfo.getTime());
-    super.updateInfo(messageManager);
-    return this;
-  }
+        registerModule(this.clustering);
+        registerModule(this.pathPlanning);
 
-
-  @Override
-  public RoadDetector calc() {
-    EntityID positionID = this.agentInfo.getPosition();
-    StandardEntity currentPosition = worldInfo.getEntity(positionID);
-    openedAreas.add((Area) currentPosition);
-    if (positionID.equals(result)) {
-      logger.debug("reach to " + currentPosition + " resetting target");
-      this.result = null;
+        this.tasks = new HashMap<>();
+        this.completedTasks = new HashSet<>();
+        this.myCluster = new HashSet<>();
     }
 
-    if (this.result == null) {
-      HashSet<Area> currentTargets = calcTargets();
-      logger.debug("Targets: " + currentTargets);
-      if (currentTargets.isEmpty()) {
-        this.result = null;
+
+    @Override
+    public RoadDetector preparate() {
+        super.preparate();
+        // 1回だけ呼ばれるようにする
+        if (this.getCountPrecompute() > 1) { return this; }
+
+        // 自身の担当区画のエンティティIDを取得
+        int myClusterIndex = this.clustering.getClusterIndex(this.agentInfo.getID());
+        if (myClusterIndex != -1) {
+            Collection<StandardEntity> clusterEntities = this.clustering.getClusterEntities(myClusterIndex);
+            if(clusterEntities != null) {
+                this.myCluster.addAll(
+                    clusterEntities.stream().map(StandardEntity::getID).collect(Collectors.toSet())
+                );
+            }
+        }
         return this;
+    }
+
+    // 情報更新
+    @Override
+    public RoadDetector updateInfo(MessageManager messageManager) {
+        super.updateInfo(messageManager);
+        logger.debug("Time:" + agentInfo.getTime());
+
+        // 情報をもとにタスクを更新
+        updateTasksWithPerception();
+        addClusterRoadsToTasksAsNeeded();
+
+        return this;
+    }
+
+    // 啓開目標を計算
+    @Override
+    public RoadDetector calc() {
+      // 目標をリセット
+      this.result = null;
+      EntityID bestTarget = null;
+      int minPriority = Integer.MAX_VALUE; // 見つけたタスクの最小優先度を記録 (低いほど優先)
+      int minDistance = Integer.MAX_VALUE; // 優先度が同じ場合の最短距離を記録
+
+      // --- 全てのタスクをループして最適なものを探す ---
+      for (Map.Entry<EntityID, Integer> task : this.tasks.entrySet()) {
+        EntityID currentTarget = task.getKey();
+        int currentPriority = task.getValue();
+
+        // 啓開済みの道路であれば無視
+        if (this.completedTasks.contains(currentTarget)) {
+          continue;
+        }
+
+        // 優先度を比較
+        if (currentPriority < minPriority) {
+          minPriority = currentPriority;
+          bestTarget = currentTarget;
+          minDistance = this.worldInfo.getDistance(this.agentInfo.getID(), bestTarget);
+        } else if (currentPriority == minPriority) {
+          // 優先度が同じ場合は，距離を比較
+          int currentDistance = this.worldInfo.getDistance(this.agentInfo.getID(), currentTarget);
+          if (currentDistance < minDistance) {
+            bestTarget = currentTarget;
+            minDistance = currentDistance;
+          }
+        }
       }
-      this.pathPlanning.setFrom(positionID);
-      this.pathPlanning.setDestination(toEntityIds(currentTargets));
-      List<EntityID> path = this.pathPlanning.calc().getResult();
-      if (path != null && path.size() > 0) {
-        this.result = path.get(path.size() - 1);
+
+      if (bestTarget != null) {
+        this.result = bestTarget;
+      } else {
+        if(!this.completedTasks.isEmpty()) {
+          this.completedTasks.clear();
+        }
       }
-      logger.debug("Selected Target: " + this.result);
+      return this;
     }
-    return this;
-  }
 
-
-  private Collection<EntityID>
-      toEntityIds(Collection<? extends StandardEntity> entities) {
-    ArrayList<EntityID> eids = new ArrayList<>();
-    for (StandardEntity standardEntity : entities) {
-      eids.add(standardEntity.getID());
+    // タスクリストの更新
+    private void updateTasksWithPerception() {
+        // 視界に入って情報が変化したエンティティをループ
+        for (EntityID id : this.worldInfo.getChanged().getChangedEntities()) {
+            StandardEntity entity = this.worldInfo.getEntity(id);
+            // 道路である場合
+            if (entity instanceof Road) {
+                Road road = (Road) entity;
+                // 道路に瓦礫が存在する場合
+                if (road.isBlockadesDefined() && !road.getBlockades().isEmpty()) {
+                    // タスクリストに追加（優先度は1）
+                    this.tasks.put(road.getID(), 1);
+                    // 啓開済みになっている場合は，リストから削除
+                    this.completedTasks.remove(road.getID());
+                } else {
+                    // 瓦礫がない場合は，啓開済みリストに追加
+                    this.completedTasks.add(road.getID());
+                }
+            }
+        }
     }
-    return eids;
-  }
 
 
-  private HashSet<Area> calcTargets() {
-    HashSet<Area> targetAreas = new HashSet<>();
-    for (StandardEntity e : this.worldInfo.getEntitiesOfType(REFUGE,
-        GAS_STATION)) {
-      targetAreas.add((Area) e);
+    private void addClusterRoadsToTasksAsNeeded() {
+        if(this.myCluster == null) return;
+        for(EntityID id : this.myCluster) {
+            // 道路エンティティの場合
+            if(this.worldInfo.getEntity(id) instanceof Road) {
+                // タスクリストに追加（優先度は8）
+                this.tasks.putIfAbsent(id, 8);
+            }
+        }
     }
-    for (StandardEntity e : this.worldInfo.getEntitiesOfType(CIVILIAN,
-        AMBULANCE_TEAM, FIRE_BRIGADE, POLICE_FORCE)) {
-      if (isValidHuman(e)) {
-        Human h = (Human) e;
-        targetAreas.add((Area) worldInfo.getEntity(h.getPosition()));
-      }
+
+    //  啓開対象の道路IDを返す
+    @Override
+    public EntityID getTarget() {
+        return this.result;
     }
-    HashSet<Area> inClusterTarget = filterInCluster(targetAreas);
-    inClusterTarget.removeAll(openedAreas);
-    return inClusterTarget;
-  }
-
-
-  private HashSet<Area> filterInCluster(HashSet<Area> targetAreas) {
-    int clusterIndex = clustering.getClusterIndex(this.agentInfo.getID());
-    HashSet<Area> clusterTargets = new HashSet<>();
-    HashSet<StandardEntity> inCluster = new HashSet<>(
-        clustering.getClusterEntities(clusterIndex));
-    for (Area target : targetAreas) {
-      if (inCluster.contains(target))
-        clusterTargets.add(target);
-
-    }
-    return clusterTargets;
-  }
-
-
-  @Override
-  public EntityID getTarget() {
-    return this.result;
-  }
-
-
-  private boolean isValidHuman(StandardEntity entity) {
-    if (entity == null)
-      return false;
-    if (!(entity instanceof Human))
-      return false;
-
-    Human target = (Human) entity;
-    if (!target.isHPDefined() || target.getHP() == 0)
-      return false;
-    if (!target.isPositionDefined())
-      return false;
-    if (!target.isDamageDefined() || target.getDamage() == 0)
-      return false;
-    if (!target.isBuriednessDefined())
-      return false;
-
-    StandardEntity position = worldInfo.getPosition(target);
-    if (position == null)
-      return false;
-
-    StandardEntityURN positionURN = position.getStandardURN();
-    if (positionURN == REFUGE || positionURN == AMBULANCE_TEAM)
-      return false;
-
-    return true;
-  }
 }
