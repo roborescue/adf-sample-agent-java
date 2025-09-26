@@ -22,16 +22,16 @@ public class SampleRoadDetector extends RoadDetector {
     private Clustering clustering;
     private Logger logger;
 
-    // keyが道路ID，valueが優先度
+    // key is road ID, value is priority
     private Map<EntityID, Integer> tasks;
-    // 啓開が完了した道路のIDを保持するSet
+    // a Set that holds the ID of roads that have been cleared
     private Set<EntityID> completedTasks;
-    // 自身に割り当てられた担当区画（クラスタ）内の全エンティティIDを保持するSet
+    // a Set that holds all entity IDs within the assigned area (cluster)
     private Set<EntityID> myCluster;
-    // 啓開対象となる道路のID
+    // ID of the road to be cleared
     private EntityID result;
 
-    // コンストラクタ
+    // constructor
     public SampleRoadDetector(AgentInfo ai, WorldInfo wi, ScenarioInfo si, ModuleManager moduleManager, DevelopData developData) {
         super(ai, wi, si, moduleManager, developData);
 
@@ -51,10 +51,10 @@ public class SampleRoadDetector extends RoadDetector {
     @Override
     public RoadDetector preparate() {
         super.preparate();
-        // 1回だけ呼ばれるようにする
+        // be called only once
         if (this.getCountPrecompute() > 1) { return this; }
 
-        // 自身の担当区画のエンティティIDを取得
+        // get the entity ID of your own area
         int myClusterIndex = this.clustering.getClusterIndex(this.agentInfo.getID());
         if (myClusterIndex != -1) {
             Collection<StandardEntity> clusterEntities = this.clustering.getClusterEntities(myClusterIndex);
@@ -67,45 +67,44 @@ public class SampleRoadDetector extends RoadDetector {
         return this;
     }
 
-    // 情報更新
+    // information update
     @Override
     public RoadDetector updateInfo(MessageManager messageManager) {
         super.updateInfo(messageManager);
         logger.debug("Time:" + agentInfo.getTime());
 
-        // 情報をもとにタスクを更新
+        // update tasks based on information
         updateTasksWithPerception();
         addClusterRoadsToTasksAsNeeded();
 
         return this;
     }
 
-    // 啓開目標を計算
+    // calculate clearing target
     @Override
     public RoadDetector calc() {
-      // 目標をリセット
+      // reset result
       this.result = null;
       EntityID bestTarget = null;
-      int minPriority = Integer.MAX_VALUE; // 見つけたタスクの最小優先度を記録 (低いほど優先)
-      int minDistance = Integer.MAX_VALUE; // 優先度が同じ場合の最短距離を記録
+      int minPriority = Integer.MAX_VALUE;
+      int minDistance = Integer.MAX_VALUE;
 
-      // --- 全てのタスクをループして最適なものを探す ---
       for (Map.Entry<EntityID, Integer> task : this.tasks.entrySet()) {
         EntityID currentTarget = task.getKey();
         int currentPriority = task.getValue();
 
-        // 啓開済みの道路であれば無視
+        // ignore if already cleared
         if (this.completedTasks.contains(currentTarget)) {
           continue;
         }
 
-        // 優先度を比較
+        // compare priority
         if (currentPriority < minPriority) {
           minPriority = currentPriority;
           bestTarget = currentTarget;
           minDistance = this.worldInfo.getDistance(this.agentInfo.getID(), bestTarget);
         } else if (currentPriority == minPriority) {
-          // 優先度が同じ場合は，距離を比較
+          // if priority is the same, compare distance
           int currentDistance = this.worldInfo.getDistance(this.agentInfo.getID(), currentTarget);
           if (currentDistance < minDistance) {
             bestTarget = currentTarget;
@@ -124,22 +123,22 @@ public class SampleRoadDetector extends RoadDetector {
       return this;
     }
 
-    // タスクリストの更新
+    // update tasks based on perception
     private void updateTasksWithPerception() {
-        // 視界に入って情報が変化したエンティティをループ
+        // loop through changed entities
         for (EntityID id : this.worldInfo.getChanged().getChangedEntities()) {
             StandardEntity entity = this.worldInfo.getEntity(id);
-            // 道路である場合
+            // if the entity is a road
             if (entity instanceof Road) {
                 Road road = (Road) entity;
-                // 道路に瓦礫が存在する場合
+                // if there are blockades on the road
                 if (road.isBlockadesDefined() && !road.getBlockades().isEmpty()) {
-                    // タスクリストに追加（優先度は1）
+                    // add to tasks with priority 1
                     this.tasks.put(road.getID(), 1);
-                    // 啓開済みになっている場合は，リストから削除
+                    // remove from completed tasks if it was there
                     this.completedTasks.remove(road.getID());
                 } else {
-                    // 瓦礫がない場合は，啓開済みリストに追加
+                    // add to completed tasks
                     this.completedTasks.add(road.getID());
                 }
             }
@@ -150,15 +149,15 @@ public class SampleRoadDetector extends RoadDetector {
     private void addClusterRoadsToTasksAsNeeded() {
         if(this.myCluster == null) return;
         for(EntityID id : this.myCluster) {
-            // 道路エンティティの場合
+            // if road entity
             if(this.worldInfo.getEntity(id) instanceof Road) {
-                // タスクリストに追加（優先度は8）
+                // add to tasks with priority 8
                 this.tasks.putIfAbsent(id, 8);
             }
         }
     }
 
-    //  啓開対象の道路IDを返す
+    // return the ID of the road to be cleared
     @Override
     public EntityID getTarget() {
         return this.result;
