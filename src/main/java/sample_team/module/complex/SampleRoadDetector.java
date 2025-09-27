@@ -24,6 +24,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Human;
+import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -62,7 +63,9 @@ public class SampleRoadDetector extends RoadDetector {
       if (entity instanceof Road) {
         Road road = (Road) entity;
         if (!road.isBlockadesDefined() || road.getBlockades().isEmpty()) {
-          this.openedAreas.add(id);
+          if (entity instanceof Area) {
+            this.openedAreas.add((Area) entity);
+          }
         }
       }
     }
