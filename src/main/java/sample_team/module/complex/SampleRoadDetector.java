@@ -24,6 +24,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Human;
+import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.worldmodel.EntityID;
@@ -55,6 +56,20 @@ public class SampleRoadDetector extends RoadDetector {
   public RoadDetector updateInfo(MessageManager messageManager) {
     logger.debug("Time:" + agentInfo.getTime());
     super.updateInfo(messageManager);
+
+    // adding a road to the list only when its clearance is complete, rather than upon arrival, prevents clearing operations from stopping
+    for (EntityID id : this.worldInfo.getChanged().getChangedEntities()) {
+      StandardEntity entity = this.worldInfo.getEntity(id);
+      if (entity instanceof Road) {
+        Road road = (Road) entity;
+        if (!road.isBlockadesDefined() || road.getBlockades().isEmpty()) {
+          if (entity instanceof Area) {
+            this.openedAreas.add((Area) entity);
+          }
+        }
+      }
+    }
+
     return this;
   }
 
