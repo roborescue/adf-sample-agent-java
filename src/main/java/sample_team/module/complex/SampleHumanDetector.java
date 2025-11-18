@@ -1,8 +1,13 @@
 package sample_team.module.complex;
 
-import static rescuecore2.standard.entities.StandardEntityURN.AMBULANCE_TEAM;
-import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
-import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+
+import org.apache.log4j.Logger;
+
 import adf.core.agent.communication.MessageManager;
 import adf.core.agent.develop.DevelopData;
 import adf.core.agent.info.AgentInfo;
@@ -12,15 +17,12 @@ import adf.core.agent.module.ModuleManager;
 import adf.core.component.module.algorithm.Clustering;
 import adf.core.component.module.complex.HumanDetector;
 import adf.core.debug.DefaultLogger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import org.apache.log4j.Logger;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
+import static rescuecore2.standard.entities.StandardEntityURN.AMBULANCE_TEAM;
+import static rescuecore2.standard.entities.StandardEntityURN.CIVILIAN;
+import static rescuecore2.standard.entities.StandardEntityURN.REFUGE;
 import rescuecore2.worldmodel.EntityID;
 
 public class SampleHumanDetector extends HumanDetector {

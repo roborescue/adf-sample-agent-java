@@ -45,7 +45,7 @@ public class SampleRoadDetector extends RoadDetector {
         "SampleRoadDetector.PathPlanning",
         "adf.impl.module.algorithm.DijkstraPathPlanning");
     this.clustering = moduleManager.getModule("SampleRoadDetector.Clustering",
-        "sample_team.module.algorithm.KMeansClustering");
+        "sample_team.module.algorithm.EuclideanKMeansClustering");
     registerModule(this.clustering);
     registerModule(this.pathPlanning);
     this.result = null;
