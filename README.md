@@ -5,7 +5,7 @@
 ## 1. Software Pre-Requisites
 
 * Git
-* OpenJDK Java 17
+* OpenJDK Java 21
 
 ## 2. Download
 
