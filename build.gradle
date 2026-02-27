@@ -6,9 +6,7 @@ defaultTasks 'build'
 
 group = 'com.github.roborescue'
 
-sourceCompatibility = '17'
-targetCompatibility = '17'
-version = '4.0'
+version = '4.1'
 
 dependencies {
   implementation fileTree(dir: 'lib', include: '*.jar')
@@ -54,9 +52,10 @@ clean {
   }
 }
 
-[compileJava, compileTestJava].each {
-  it.options.encoding = 'UTF-8'
-  it.options.compilerArgs += [ '-Xlint:unchecked', '-Xlint:deprecation' ]
+tasks.withType(JavaCompile).configureEach {
+  options.release = 21
+  options.encoding = 'UTF-8'
+  options.compilerArgs += [ '-Xlint:unchecked', '-Xlint:deprecation' ]
 }
 
 task launch(type: JavaExec) {
