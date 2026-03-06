@@ -8,6 +8,12 @@ group = 'com.github.roborescue'
 
 version = '4.1'
 
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
+}
+
 dependencies {
   implementation fileTree(dir: 'lib', include: '*.jar')
   implementation 'com.github.roborescue:rcrs-server:master-SNAPSHOT'
@@ -28,7 +34,7 @@ repositories {
     url = 'https://repo.enonic.com/public/'
   }
   maven {
-    url 'https://jitpack.io'
+    url = 'https://jitpack.io'
   }
 }
 
